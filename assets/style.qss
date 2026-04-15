@@ -99,6 +99,7 @@ QLineEdit#LoginInput {
     padding: 12px;
     border: 1px solid #DDD;
     border-radius: 8px;
+    color: black;
     background: #F9FAFB;
     font-size: 14px;
 }
