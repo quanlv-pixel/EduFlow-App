@@ -61,27 +61,32 @@ class SummaryWidget(QWidget):
         display_layout.addLayout(right_v, 1)
         layout.addLayout(display_layout)
 
+    # Trong file ui_summary.py, hãy sửa hàm handle_upload như sau:
+
     def handle_upload(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Chọn tài liệu", "", "Tài liệu (*.pdf *.docx)")
         
         if file_path:
-            self.lbl_status.setText(f"⌛ Đang đọc: {os.path.basename(file_path)}")
-            self.txt_summary.setText("🤖 Gemini đang suy nghĩ, Quân đợi xíu nhé...")
+            # 1. Trạng thái bắt đầu
+            self.lbl_status.setText(f"⌛ Đang đọc file...")
+            self.btn_upload.setEnabled(False) # Khóa nút lại tránh bấm liên tục
+            self.txt_original.clear()
+            self.txt_summary.setText("🤖 Đang gửi dữ liệu cho AI, đợi xíu nhé...")
             
+            # Cho phép giao diện cập nhật ngay lập tức
+            from PySide6.QtWidgets import QApplication
+            QApplication.processEvents() 
+
+            # 2. Đọc nội dung
+            content = self.ai.read_file(file_path)
+            self.txt_original.setText(content)
+
+            # 3. Gọi AI (Nên dùng try-except ở đây)
             try:
-                # Đọc nội dung
-                if file_path.endswith('.pdf'):
-                    content = self.ai.read_pdf(file_path)
-                else:
-                    content = self.ai.read_docx(file_path)
-                
-                self.txt_original.setText(content)
-                
-                # Gọi AI tóm tắt
                 summary = self.ai.get_summary(content)
                 self.txt_summary.setText(summary)
-                self.lbl_status.setText(f"✅ Đã tóm tắt xong: {os.path.basename(file_path)}")
-                
+                self.lbl_status.setText(f"✅ Tóm tắt thành công: {os.path.basename(file_path)}")
             except Exception as e:
-                self.txt_summary.setText(f"❌ Có lỗi xảy ra: {str(e)}")
-                self.lbl_status.setText("❌ Lỗi xử lý")
+                self.txt_summary.setText(f"❌ Lỗi AI: {str(e)}")
+            finally:
+                self.btn_upload.setEnabled(True) # Mở khóa nút
