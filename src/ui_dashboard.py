@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt, Signal
 from src.ui_schedule import ScheduleWidget
 from src.ui_summary import SummaryWidget
-
+from src.ui_flashcard import FlashcardWidget
 class DashMenuButton(QPushButton):
     def __init__(self, text, active=False):
         super().__init__(text)
@@ -22,6 +22,7 @@ class EduDashboard(QMainWindow):
 
     def __init__(self, user_info=None):
         super().__init__()
+        
         self.user_info = user_info or {"name": "LÊ VĂN QUÂN", "email": "quanlv.25ai@vku.udn.vn"}
         self.setWindowTitle("EduFlow - Dashboard")
         self.resize(1300, 850)
@@ -41,14 +42,17 @@ class EduDashboard(QMainWindow):
         self.setup_header()
 
         self.pages = QStackedWidget()
+
         self.page_overview = self.create_overview_page()
         self.page_schedule = ScheduleWidget()
+        self.page_flashcard = FlashcardWidget()
         self.page_summary = SummaryWidget()
- 
+
         self.pages.addWidget(self.page_overview)
         self.pages.addWidget(self.page_schedule)
+        self.pages.addWidget(self.page_flashcard)
         self.pages.addWidget(self.page_summary)
-
+ 
         self.content_layout.addWidget(self.pages)
         self.main_layout.addWidget(self.content_container)
 
@@ -150,6 +154,10 @@ class EduDashboard(QMainWindow):
         if sender == self.btn_overview: self.pages.setCurrentIndex(0)
         elif sender == self.btn_schedule: self.pages.setCurrentIndex(1)
         elif sender == self.btn_summary: self.pages.setCurrentIndex(2)
+        elif sender == self.btn_flash:
+            self.pages.setCurrentIndex(2)
+        elif sender == self.btn_summary:
+            self.pages.setCurrentIndex(3)
 
     def create_overview_page(self):
         """Tạo giao diện trang Tổng quan đầy đủ các thẻ trạng thái (Cards)"""

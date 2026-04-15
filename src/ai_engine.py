@@ -1,7 +1,7 @@
 import os
 import fitz  # PyMuPDF
 from docx import Document
-from google import genai  # Thư viện mới nhất
+import google.generativeai as genai  # Thư viện mới nhất
 from dotenv import load_dotenv
 
 class AIEngine:
@@ -10,10 +10,9 @@ class AIEngine:
         api_key = os.getenv("GOOGLE_API_KEY")
         
         # Khởi tạo Client theo chuẩn SDK 2026
-        self.client = genai.Client(api_key=api_key)
-        
+        genai.configure(api_key=api_key)
         # Sử dụng model mạnh nhất và nhanh nhất Quân vừa quét được
-        self.model_name = "gemini-2.5-flash"
+        self.model_name = genai.GenerativeModel("gemini-1.5-flash")
 
     def read_file(self, file_path):
         """Tự động nhận diện và đọc nội dung từ file PDF hoặc Word"""
