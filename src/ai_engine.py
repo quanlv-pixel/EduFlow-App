@@ -1,68 +1,81 @@
 import os
 import fitz  # PyMuPDF
 from docx import Document
-import google.generativeai as genai  # Thư viện mới nhất
+from google import genai  # CHUẨN MỚI 2026
 from dotenv import load_dotenv
 
 class AIEngine:
     def __init__(self):
+        # 1. Tải các biến môi trường từ file .env
         load_dotenv()
         api_key = os.getenv("GOOGLE_API_KEY")
         
-        # Khởi tạo Client theo chuẩn SDK 2026
-        genai.configure(api_key=api_key)
-        # Sử dụng model mạnh nhất và nhanh nhất Quân vừa quét được
-        self.model_name = genai.GenerativeModel("gemini-1.5-flash")
+        # 2. Khởi tạo Client theo thư viện google-genai mới nhất
+        # Không còn dùng genai.configure() nữa
+        self.client = genai.Client(api_key=api_key)
+        
+        # 3. Sử dụng model 2.5 Flash Quân đã quét thành công
+        self.model_name = "gemini-2.5-flash"
 
     def read_file(self, file_path):
-        """Tự động nhận diện và đọc nội dung từ file PDF hoặc Word"""
+        """Tự động đọc nội dung từ file PDF hoặc Word"""
         ext = os.path.splitext(file_path)[1].lower()
         try:
             if ext == '.pdf':
                 return self._read_pdf(file_path)
             elif ext == '.docx':
                 return self._read_docx(file_path)
-            return "Định dạng file này hiện chưa được hỗ trợ."
+            return "Định dạng file không hỗ trợ (Chỉ nhận .pdf và .docx)."
         except Exception as e:
-            return f"Lỗi kỹ thuật khi đọc file: {str(e)}"
+            return f"Lỗi khi đọc file: {str(e)}"
 
     def _read_pdf(self, file_path):
+        """Trích xuất văn bản từ file PDF"""
         text = ""
-        with fitz.open(file_path) as doc:
-            for page in doc:
-                text += page.get_text()
-        return text if text.strip() else "File PDF này không có nội dung văn bản (có thể là file ảnh)."
+        try:
+            with fitz.open(file_path) as doc:
+                for page in doc:
+                    text += page.get_text()
+            return text if text.strip() else "File PDF này không có nội dung văn bản."
+        except Exception as e:
+            return f"Lỗi đọc PDF: {e}"
 
     def _read_docx(self, file_path):
-        doc = Document(file_path)
-        content = "\n".join([para.text for para in doc.paragraphs])
-        return content if content.strip() else "File Word này trống."
+        """Trích xuất văn bản từ file Word"""
+        try:
+            doc = Document(file_path)
+            content = "\n".join([para.text for para in doc.paragraphs])
+            return content if content.strip() else "File Word này trống."
+        except Exception as e:
+            return f"Lỗi đọc Word: {e}"
 
     def get_summary(self, text):
-        """Gửi văn bản lên AI và lấy bản tóm tắt chất lượng cao"""
-        if not text.strip() or len(text) < 20:
-            return "Văn bản quá ngắn hoặc không có nội dung để tóm tắt."
-        
-        # Giới hạn nội dung để tránh quá tải (Flash hỗ trợ rất dài nhưng 15k là ổn cho Edu)
-        clean_text = text[:20000] 
-        
-        # Prompt được tối ưu để AI phản hồi chuyên nghiệp hơn
+        """Gửi văn bản lên Gemini 2.5 Flash để tóm tắt"""
+        if not text or len(text.strip()) < 10:
+            return "Nội dung quá ngắn để có thể tóm tắt."
+
+        # Cắt bớt văn bản nếu quá dài (Gemini 2.5 Flash chịu được rất nhiều, 30k là thoải mái)
+        safe_text = text[:30000]
+
+        # Prompt được thiết kế chuyên sâu cho sinh viên
         prompt = (
-            "Bạn là một trợ lý học tập thông minh. Hãy tóm tắt văn bản sau đây "
-            "một cách súc tích, rõ ràng bằng tiếng Việt. "
-            "Yêu cầu: \n"
-            "- Sử dụng các gạch đầu dòng cho các ý chính.\n"
-            "- Giữ lại các thuật ngữ quan trọng.\n"
-            "- Kết thúc bằng một câu nhận xét về độ hữu ích của tài liệu này.\n\n"
-            f"NỘI DUNG VĂN BẢN:\n{clean_text}"
+            "Bạn là một chuyên gia tóm tắt tài liệu học tập. "
+            "Hãy tóm tắt văn bản dưới đây theo cấu trúc:\n"
+            "1. Tóm tắt ngắn gọn mục tiêu chính (2-3 câu).\n"
+            "2. Danh sách các ý chính quan trọng nhất (dùng gạch đầu dòng).\n"
+            "3. Giải thích nhanh các thuật ngữ chuyên môn (nếu có).\n"
+            "Yêu cầu: Ngôn ngữ chuyên nghiệp, trình bày rõ ràng bằng tiếng Việt.\n\n"
+            f"NỘI DUNG CẦN TÓM TẮT:\n{safe_text}"
         )
-        
+
         try:
-            # Gọi API theo cú pháp mới của google-genai
+            # CẤU TRÚC GỌI API MỚI NHẤT
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt
             )
+            
+            # Trả về nội dung tóm tắt
             return response.text
         except Exception as e:
-            return f"Lỗi khi kết nối với AI: {str(e)}"
+            return f"Lỗi khi gọi AI: {str(e)}"

@@ -1,276 +1,265 @@
-import os
-from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                             QPushButton, QLabel, QFrame, QLineEdit, 
-                             QProgressBar, QGridLayout, QStackedWidget)
+from PySide6.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QPushButton, QLabel, QFrame, QLineEdit,
+    QProgressBar, QStackedWidget
+)
 from PySide6.QtCore import Qt, Signal
+
 from src.ui_schedule import ScheduleWidget
 from src.ui_summary import SummaryWidget
 from src.ui_flashcard import FlashcardWidget
+from src.ui_course import CoursesWidget   
+
+
+# ================= MENU BUTTON =================
 class DashMenuButton(QPushButton):
-    def __init__(self, text, active=False):
+    def __init__(self, text):
         super().__init__(text)
         self.setObjectName("MenuBtn")
         self.setCheckable(True)
         self.setCursor(Qt.PointingHandCursor)
-        if active:
-            self.setChecked(True)
-            self.setProperty("active", "true")
 
+
+# ================= MAIN DASHBOARD =================
 class EduDashboard(QMainWindow):
-    # Tín hiệu phát đi khi nhấn Đăng xuất
     logout_signal = Signal()
 
     def __init__(self, user_info=None):
         super().__init__()
-        
-        self.user_info = user_info or {"name": "LÊ VĂN QUÂN", "email": "quanlv.25ai@vku.udn.vn"}
+
+        self.user_info = user_info or {
+            "name": "LÊ VĂN QUÂN",
+            "email": "quanlv.25ai@vku.udn.vn"
+        }
+
         self.setWindowTitle("EduFlow - Dashboard")
         self.resize(1300, 850)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
+
         self.main_layout = QHBoxLayout(central_widget)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
 
-        self.setup_sidebar()
-
-        self.content_container = QWidget()
-        self.content_layout = QVBoxLayout(self.content_container)
-        self.content_layout.setContentsMargins(35, 30, 35, 30)
-
-        self.setup_header()
-
         self.pages = QStackedWidget()
+        self.page_map = {}
 
-        self.page_overview = self.create_overview_page()
-        self.page_schedule = ScheduleWidget()
-        self.page_flashcard = FlashcardWidget()
-        self.page_summary = SummaryWidget()
+        self.setup_sidebar()
+        self.setup_content()
 
-        self.pages.addWidget(self.page_overview)
-        self.pages.addWidget(self.page_schedule)
-        self.pages.addWidget(self.page_flashcard)
-        self.pages.addWidget(self.page_summary)
- 
-        self.content_layout.addWidget(self.pages)
-        self.main_layout.addWidget(self.content_container)
-
+    # ================= SIDEBAR =================
     def setup_sidebar(self):
         sidebar = QFrame()
         sidebar.setObjectName("Sidebar")
         sidebar.setFixedWidth(280)
+
         layout = QVBoxLayout(sidebar)
         layout.setContentsMargins(25, 40, 25, 25)
 
+        # LOGO
         logo = QLabel("📘 EduFlow")
-        logo.setStyleSheet("font-size: 24px; font-weight: bold; color: #2D60FF; margin-bottom: 35px;")
+        logo.setStyleSheet("font-size: 24px; font-weight: bold; color: #2D60FF;")
         layout.addWidget(logo)
 
-        self.btn_overview = DashMenuButton("  Tổng quan", active=True)
-        self.btn_schedule = DashMenuButton("  Thời khóa biểu")
-        self.btn_courses = DashMenuButton("  Khóa học")
-        self.btn_flash = DashMenuButton("  Flashcards")
-        self.btn_summary = DashMenuButton("  Tóm tắt AI")
+        # MENU ITEMS
+        self.menu_items = [
+            ("overview", "  Tổng quan", self.create_overview_page),
+            ("schedule", "  Thời khóa biểu", ScheduleWidget),
+            ("courses", "  Khóa học", CoursesWidget),   # 👈 ĐÃ THÊM
+            ("flash", "  Flashcards", FlashcardWidget),
+            ("summary", "  Tóm tắt AI", SummaryWidget),
+        ]
 
-        self.menu_group = [self.btn_overview, self.btn_schedule, self.btn_courses, self.btn_flash, self.btn_summary]
-        for btn in self.menu_group:
+        self.menu_buttons = {}
+
+        for key, text, widget_cls in self.menu_items:
+            btn = DashMenuButton(text)
             layout.addWidget(btn)
-            btn.clicked.connect(self.handle_menu_click)
+            self.menu_buttons[key] = btn
+
+            # tạo page
+            page = widget_cls() if callable(widget_cls) else widget_cls
+            self.page_map[key] = page
+            self.pages.addWidget(page)
+
+            btn.clicked.connect(lambda checked, k=key: self.switch_page(k))
+
+        # default page
+        self.menu_buttons["overview"].setChecked(True)
 
         layout.addStretch()
 
-        # Phần User Info (Avatar + Tên)
+        # USER INFO
         user_frame = QFrame()
-        user_frame.setStyleSheet("border-top: 1px solid #F0F0F0; padding-top: 20px;")
         user_layout = QHBoxLayout(user_frame)
-        user_layout.setContentsMargins(0, 0, 0, 0)
 
-        avatar_txt = self.user_info['name'][0].upper()
-        lbl_avatar = QLabel(avatar_txt)
-        lbl_avatar.setFixedSize(40, 40)
-        lbl_avatar.setAlignment(Qt.AlignCenter)
-        lbl_avatar.setStyleSheet("background-color: #535C67; color: white; border-radius: 20px; font-weight: bold;")
+        avatar = QLabel(self.user_info['name'][0].upper())
+        avatar.setFixedSize(40, 40)
+        avatar.setAlignment(Qt.AlignCenter)
+        avatar.setStyleSheet(
+            "background:#535C67;color:white;border-radius:20px;font-weight:bold;"
+        )
 
-        info_v = QVBoxLayout()
-        lbl_name = QLabel(self.user_info['name'])
-        lbl_name.setStyleSheet("font-weight: bold; font-size: 13px; color: #1E2328;")
-        lbl_email = QLabel(self.user_info['email'])
-        lbl_email.setStyleSheet("color: #6F767E; font-size: 11px;")
-        info_v.addWidget(lbl_name)
-        info_v.addWidget(lbl_email)
-        info_v.setSpacing(2)
+        info = QVBoxLayout()
 
-        user_layout.addWidget(lbl_avatar)
-        user_layout.addLayout(info_v)
+        name = QLabel(self.user_info['name'])
+        name.setStyleSheet("font-weight:bold;font-size:13px;")
+
+        email = QLabel(self.user_info['email'])
+        email.setStyleSheet("color:#6F767E;font-size:11px;")
+
+        info.addWidget(name)
+        info.addWidget(email)
+
+        user_layout.addWidget(avatar)
+        user_layout.addLayout(info)
+
         layout.addWidget(user_frame)
 
-        # Nút Đăng xuất màu đỏ
-        self.btn_logout = QPushButton("↪ Đăng xuất")
-        self.btn_logout.setStyleSheet("color: #FF4D4F; border: none; text-align: left; padding: 15px 0px; font-weight: bold;")
-        self.btn_logout.setCursor(Qt.PointingHandCursor)
-        self.btn_logout.clicked.connect(self.handle_logout) # Kết nối tới hàm logout
-        layout.addWidget(self.btn_logout)
+        # LOGOUT
+        logout_btn = QPushButton("↪ Đăng xuất")
+        logout_btn.setStyleSheet(
+            "color:#FF4D4F;border:none;text-align:left;padding:10px 0;font-weight:bold;"
+        )
+        logout_btn.clicked.connect(self.handle_logout)
+        layout.addWidget(logout_btn)
 
         self.main_layout.addWidget(sidebar)
 
-    def setup_header(self):
-        header_layout = QHBoxLayout()
-        greeting_txt = "Chào mừng trở lại! 👋<br><span style='font-size: 12px; color: #6F767E;'>Hôm nay là Thứ Hai, ngày 6 tháng 4 năm 2026</span>"
-        self.lbl_greeting = QLabel(greeting_txt)
-        self.lbl_greeting.setTextFormat(Qt.RichText)
-        self.lbl_greeting.setStyleSheet("font-size: 22px; font-weight: bold;")
+    # ================= CONTENT =================
+    def setup_content(self):
+        container = QWidget()
+        content_layout = QVBoxLayout(container)
+        content_layout.setContentsMargins(35, 30, 35, 30)
+        content_layout.setSpacing(25)
 
-        search_bar = QLineEdit()
-        search_bar.setPlaceholderText(" 🔍 Tìm kiếm...")
-        search_bar.setFixedWidth(280)
-        search_bar.setStyleSheet("padding: 10px; border-radius: 10px; border: 1px solid #EAEAEA; background: white;")
+        # HEADER
+        header = QHBoxLayout()
 
-        header_layout.addWidget(self.lbl_greeting)
-        header_layout.addStretch()
-        header_layout.addWidget(search_bar)
-        self.content_layout.addLayout(header_layout)
+        greeting = QLabel(
+            "Chào mừng trở lại! 👋<br>"
+            "<span style='font-size:12px;color:#6F767E;'>Hôm nay là Thứ Hai</span>"
+        )
+        greeting.setTextFormat(Qt.RichText)
+        greeting.setStyleSheet("font-size:22px;font-weight:bold;")
 
+        search = QLineEdit()
+        search.setPlaceholderText("🔍 Tìm kiếm...")
+        search.setFixedWidth(280)
+        search.setStyleSheet(
+            "padding:10px;border-radius:10px;border:1px solid #EAEAEA;background:white;"
+        )
+
+        header.addWidget(greeting)
+        header.addStretch()
+        header.addWidget(search)
+
+        content_layout.addLayout(header)
+        content_layout.addWidget(self.pages)
+
+        self.main_layout.addWidget(container)
+
+    # ================= SWITCH PAGE =================
+    def switch_page(self, key):
+        for k, btn in self.menu_buttons.items():
+            btn.setChecked(k == key)
+
+        self.pages.setCurrentWidget(self.page_map[key])
+
+    # ================= OVERVIEW =================
     def create_overview_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(0, 20, 0, 0)
         layout.setSpacing(25)
-        # (Giữ nguyên phần Card và Progress bar như cũ...)
-        return page
 
-    def handle_menu_click(self):
-        sender = self.sender()
-        for btn in self.menu_group:
-            btn.setChecked(False)
-            btn.setProperty("active", "false")
-            btn.style().unpolish(btn)
-            btn.style().polish(btn)
-        sender.setChecked(True)
-        sender.setProperty("active", "true")
-        sender.style().unpolish(sender)
-        sender.style().polish(sender)
+        # ===== CARDS =====
+        cards = QHBoxLayout()
+        cards.setSpacing(20)
 
-        if sender == self.btn_overview: self.pages.setCurrentIndex(0)
-        elif sender == self.btn_schedule: self.pages.setCurrentIndex(1)
-        elif sender == self.btn_summary: self.pages.setCurrentIndex(2)
-        elif sender == self.btn_flash:
-            self.pages.setCurrentIndex(2)
-        elif sender == self.btn_summary:
-            self.pages.setCurrentIndex(3)
-
-    def create_overview_page(self):
-        """Tạo giao diện trang Tổng quan đầy đủ các thẻ trạng thái (Cards)"""
-        page = QWidget()
-        # Dùng QVBoxLayout để xếp hàng Thẻ Status lên trên, hàng Lịch học xuống dưới
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(25) # Khoảng cách giữa các hàng
-
-        # ---------------------------------------------------------
-        # 1. HÀNG CARD TRẠNG THÁI (Màu xanh và màu trắng)
-        # ---------------------------------------------------------
-        cards_layout = QHBoxLayout()
-        cards_layout.setSpacing(20) # Khoảng cách giữa 2 Card
-
-        # --- Thẻ "Khóa học đang học" (Màu xanh Royal) ---
+        # BLUE CARD
         card_blue = QFrame()
-        card_blue.setObjectName("CardBlue") # ID để QSS nhận diện màu xanh bo góc
+        card_blue.setObjectName("CardBlue")
         v1 = QVBoxLayout(card_blue)
-        v1.setContentsMargins(20, 20, 20, 20)
-        
-        # Tiêu đề card
-        lbl_c1_title = QLabel("📖 Khóa học đang học<br><b>Học kỳ 2</b>")
-        lbl_c1_title.setTextFormat(Qt.RichText)
-        lbl_c1_title.setStyleSheet("color: white; font-size: 14px;")
-        v1.addWidget(lbl_c1_title)
-        
-        # Số liệu lớn
-        lbl_c1_num = QLabel("3")
-        lbl_c1_num.setStyleSheet("color: white; font-size: 48px; font-weight: bold; margin-top: 10px;")
-        lbl_c1_num.setAlignment(Qt.AlignBottom | Qt.AlignLeft)
-        v1.addWidget(lbl_c1_num)
-        
-        # --- Thẻ "Tiến độ trung bình" (Màu trắng) ---
+
+        lbl1 = QLabel("📘 Khóa học đang học")
+        lbl2 = QLabel("3")
+        lbl2.setStyleSheet("font-size:48px;font-weight:bold;")
+
+        v1.addWidget(lbl1)
+        v1.addWidget(lbl2)
+        v1.addStretch()
+
+        # WHITE CARD
         card_white = QFrame()
-        card_white.setObjectName("CardWhite") # ID để QSS nhận diện màu trắng bo góc
+        card_white.setObjectName("CardWhite")
         v2 = QVBoxLayout(card_white)
-        v2.setContentsMargins(20, 20, 20, 20)
-        
-        # Tiêu đề card
-        lbl_c2_title = QLabel("✅ Tiến độ trung bình")
-        lbl_c2_title.setStyleSheet("color: #6F767E; font-size: 14px;")
-        v2.addWidget(lbl_c2_title)
-        
-        # Số liệu lớn màu xanh
-        lbl_c2_num = QLabel("78%")
-        lbl_c2_num.setStyleSheet("color: #2D60FF; font-size: 48px; font-weight: bold; margin-top: 10px;")
-        lbl_c2_num.setAlignment(Qt.AlignBottom | Qt.AlignLeft)
-        v2.addWidget(lbl_c2_num)
-        
-        # Thêm 2 card vào layout hàng ngang
-        cards_layout.addWidget(card_blue)
-        cards_layout.addWidget(card_white)
-        layout.addLayout(cards_layout)
 
-        # ---------------------------------------------------------
-        # 2. HÀNG NỘI DUNG CHI TIẾT (Lịch học và Tiến độ môn học)
-        # ---------------------------------------------------------
-        row2_layout = QHBoxLayout()
-        row2_layout.setSpacing(20)
-        
-        # --- Card Lịch học hôm nay (Chiếm 2/3 chiều rộng) ---
-        sch_card = QFrame()
-        sch_card.setObjectName("CardWhite")
-        sch_v = QVBoxLayout(sch_card)
-        sch_v.setContentsMargins(20, 20, 20, 20)
-        
-        lbl_sch_title = QLabel("<b>Lịch học hôm nay</b>")
-        lbl_sch_title.setStyleSheet("font-size: 16px;")
-        sch_v.addWidget(lbl_sch_title)
-        
-        # Thông báo trống
-        msg = QLabel("Không có lịch học nào hôm nay."); msg.setAlignment(Qt.AlignCenter)
-        msg.setStyleSheet("color: #999; font-size: 14px;")
-        sch_v.addStretch(); sch_v.addWidget(msg); sch_v.addStretch()
-        
-        # --- Card Tiến độ học tập (Chiếm 1/3 chiều rộng) ---
-        prog_card = QFrame()
-        prog_card.setObjectName("CardWhite")
-        prog_card.setFixedWidth(320) # Cố định chiều rộng giống ảnh
-        prog_v = QVBoxLayout(prog_card)
-        prog_v.setContentsMargins(20, 20, 20, 20)
-        
-        lbl_prog_title = QLabel("<b>Tiến độ học tập</b>")
-        lbl_prog_title.setStyleSheet("font-size: 16px;")
-        prog_v.addWidget(lbl_prog_title)
-        
-        # Danh sách môn học và Progress bar
-        subjects = [("Cơ sở dữ liệu", 40), ("Lập trình Python", 65), ("Trí tuệ nhân tạo", 85)]
+        lbl3 = QLabel("Tiến độ trung bình")
+        lbl4 = QLabel("78%")
+        lbl4.setStyleSheet("font-size:48px;font-weight:bold;color:#2D60FF;")
+
+        v2.addWidget(lbl3)
+        v2.addWidget(lbl4)
+        v2.addStretch()
+
+        cards.addWidget(card_blue)
+        cards.addWidget(card_white)
+
+        layout.addLayout(cards)
+
+        # ===== ROW 2 =====
+        row2 = QHBoxLayout()
+        row2.setSpacing(20)
+
+        # SCHEDULE CARD
+        sch = QFrame()
+        sch.setObjectName("CardWhite")
+        sch_v = QVBoxLayout(sch)
+
+        title = QLabel("<b>Lịch học hôm nay</b>")
+        msg = QLabel("Không có lịch học nào hôm nay.")
+        msg.setAlignment(Qt.AlignCenter)
+        msg.setStyleSheet("color:#999;")
+
+        sch_v.addWidget(title)
+        sch_v.addStretch()
+        sch_v.addWidget(msg)
+        sch_v.addStretch()
+
+        # PROGRESS CARD
+        prog = QFrame()
+        prog.setObjectName("CardWhite")
+        prog.setFixedWidth(320)
+        prog_v = QVBoxLayout(prog)
+
+        title2 = QLabel("<b>Tiến độ học tập</b>")
+        prog_v.addWidget(title2)
+
+        subjects = [
+            ("Cơ sở dữ liệu", 40),
+            ("Python", 65),
+            ("AI", 85)
+        ]
+
         for name, val in subjects:
-            prog_v.addSpacing(15) # Khoảng cách
-            
-            # Tên môn và %
-            lbl_sub = QLabel(f"{name} ({val}%)")
-            lbl_sub.setStyleSheet("font-size: 13px; color: #1E2328;")
-            prog_v.addWidget(lbl_sub)
-            
-            # Thanh tiến độ
-            pb = QProgressBar()
-            pb.setValue(val)
-            pb.setFixedSize(280, 8) # Chiều dài và độ dày của thanh
-            pb.setTextVisible(False) # Ẩn % chữ mặc định của QProgressBar
-            prog_v.addWidget(pb)
+            lbl = QLabel(f"{name} ({val}%)")
+            bar = QProgressBar()
+            bar.setValue(val)
+            bar.setFixedHeight(8)
+            bar.setTextVisible(False)
 
-        # Thêm 2 card dưới vào layout hàng ngang
-        row2_layout.addWidget(sch_card, 2) # Tỷ lệ 2
-        row2_layout.addWidget(prog_card, 1) # Tỷ lệ 1
-        layout.addLayout(row2_layout)
-        
+            prog_v.addWidget(lbl)
+            prog_v.addWidget(bar)
+
+        row2.addWidget(sch, 2)
+        row2.addWidget(prog, 1)
+
+        layout.addLayout(row2)
+
         return page
 
-
+    # ================= LOGOUT =================
     def handle_logout(self):
-        """Phát tín hiệu logout và đóng cửa sổ hiện tại"""
         self.logout_signal.emit()
         self.close()

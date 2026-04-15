@@ -1,116 +1,151 @@
-import sys
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QLineEdit, QFrame, QGridLayout, QScrollArea, QSizePolicy
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QFrame, QLineEdit, QTextEdit,
+    QStackedLayout
 )
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QIcon, QFont, QColor, QPainter, QPen, QBrush
+from PySide6.QtCore import Qt
 
-class CourseCard(QWidget):
-    def __init__(self, name, code, professor, progress):
+
+# ================= FLASHCARD ITEM =================
+class FlashcardItem(QFrame):
+    def __init__(self, question, answer):
         super().__init__()
-        self.setFixedHeight(220)
-        self.setStyleSheet("""
-            QWidget {
-                background: white;
-                border-radius: 20px;
-                border: 1px solid #e2e8f0;
-            }
-            QWidget:hover {
-                border: 1px solid #3b82f6;
-                box-shadow: 0 10px 15px rgba(0, 0, 0, 0.08);
-            }
-        """)
+
+        self.setObjectName("CardWhite")
+        self.question = question
+        self.answer = answer
+        self.showing_answer = False
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
 
-        # Header card
-        header = QHBoxLayout()
-        icon = QLabel("📘")
-        icon.setFont(QFont("", 32))
-        header.addWidget(icon)
+        self.lbl = QLabel(question)
+        self.lbl.setAlignment(Qt.AlignCenter)
+        self.lbl.setStyleSheet("font-size:16px; padding:20px;")
 
-        status = QLabel("Đang học")
-        status.setStyleSheet("""
-            background: #ecfdf5; 
-            color: #10b981; 
-            padding: 4px 14px; 
-            border-radius: 9999px; 
-            font-size: 12px;
-        """)
-        header.addStretch()
-        header.addWidget(status)
-        layout.addLayout(header)
+        btn = QPushButton("Lật thẻ")
+        btn.clicked.connect(self.flip)
 
-        # Title & info
-        title = QLabel(name)
-        title.setFont(QFont("", 16, QFont.Bold))
-        layout.addWidget(title)
+        layout.addWidget(self.lbl)
+        layout.addWidget(btn)
 
-        info = QLabel(f"{code} • {professor}")
-        info.setStyleSheet("color: #64748b; font-size: 13px;")
-        layout.addWidget(info)
+    def flip(self):
+        if self.showing_answer:
+            self.lbl.setText(self.question)
+        else:
+            self.lbl.setText(self.answer)
 
-        layout.addStretch()
-
-        # Progress
-        prog_layout = QHBoxLayout()
-        prog_label = QLabel("Tiến độ")
-        prog_label.setStyleSheet("color: #475569;")
-        prog_layout.addWidget(prog_label)
-
-        percent = QLabel(f"{progress}%")
-        percent.setStyleSheet("font-weight: bold;")
-        prog_layout.addStretch()
-        prog_layout.addWidget(percent)
-        layout.addLayout(prog_layout)
-
-        # Progress bar
-        self.progress_bar = QFrame()
-        self.progress_bar.setFixedHeight(6)
-        self.progress_bar.setStyleSheet("""
-            background: #e2e8f0;
-            border-radius: 3px;
-        """)
-        layout.addWidget(self.progress_bar)
-
-        # Vẽ progress thật (sử dụng paintEvent)
-        self.progress = progress
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        painter = QPainter(self.progress_bar)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        # Background đã có trong stylesheet
-        # Vẽ phần tiến độ
-        rect = self.progress_bar.rect()
-        fill_width = int(rect.width() * self.progress / 100)
-
-        painter.setBrush(QBrush(QColor("#3b82f6")))
-        painter.setPen(Qt.NoPen)
-        painter.drawRoundedRect(0, 0, fill_width, rect.height(), 3, 3)
+        self.showing_answer = not self.showing_answer
 
 
+# ================= MAIN =================
 class FlashcardWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background: #f8fafc; font-family: 'Segoe UI', Arial;")
-        self.setStyleSheet("background: #f8fafc; font-family: 'Segoe UI', Arial;")
 
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(40, 40, 40, 40)
-        main_layout.setSpacing(30)
+        self.stack = QStackedLayout(self)
 
-        title = QLabel("📚 FlashCards")
-        title.setStyleSheet(
-            "font-size: 24px; font-weight: bold; color: #1E2328;"
-        )
-        main_layout.addWidget(title)
+        # 3 page
+        self.page_main = QWidget()
+        self.page_create = QWidget()
+        self.page_study = QWidget()
 
-        subtitle = QLabel("Danh sách các môn học trong học kỳ này")
-        subtitle.setStyleSheet("color: #64748b; font-size: 14px;")
-        main_layout.addWidget(subtitle)
-       
+        self.stack.addWidget(self.page_main)
+        self.stack.addWidget(self.page_create)
+        self.stack.addWidget(self.page_study)
+
+        self.setup_main()
+        self.setup_create()
+        self.setup_study()
+
+    # ================= MAIN =================
+    def setup_main(self):
+        layout = QVBoxLayout(self.page_main)
+        layout.setSpacing(20)
+
+        title = QLabel("⚡ Flashcards")
+        title.setStyleSheet("font-size:26px;font-weight:bold;")
+
+        subtitle = QLabel("Tạo và học flashcard nhanh chóng.")
+        subtitle.setStyleSheet("color:#6F767E;")
+
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+
+        # Buttons
+        btn_manual = QPushButton("➕ Tạo flashcard thủ công")
+        btn_ai = QPushButton("🤖 Tạo flashcard bằng AI")
+
+        btn_ai.setObjectName("BtnAddSchedule")
+
+        btn_manual.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        btn_ai.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+
+        layout.addWidget(btn_manual)
+        layout.addWidget(btn_ai)
+
+        layout.addStretch()
+
+    # ================= CREATE =================
+    def setup_create(self):
+        layout = QVBoxLayout(self.page_create)
+        layout.setSpacing(15)
+
+        back = QPushButton("← Quay lại")
+        back.clicked.connect(lambda: self.stack.setCurrentIndex(0))
+
+        title = QLabel("Tạo Flashcard")
+        title.setStyleSheet("font-size:22px;font-weight:bold;")
+
+        self.input_q = QLineEdit()
+        self.input_q.setPlaceholderText("Nhập câu hỏi...")
+
+        self.input_a = QLineEdit()
+        self.input_a.setPlaceholderText("Nhập câu trả lời...")
+
+        btn_add = QPushButton("Lưu flashcard")
+        btn_add.setObjectName("BtnAddSchedule")
+
+        btn_add.clicked.connect(self.add_flashcard)
+
+        layout.addWidget(back)
+        layout.addWidget(title)
+        layout.addWidget(self.input_q)
+        layout.addWidget(self.input_a)
+        layout.addWidget(btn_add)
+
+        layout.addStretch()
+
+    # ================= STUDY =================
+    def setup_study(self):
+        layout = QVBoxLayout(self.page_study)
+        layout.setSpacing(20)
+
+        back = QPushButton("← Quay lại")
+        back.clicked.connect(lambda: self.stack.setCurrentIndex(0))
+
+        title = QLabel("Học Flashcard")
+        title.setStyleSheet("font-size:22px;font-weight:bold;")
+
+        self.card_container = QVBoxLayout()
+
+        layout.addWidget(back)
+        layout.addWidget(title)
+        layout.addLayout(self.card_container)
+        layout.addStretch()
+
+    # ================= LOGIC =================
+    def add_flashcard(self):
+        q = self.input_q.text()
+        a = self.input_a.text()
+
+        if not q or not a:
+            return
+
+        card = FlashcardItem(q, a)
+        self.card_container.addWidget(card)
+
+        self.input_q.clear()
+        self.input_a.clear()
+
+        # chuyển sang học
+        self.stack.setCurrentIndex(2)

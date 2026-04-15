@@ -56,3 +56,6 @@ class Database:
         if hasattr(self, 'conn') and self.conn.is_connected():
             self.cursor.close()
             self.conn.close()
+
+if __name__ == "__main__":
+    db = Database()
