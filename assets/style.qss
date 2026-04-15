@@ -1,0 +1,116 @@
+/* Tổng thể app */
+QMainWindow { background-color: #F0F2F5; } /* Màu nền content */
+QLabel { color: #1E2328; font-family: "SF Pro Display", "Segoe UI", sans-serif; }
+
+/* Styles cho Sidebar */
+QFrame#Sidebar {
+    background-color: #FFFFFF; /* Sidebar màu trắng */
+    border-right: 1px solid #EDEDED;
+}
+
+/* Styles cho Nút Menu Sidebar */
+QPushButton#MenuBtn {
+    text-align: left;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #6F767E; /* Màu chữ chưa active */
+    background-color: transparent;
+}
+QPushButton#MenuBtn:hover {
+    background-color: #F1F4F9;
+    color: #1A1D21;
+}
+/* Styles cho nút đang được chọn */
+QPushButton#MenuBtn[active="true"] {
+    background-color: #2D60FF; /* Xanh Royal giống ảnh */
+    color: white;
+    font-weight: bold;
+}
+
+/* Styles cho các Cards (ô nội dung bo góc) */
+QFrame#CardBlue {
+    background-color: #2D60FF; /* Xanh Royal */
+    color: white;
+    border-radius: 20px;
+    padding: 15px;
+}
+QFrame#CardBlue QLabel { color: white; }
+
+QFrame#CardWhite {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid #EDEDED;
+}
+
+/* Styles cho Progress Bar */
+QProgressBar {
+    border: none;
+    background-color: #E0E0E0;
+    border-radius: 5px;
+    text-align: center;
+    color: white;
+}
+QProgressBar::chunk {
+    background-color: #2D60FF; /* Xanh Royal */
+    border-radius: 5px;
+}
+
+/* Style cho bảng thời khóa biểu */
+QTableWidget {
+    background-color: white;
+    border: 1px solid #EDEDED;
+    border-radius: 15px;
+    gridline-color: #F0F2F5;
+    font-size: 14px;
+}
+
+QHeaderView::section {
+    background-color: #F8F9FA;
+    padding: 10px;
+    border: none;
+    border-bottom: 2px solid #2D60FF;
+    font-weight: bold;
+    color: #6F767E;
+}
+
+QTableWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid #F0F2F5;
+}
+
+/* Nút thêm lịch học */
+QPushButton#BtnAddSchedule {
+    background-color: #2D60FF;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-weight: bold;
+}
+
+/* Style cho cửa sổ đăng nhập */
+QDialog#LoginWindow {
+    background-color: white;
+}
+
+QLineEdit#LoginInput {
+    padding: 12px;
+    border: 1px solid #DDD;
+    border-radius: 8px;
+    background: #F9FAFB;
+    font-size: 14px;
+}
+
+QPushButton#BtnLogin {
+    background-color: #2D60FF;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+QPushButton#BtnLogin:hover {
+    background-color: #1557B0;
+}
