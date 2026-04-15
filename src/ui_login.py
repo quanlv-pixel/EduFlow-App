@@ -8,7 +8,11 @@ class LoginDialog(QDialog):
         self.setObjectName("LoginWindow")
         self.setWindowTitle("Đăng nhập EduFlow")
         self.setFixedSize(350, 450)
-        self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint)
+        self.setWindowFlags(
+    Qt.Window 
+    | Qt.WindowTitleHint 
+    | Qt.WindowCloseButtonHint
+    )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 40, 30, 40)
