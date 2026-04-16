@@ -45,7 +45,7 @@ class SummaryWidget(QWidget):
         left_v.addWidget(QLabel("<b>Nội dung gốc:</b>"))
         self.txt_original = QTextEdit()
         self.txt_original.setPlaceholderText("Văn bản từ tài liệu sẽ hiện ở đây...")
-        self.txt_original.setStyleSheet("border-radius: 12px; border: 1px solid #DDD; background: white; padding: 10px;")
+        self.txt_original.setStyleSheet("border-radius: 12px; border: 1px solid #DDD; background: white; padding: 10px; font-family: sans-serif; font-size: 14px; color: black;")
         left_v.addWidget(self.txt_original)
         
         # Cột phải: Bản tóm tắt
@@ -54,7 +54,9 @@ class SummaryWidget(QWidget):
         self.txt_summary = QTextEdit()
         self.txt_summary.setReadOnly(True)
         self.txt_summary.setPlaceholderText("Bản tóm tắt sẽ hiện ở đây...")
-        self.txt_summary.setStyleSheet("border-radius: 12px; border: 1px solid #2D60FF; background: #F4F7FF; padding: 10px;")
+        self.txt_summary.setStyleSheet(
+            "border-radius: 12px; border: 1px solid #2D60FF; background: #F4F7FF; padding: 10px; font-family: sans-serif; font-size: 14px; color: black;"
+        )
         right_v.addWidget(self.txt_summary)
         
         display_layout.addLayout(left_v, 1)
