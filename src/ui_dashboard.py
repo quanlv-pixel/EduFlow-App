@@ -148,7 +148,7 @@ class EduDashboard(QMainWindow):
         search.setPlaceholderText("🔍 Tìm kiếm...")
         search.setFixedWidth(280)
         search.setStyleSheet(
-            "padding:10px;border-radius:10px;border:1px solid #EAEAEA;background:white;"
+            "padding:10px;border-radius:10px;border:1px solid #EAEAEA;background:white;font-family: 'Segoe UI',sans-serif; font-size: 15px; color: black;"
         )
 
         header.addWidget(greeting)
