@@ -19,20 +19,26 @@ class AppController:
         self.current_window = None
 
     def show_login(self):
-        """Hiển thị màn hình đăng nhập"""
+        if hasattr(self, 'dashboard_window') and self.dashboard_window:
+            self.dashboard_window.close()
+            self.dashboard_window.deleteLater()
+
         self.login_window = LoginDialog()
-        # exec() trả về Accepted nếu người dùng login thành công
-        if self.login_window.exec() == LoginDialog.Accepted:
-            self.show_dashboard(self.login_window.user_data)
+        
+        result = self.login_window.exec()
+        
+        if result == LoginDialog.Accepted:
+            user_data = self.login_window.user_data
+            self.show_dashboard(user_data)
         else:
-            sys.exit(0) # Thoát nếu người dùng đóng cửa sổ login
+            sys.exit(0)
 
     def show_dashboard(self, user_data):
-        """Hiển thị dashboard và lắng nghe tín hiệu logout"""
         self.dashboard_window = EduDashboard(user_data)
-        # Khi Dashboard phát tín hiệu logout, gọi lại hàm show_login
         self.dashboard_window.logout_signal.connect(self.show_login)
         self.dashboard_window.show()
+        if hasattr(self, 'login_window'):
+            self.login_window.deleteLater()
 
     def run(self):
         self.show_login()
