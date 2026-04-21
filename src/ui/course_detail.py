@@ -1,20 +1,22 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QFrame, QProgressBar,
-    QStackedLayout
+    QStackedLayout, QMessageBox
 )
 from PySide6.QtCore import Qt
 
 
 # ================= LESSON ITEM =================
 class LessonItem(QFrame):
-    def __init__(self, title, on_flashcard):
+    def __init__(self, lesson, on_flashcard):
         super().__init__()
 
         self.setObjectName("CardWhite")
         layout = QHBoxLayout(self)
 
-        name = QLabel(title)
+        self.lesson = lesson
+
+        name = QLabel(lesson["title"])
         name.setStyleSheet("font-size:14px;")
 
         btn_view = QPushButton("Xem")
@@ -22,7 +24,7 @@ class LessonItem(QFrame):
 
         btn_flash = QPushButton("⚡ Flashcard")
         btn_flash.setObjectName("BtnAddSchedule")
-        btn_flash.clicked.connect(lambda: on_flashcard(title))
+        btn_flash.clicked.connect(lambda: on_flashcard(self.lesson))
 
         layout.addWidget(name)
         layout.addStretch()
@@ -33,16 +35,19 @@ class LessonItem(QFrame):
 
 # ================= MAIN =================
 class CourseDetailWidget(QWidget):
-    def __init__(self):
+    def __init__(self, controller):
         super().__init__()
+
+        self.controller = controller
+        self.course_id = None
 
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(20)
 
         # ===== BACK =====
-        back_btn = QPushButton("← Quay lại")
-        back_btn.setFixedWidth(120)
-        main_layout.addWidget(back_btn)
+        self.back_btn = QPushButton("← Quay lại")
+        self.back_btn.setFixedWidth(120)
+        main_layout.addWidget(self.back_btn)
 
         # ===== TITLE =====
         self.lbl_title = QLabel("Tên khóa học")
@@ -92,7 +97,9 @@ class CourseDetailWidget(QWidget):
         # ===== STACK =====
         self.stack = QStackedLayout()
 
-        self.page_lessons = self.create_lessons_page()
+        self.page_lessons = QWidget()
+        self.layout_lessons = QVBoxLayout(self.page_lessons)
+
         self.page_docs = self.create_docs_page()
         self.page_flash = self.create_flash_page()
 
@@ -115,31 +122,44 @@ class CourseDetailWidget(QWidget):
 
         self.stack.setCurrentIndex(index)
 
-    # ================= LESSON PAGE =================
-    def create_lessons_page(self):
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setSpacing(15)
+    # ================= LOAD DATA =================
+    def load_course(self, course):
+        """
+        course = {
+            id, name, code, professor, progress
+        }
+        """
+        self.course_id = course["id"]
 
-        lessons = [
-            "Bài 1: Giới thiệu",
-            "Bài 2: Kiến thức cơ bản",
-            "Bài 3: Thực hành"
-        ]
+        self.lbl_title.setText(course["name"])
+        self.lbl_info.setText(f"{course['code']} • {course['professor']}")
+        self.lbl_progress.setText(f"Tiến độ: {course['progress']}%")
+        self.bar.setValue(course["progress"])
+
+        # Load lessons từ controller
+        self.load_lessons()
+
+    def load_lessons(self):
+        # clear layout cũ
+        for i in reversed(range(self.layout_lessons.count())):
+            widget = self.layout_lessons.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+
+        lessons = self.controller.get_lessons(self.course_id)
 
         for l in lessons:
             item = LessonItem(l, self.handle_flashcard)
-            layout.addWidget(item)
+            self.layout_lessons.addWidget(item)
 
-        layout.addStretch()
-        return page
+        self.layout_lessons.addStretch()
 
     # ================= DOC PAGE =================
     def create_docs_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        lbl = QLabel("📄 Tài liệu khóa học (PDF, DOCX...)")
+        lbl = QLabel("📄 Tài liệu khóa học")
         layout.addWidget(lbl)
 
         btn = QPushButton("+ Thêm tài liệu")
@@ -158,24 +178,40 @@ class CourseDetailWidget(QWidget):
         lbl = QLabel("⚡ Flashcards của khóa học")
         layout.addWidget(lbl)
 
-        btn_manual = QPushButton("Tạo thủ công")
-        btn_ai = QPushButton("Tạo bằng AI")
+        self.btn_ai = QPushButton("Tạo bằng AI")
+        self.btn_ai.setObjectName("BtnAddSchedule")
+        self.btn_ai.clicked.connect(self.generate_flashcards_ai)
 
-        btn_ai.setObjectName("BtnAddSchedule")
-
-        layout.addWidget(btn_manual)
-        layout.addWidget(btn_ai)
+        layout.addWidget(self.btn_ai)
         layout.addStretch()
 
         return page
 
-    # ================= DATA =================
-    def set_course(self, name, code, prof, progress):
-        self.lbl_title.setText(name)
-        self.lbl_info.setText(f"{code} • {prof}")
-        self.lbl_progress.setText(f"Tiến độ: {progress}%")
-        self.bar.setValue(progress)
-
     # ================= ACTION =================
-    def handle_flashcard(self, lesson_name):
-        print(f"Tạo flashcard cho: {lesson_name}")
+    def handle_flashcard(self, lesson):
+        """Tạo flashcard cho 1 bài"""
+        try:
+            cards = self.controller.generate_flashcard_for_lesson(lesson)
+
+            QMessageBox.information(
+                self,
+                "Flashcard",
+                f"Đã tạo {len(cards)} flashcard!"
+            )
+
+        except Exception as e:
+            QMessageBox.warning(self, "Lỗi", str(e))
+
+    def generate_flashcards_ai(self):
+        """Tạo flashcard cho toàn bộ course"""
+        try:
+            cards = self.controller.generate_flashcard_for_course(self.course_id)
+
+            QMessageBox.information(
+                self,
+                "AI Flashcard",
+                f"Đã tạo {len(cards)} flashcard từ toàn bộ khóa học!"
+            )
+
+        except Exception as e:
+            QMessageBox.warning(self, "Lỗi", str(e))
