@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from src.ui.ui_course_detail import CourseDetailWidget
-
+from src.ui.ui_add_course import AddCourseDialog
 
 # ================= COURSE CARD =================
 class CourseCard(QFrame):
@@ -101,6 +101,7 @@ class CoursesWidget(QWidget):
         layout = QVBoxLayout(self.page_list)
         layout.setSpacing(20)
 
+
         # Header
         header = QHBoxLayout()
 
@@ -118,6 +119,7 @@ class CoursesWidget(QWidget):
         btn_add = QPushButton("+ Thêm khóa học")
         btn_add.setObjectName("BtnAddSchedule")
         btn_add.setFixedHeight(40)
+        btn_add.clicked.connect(self.add_course)
 
         header.addLayout(title_v)
         header.addStretch()
@@ -126,8 +128,8 @@ class CoursesWidget(QWidget):
         layout.addLayout(header)
 
         # Grid courses
-        grid = QGridLayout()
-        grid.setSpacing(20)
+        self.grid = QGridLayout()
+        self.grid.setSpacing(20)
 
         courses = [
             ("Cơ sở dữ liệu", "DB202", "Prof. Johnson", 40),
@@ -138,15 +140,30 @@ class CoursesWidget(QWidget):
         row, col = 0, 0
         for course in courses:
             card = CourseCard(*course, self.open_detail)
-            grid.addWidget(card, row, col)
+            self.grid.addWidget(card, row, col)
 
             col += 1
             if col == 3:
                 col = 0
                 row += 1
 
-        layout.addLayout(grid)
+        layout.addLayout(self.grid)
         layout.addStretch()
+
+    # ================= ADD COURSE =================
+    def add_course(self):
+        dialog = AddCourseDialog()
+
+        if dialog.exec():
+            name, code, prof, prog = dialog.get_data()
+
+            card = CourseCard(name, code, prof, prog, self.open_detail)
+
+            count = self.grid.count()
+            row = count // 3
+            col = count % 3
+
+            self.grid.addWidget(card, row, col)
 
     # ================= OPEN DETAIL =================
     def open_detail(self, name, code, professor, progress):
