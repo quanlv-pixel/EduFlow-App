@@ -19,12 +19,13 @@ QPushButton#MenuBtn {
     background-color: transparent;
 }
 QPushButton#MenuBtn:hover {
-    background-color: #F1F4F9;
-    color: #1A1D21;
+    background-color: #2D60FF;   /* xanh */
+    color: white; 
+    font-weight: bold;
 }
 /* Styles cho nút đang được chọn */
-QPushButton#MenuBtn[active="true"] {
-    background-color: #2D60FF; /* Xanh Royal giống ảnh */
+QPushButton#MenuBtn:checked {
+    background-color: #2D60FF;
     color: white;
     font-weight: bold;
 }
