@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from src.ui.ui_login import LoginDialog
-from src.ui.ui_dashboard import EduDashboard
+from src.ui.login import LoginDialog
+from src.ui.dashboard import EduDashboard
 
 class AppController:
     """Điều phối luồng chạy giữa Login và Dashboard"""

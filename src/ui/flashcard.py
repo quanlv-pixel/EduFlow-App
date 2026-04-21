@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QFrame, QLineEdit, QTextEdit,
-    QStackedLayout
+    QWidget, QVBoxLayout, QLabel,
+    QPushButton, QFrame, QLineEdit,
+    QStackedLayout, QMessageBox
 )
 from PySide6.QtCore import Qt
 
@@ -29,22 +29,21 @@ class FlashcardItem(QFrame):
         layout.addWidget(btn)
 
     def flip(self):
-        if self.showing_answer:
-            self.lbl.setText(self.question)
-        else:
-            self.lbl.setText(self.answer)
-
+        self.lbl.setText(self.answer if not self.showing_answer else self.question)
         self.showing_answer = not self.showing_answer
 
 
 # ================= MAIN =================
 class FlashcardWidget(QWidget):
-    def __init__(self):
+    def __init__(self, controller=None, user_id=None):
         super().__init__()
+
+        self.controller = controller
+        self.user_id = user_id
 
         self.stack = QStackedLayout(self)
 
-        # 3 page
+        # pages
         self.page_main = QWidget()
         self.page_create = QWidget()
         self.page_study = QWidget()
@@ -60,92 +59,103 @@ class FlashcardWidget(QWidget):
     # ================= MAIN =================
     def setup_main(self):
         layout = QVBoxLayout(self.page_main)
-        layout.setSpacing(20)
 
         title = QLabel("⚡ Flashcards")
         title.setStyleSheet("font-size:26px;font-weight:bold;")
 
-        subtitle = QLabel("Tạo và học flashcard nhanh chóng.")
-        subtitle.setStyleSheet("color:#6F767E;")
-
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-
-        # Buttons
-        btn_manual = QPushButton("➕ Tạo flashcard thủ công")
-        btn_ai = QPushButton("🤖 Tạo flashcard bằng AI")
+        btn_manual = QPushButton("➕ Tạo thủ công")
+        btn_ai = QPushButton("🤖 Tạo bằng AI")
 
         btn_ai.setObjectName("BtnAddSchedule")
 
         btn_manual.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-        btn_ai.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        btn_ai.clicked.connect(self.generate_ai_flashcards)
 
+        layout.addWidget(title)
         layout.addWidget(btn_manual)
         layout.addWidget(btn_ai)
-
         layout.addStretch()
 
     # ================= CREATE =================
     def setup_create(self):
         layout = QVBoxLayout(self.page_create)
-        layout.setSpacing(15)
 
         back = QPushButton("← Quay lại")
         back.clicked.connect(lambda: self.stack.setCurrentIndex(0))
 
-        title = QLabel("Tạo Flashcard")
-        title.setStyleSheet("font-size:22px;font-weight:bold;")
-
         self.input_q = QLineEdit()
-        self.input_q.setPlaceholderText("Nhập câu hỏi...")
+        self.input_q.setPlaceholderText("Câu hỏi...")
 
         self.input_a = QLineEdit()
-        self.input_a.setPlaceholderText("Nhập câu trả lời...")
+        self.input_a.setPlaceholderText("Câu trả lời...")
 
-        btn_add = QPushButton("Lưu flashcard")
+        btn_add = QPushButton("Lưu")
         btn_add.setObjectName("BtnAddSchedule")
-
         btn_add.clicked.connect(self.add_flashcard)
 
         layout.addWidget(back)
-        layout.addWidget(title)
         layout.addWidget(self.input_q)
         layout.addWidget(self.input_a)
         layout.addWidget(btn_add)
 
-        layout.addStretch()
-
     # ================= STUDY =================
     def setup_study(self):
         layout = QVBoxLayout(self.page_study)
-        layout.setSpacing(20)
 
         back = QPushButton("← Quay lại")
         back.clicked.connect(lambda: self.stack.setCurrentIndex(0))
 
-        title = QLabel("Học Flashcard")
-        title.setStyleSheet("font-size:22px;font-weight:bold;")
-
-        self.card_container = QVBoxLayout()
+        self.container = QVBoxLayout()
 
         layout.addWidget(back)
-        layout.addWidget(title)
-        layout.addLayout(self.card_container)
-        layout.addStretch()
+        layout.addLayout(self.container)
 
-    # ================= LOGIC =================
+    # ================= ADD =================
     def add_flashcard(self):
-        q = self.input_q.text()
-        a = self.input_a.text()
+        q = self.input_q.text().strip()
+        a = self.input_a.text().strip()
 
         if not q or not a:
+            QMessageBox.warning(self, "Lỗi", "Nhập đầy đủ!")
             return
 
-        card = FlashcardItem(q, a)
-        self.card_container.addWidget(card)
+        # lưu DB
+        if self.controller:
+            self.controller.add_flashcard(self.user_id, q, a)
+
+        self.render_flashcards()
 
         self.input_q.clear()
         self.input_a.clear()
 
-        # chuyển sang học
+        self.stack.setCurrentIndex(2)
+
+    # ================= LOAD =================
+    def render_flashcards(self):
+        # clear
+        for i in reversed(range(self.container.count())):
+            widget = self.container.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+
+        if not self.controller:
+            return
+
+        data = self.controller.get_flashcards(self.user_id)
+
+        for item in data:
+            card = FlashcardItem(item["question"], item["answer"])
+            self.container.addWidget(card)
+
+    # ================= AI =================
+    def generate_ai_flashcards(self):
+        if not self.controller:
+            return
+
+        cards = self.controller.generate_ai(self.user_id)
+
+        for c in cards:
+            self.controller.add_flashcard(self.user_id, c["q"], c["a"])
+
+        self.render_flashcards()
         self.stack.setCurrentIndex(2)
