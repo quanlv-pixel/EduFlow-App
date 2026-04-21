@@ -65,6 +65,7 @@ QTableWidget {
     border: 1px solid #EDEDED;
     border-radius: 15px;
     gridline-color: #F0F2F5;
+    color: black;
     font-size: 14px;
 }
 
