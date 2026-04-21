@@ -2,7 +2,7 @@ import os
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QTextEdit, QLabel, QFileDialog)
 from PySide6.QtCore import Qt
-from src.ai_engine import AIEngine
+from src.services.ai_engine import AIEngine
 
 class SummaryWidget(QWidget):
     def __init__(self):

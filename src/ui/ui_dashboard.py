@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 
-from src.ui_schedule import ScheduleWidget
-from src.ui_summary import SummaryWidget
+from src.ui.ui_schedule import ScheduleWidget
+from src.ui.ui_summary import SummaryWidget
 from src.ui_flashcard import FlashcardWidget
 from src.ui_course import CoursesWidget   
 
