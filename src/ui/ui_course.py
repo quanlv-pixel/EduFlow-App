@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from src.ui_course_detail import CourseDetailWidget
+from src.ui.ui_course_detail import CourseDetailWidget
 
 
 # ================= COURSE CARD =================
