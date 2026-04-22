@@ -1,48 +1,70 @@
 import sys
 from PySide6.QtWidgets import QApplication
+
+# UI
 from src.ui.login import LoginDialog
 from src.ui.dashboard import EduDashboard
 
+# SERVICES
+from src.models.database import Database
+from src.services.ai_engine import AIEngine
+
+# CONTROLLERS
+from src.controllers.auth_controller import AuthController
+
+
 class AppController:
-    """Điều phối luồng chạy giữa Login và Dashboard"""
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
-        
-        # Nạp stylesheet chung
+
+        # load style
         try:
             with open("assets/style.qss", "r", encoding="utf-8") as f:
                 self.app.setStyleSheet(f.read())
-        except FileNotFoundError:
-            print("Cảnh báo: Không tìm thấy file style.qss")
+        except:
+            pass
 
-        self.current_window = None
+        # 👉 INIT CORE
+        self.db = Database()
+        self.ai = AIEngine()
+
+        # 👉 CONTROLLER
+        self.auth_controller = AuthController(self.db)
+
+        self.dashboard = None 
+        self.login_window = None
 
     def show_login(self):
-        if hasattr(self, 'dashboard_window') and self.dashboard_window:
-            self.dashboard_window.close()
-            self.dashboard_window.deleteLater()
+    # 👉 đóng dashboard nếu còn
+        if self.dashboard:
+            self.dashboard.hide()
+            self.dashboard.deleteLater()
+            self.dashboard = None
 
-        self.login_window = LoginDialog()
-        
-        result = self.login_window.exec()
-        
-        if result == LoginDialog.Accepted:
-            user_data = self.login_window.user_data
-            self.show_dashboard(user_data)
+        self.login_window = LoginDialog(self.auth_controller)
+
+        if self.login_window.exec():
+            user = self.login_window.user_data
+            self.show_dashboard(user)
         else:
-            sys.exit(0)
+            sys.exit()
 
-    def show_dashboard(self, user_data):
-        self.dashboard_window = EduDashboard(user_data)
-        self.dashboard_window.logout_signal.connect(self.show_login)
-        self.dashboard_window.show()
-        if hasattr(self, 'login_window'):
+    def show_dashboard(self, user):
+    # 👉 đóng login trước
+        if self.login_window:
+            self.login_window.hide()
             self.login_window.deleteLater()
+            self.login_window = None
+
+        self.dashboard = EduDashboard(user, self.db, self.ai)
+        self.dashboard.logout_signal.connect(self.show_login)
+        self.dashboard.show()
 
     def run(self):
         self.show_login()
         return self.app.exec()
+
 
 if __name__ == "__main__":
     controller = AppController()

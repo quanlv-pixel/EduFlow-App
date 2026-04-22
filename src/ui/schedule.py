@@ -7,6 +7,8 @@ from PySide6.QtCore import Qt
 
 
 class ScheduleWidget(QWidget):
+    DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
+
     def __init__(self, controller, user_id):
         super().__init__()
 
@@ -14,7 +16,6 @@ class ScheduleWidget(QWidget):
         self.user_id = user_id
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(20)
 
         # ================= HEADER =================
@@ -24,15 +25,14 @@ class ScheduleWidget(QWidget):
         title = QLabel("Thời khóa biểu")
         title.setStyleSheet("font-size: 26px; font-weight: bold;")
 
-        subtitle = QLabel("Xem và quản lý thời gian biểu hàng tuần.")
-        subtitle.setStyleSheet("color: #6F767E; font-size: 13px;")
+        subtitle = QLabel("Quản lý lịch học theo tuần.")
+        subtitle.setStyleSheet("color: #6F767E;")
 
         title_v.addWidget(title)
         title_v.addWidget(subtitle)
 
         self.btn_add = QPushButton("+ Thêm lịch học")
         self.btn_add.setObjectName("BtnAddSchedule")
-        self.btn_add.setCursor(Qt.PointingHandCursor)
         self.btn_add.setFixedHeight(40)
         self.btn_add.clicked.connect(self.add_schedule)
 
@@ -42,17 +42,14 @@ class ScheduleWidget(QWidget):
 
         main_layout.addLayout(header_layout)
 
-        # ================= CARD =================
+        # ================= TABLE =================
         card = QFrame()
         card.setObjectName("CardWhite")
+
         card_layout = QVBoxLayout(card)
 
-        lbl = QLabel("<b>Lịch học chi tiết</b>")
-        card_layout.addWidget(lbl)
-
-        # ================= TABLE =================
         self.table = QTableWidget(10, 7)
-        self.table.setHorizontalHeaderLabels(["T2", "T3", "T4", "T5", "T6", "T7", "CN"])
+        self.table.setHorizontalHeaderLabels(self.DAYS)
 
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
@@ -63,48 +60,88 @@ class ScheduleWidget(QWidget):
         card_layout.addWidget(self.table)
         main_layout.addWidget(card)
 
-        # load data
+        # load
         self.load_schedule()
 
     # ================= LOAD =================
     def load_schedule(self):
         self.table.clearContents()
 
-        schedules = self.controller.get_schedule(self.user_id)
+        try:
+            schedules = self.controller.get_schedule(self.user_id)
+        except Exception as e:
+            QMessageBox.critical(self, "Lỗi DB", str(e))
+            return
 
         for s in schedules:
-            row = s["row"]
-            col = s["col"]
+            row = s["slot"]
+            col = s["day"]
 
-            text = f"{s['course']}\n{s['room']}"
+            if row is None or col is None:
+                continue
+
+            text = f"{s.get('course', '')}\n{s.get('room', '')}"
+
             item = QTableWidgetItem(text)
             item.setTextAlignment(Qt.AlignCenter)
+
+            # 👉 highlight nhẹ
+            item.setBackground(Qt.lightGray)
 
             self.table.setItem(row, col, item)
 
     # ================= ADD =================
     def add_schedule(self):
-        course, ok1 = QInputDialog.getText(self, "Tên môn", "Nhập tên môn:")
-        if not ok1 or not course:
+        # ===== COURSE =====
+        course, ok = QInputDialog.getText(self, "Môn học", "Nhập tên môn:")
+        if not ok or not course.strip():
             return
 
-        room, ok2 = QInputDialog.getText(self, "Phòng", "Nhập phòng:")
-        if not ok2 or not room:
+        # ===== ROOM =====
+        room, ok = QInputDialog.getText(self, "Phòng", "Nhập phòng:")
+        if not ok or not room.strip():
             return
 
-        day, ok3 = QInputDialog.getInt(self, "Thứ", "Nhập cột (0-6):", 0, 0, 6)
-        if not ok3:
-            return
-
-        slot, ok4 = QInputDialog.getInt(self, "Tiết", "Nhập hàng (0-9):", 0, 0, 9)
-        if not ok4:
-            return
-
-        success = self.controller.add_schedule(
-            self.user_id, course, room, day, slot
+        # ===== DAY (UX tốt hơn) =====
+        day, ok = QInputDialog.getItem(
+            self,
+            "Chọn thứ",
+            "Chọn ngày:",
+            self.DAYS,
+            0,
+            False
         )
+        if not ok:
+            return
 
-        if success:
-            self.load_schedule()
-        else:
-            QMessageBox.warning(self, "Lỗi", "Không thể thêm lịch!")
+        col = self.DAYS.index(day)
+
+        # ===== SLOT =====
+        slot, ok = QInputDialog.getInt(
+            self,
+            "Tiết học",
+            "Chọn tiết (0-9):",
+            0,
+            0,
+            9
+        )
+        if not ok:
+            return
+
+        # ===== SAVE =====
+        try:
+            success = self.controller.add_schedule(
+                self.user_id,
+                course.strip(),
+                room.strip(),
+                col,
+                slot
+            )
+
+            if success:
+                self.load_schedule()
+            else:
+                QMessageBox.warning(self, "Lỗi", "Không thể thêm lịch!")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Lỗi hệ thống", str(e))
