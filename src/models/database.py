@@ -14,21 +14,21 @@ class Database:
         }
 
         if not self.config["password"]:
-            raise ValueError("❌ Thiếu DB_PASSWORD trong file .env")
+            raise ValueError("❌ Thiếu DB_PASSWORD trong .env")
 
         try:
-            # 1. Connect MySQL
+            # ===== CONNECT =====
             self.conn = mysql.connector.connect(**self.config)
             self.cursor = self.conn.cursor()
 
-            # 2. Create DB
+            # ===== CREATE DB =====
             self.cursor.execute("CREATE DATABASE IF NOT EXISTS education")
             self.cursor.execute("USE education")
 
-            # 3. Init tables
+            # ===== INIT TABLE =====
             self.init_db_structure()
 
-            print("✅ Database EduFlow đã sẵn sàng!")
+            print("✅ Database EduFlow ready!")
 
         except mysql.connector.Error as err:
             print(f"❌ Lỗi DB: {err}")
@@ -56,22 +56,23 @@ class Database:
                 name VARCHAR(255) NOT NULL,
                 code VARCHAR(50),
                 professor VARCHAR(100),
+                progress INT DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
             """,
 
-            # SCHEDULE
+            # SCHEDULE (đổi sang user_id cho dễ dùng UI)
             """
             CREATE TABLE IF NOT EXISTS schedule (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                course_id INT NOT NULL,
-                day_of_week INT,
-                start_time TIME,
-                end_time TIME,
+                user_id INT NOT NULL,
+                course VARCHAR(255),
                 room VARCHAR(50),
-                FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-            )
+                day INT,
+                slot INT,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
             """,
 
             # DOCUMENTS
@@ -98,7 +99,7 @@ class Database:
             )
             """,
 
-            # FLASHCARDS (NEW)
+            # FLASHCARDS
             """
             CREATE TABLE IF NOT EXISTS flashcards (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -114,14 +115,19 @@ class Database:
         for q in queries:
             self.cursor.execute(q)
 
-        # INDEX (tăng tốc)
-        try:
-            self.cursor.execute("CREATE INDEX idx_courses_user ON courses(user_id)")
-            self.cursor.execute("CREATE INDEX idx_docs_user ON documents(user_id)")
-            self.cursor.execute("CREATE INDEX idx_sum_doc ON summaries(document_id)")
-            self.cursor.execute("CREATE INDEX idx_flash_user ON flashcards(user_id)")
-        except:
-            pass
+        # ===== INDEX (an toàn) =====
+        indexes = [
+            "CREATE INDEX idx_courses_user ON courses(user_id)",
+            "CREATE INDEX idx_schedule_user ON schedule(user_id)",
+            "CREATE INDEX idx_docs_user ON documents(user_id)",
+            "CREATE INDEX idx_flash_user ON flashcards(user_id)"
+        ]
+
+        for idx in indexes:
+            try:
+                self.cursor.execute(idx)
+            except:
+                pass
 
         self.conn.commit()
 
@@ -132,9 +138,9 @@ class Database:
             cursor.execute(query, params or ())
 
             if fetch:
-                result = cursor.fetchall()
+                data = cursor.fetchall()
                 cursor.close()
-                return result
+                return data
 
             self.conn.commit()
             cursor.close()
@@ -157,7 +163,7 @@ class Database:
     # ================= COURSES =================
     def get_courses(self, user_id):
         query = """
-        SELECT id, name, code, professor
+        SELECT id, name, code, professor, progress
         FROM courses
         WHERE user_id=%s
         """
@@ -170,10 +176,26 @@ class Database:
         """
         return self.execute(query, (user_id, name, code, professor))
 
+    # ================= SCHEDULE =================
+    def get_schedule(self, user_id):
+        query = """
+        SELECT course, room, day, slot
+        FROM schedule
+        WHERE user_id=%s
+        """
+        return self.execute(query, (user_id,), fetch=True)
+
+    def add_schedule(self, user_id, course, room, day, slot):
+        query = """
+        INSERT INTO schedule (user_id, course, room, day, slot)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+        return self.execute(query, (user_id, course, room, day, slot))
+
     # ================= FLASHCARDS =================
     def get_flashcards(self, user_id):
         query = """
-        SELECT id, question, answer
+        SELECT question, answer
         FROM flashcards
         WHERE user_id=%s
         ORDER BY id DESC
@@ -187,19 +209,17 @@ class Database:
         """
         return self.execute(query, (user_id, question, answer))
 
-    # ================= DOCUMENT + SUMMARY =================
+    # ================= SUMMARY =================
     def save_document_and_summary(self, user_id, filename, content, summary):
         try:
             cursor = self.conn.cursor()
 
-            # document
             cursor.execute(
                 "INSERT INTO documents (user_id, filename, content) VALUES (%s, %s, %s)",
                 (user_id, filename, content)
             )
             doc_id = cursor.lastrowid
 
-            # summary
             cursor.execute(
                 "INSERT INTO summaries (document_id, summary_text, type) VALUES (%s, %s, %s)",
                 (doc_id, summary, "ai")

@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QFrame, QLineEdit,
-    QStackedWidget
+    QProgressBar, QStackedWidget
 )
 from PySide6.QtCore import Qt, Signal
+from datetime import datetime
 
 from src.ui.schedule import ScheduleWidget
 from src.ui.summary import SummaryWidget
@@ -14,7 +15,6 @@ from src.controllers.flashcard_controller import FlashcardController
 from src.controllers.course_controller import CourseController
 from src.controllers.summary_controller import SummaryController
 from src.controllers.schedule_controller import ScheduleController
-
 
 # ================= MENU BUTTON =================
 class DashMenuButton(QPushButton):
@@ -33,12 +33,10 @@ class EduDashboard(QMainWindow):
         super().__init__()
 
         self.user_info = user_info
-        self.user_id = user_info["id"]
-
         self.db = db
         self.ai = ai
 
-        # ===== CONTROLLERS =====
+        # Controllers
         self.course_controller = CourseController(self.db, self.ai)
         self.flash_controller = FlashcardController(self.db, self.ai)
         self.summary_controller = SummaryController(self.ai, self.db)
@@ -63,30 +61,23 @@ class EduDashboard(QMainWindow):
     def setup_sidebar(self):
         sidebar = QFrame()
         sidebar.setObjectName("Sidebar")
-        sidebar.setFixedWidth(280)
+        sidebar.setFixedWidth(260)
 
         layout = QVBoxLayout(sidebar)
-        layout.setContentsMargins(25, 40, 25, 25)
+        layout.setContentsMargins(20, 30, 20, 20)
 
         logo = QLabel("📘 EduFlow")
-        logo.setStyleSheet("font-size:24px;font-weight:bold;color:#2D60FF;")
+        logo.setStyleSheet("font-size:22px;font-weight:bold;color:#2D60FF;")
         layout.addWidget(logo)
 
-        # ===== MENU =====
-        self.menu_items = [
-            ("overview", "  Tổng quan"),
-            ("schedule", "  Thời khóa biểu"),
-            ("courses", "  Khóa học"),
-            ("flash", "  Flashcards"),
-            ("summary", "  Tóm tắt AI"),
-        ]
+        self.menu_items = ["overview", "schedule", "courses", "flash", "summary"]
+        names = ["Tổng quan", "Thời khóa biểu", "Khóa học", "Flashcards", "Tóm tắt AI"]
 
         self.menu_buttons = {}
 
-        for key, text in self.menu_items:
-            btn = DashMenuButton(text)
+        for key, text in zip(self.menu_items, names):
+            btn = DashMenuButton(f"  {text}")
             layout.addWidget(btn)
-
             self.menu_buttons[key] = btn
 
             page = self.create_page(key)
@@ -96,18 +87,17 @@ class EduDashboard(QMainWindow):
             btn.clicked.connect(lambda _, k=key: self.switch_page(k))
 
         self.menu_buttons["overview"].setChecked(True)
+
         layout.addStretch()
 
-        # ===== USER =====
+        # USER INFO
         user_frame = QFrame()
         user_layout = QHBoxLayout(user_frame)
 
-        avatar = QLabel(self.user_info["name"][0].upper())
+        avatar = QLabel(self.user_info["name"][0])
         avatar.setFixedSize(40, 40)
         avatar.setAlignment(Qt.AlignCenter)
-        avatar.setStyleSheet(
-            "background:#535C67;color:white;border-radius:20px;font-weight:bold;"
-        )
+        avatar.setStyleSheet("background:#555;color:white;border-radius:20px;")
 
         info = QVBoxLayout()
         info.addWidget(QLabel(self.user_info["name"]))
@@ -118,62 +108,77 @@ class EduDashboard(QMainWindow):
 
         layout.addWidget(user_frame)
 
-        logout_btn = QPushButton("↪ Đăng xuất")
-        logout_btn.clicked.connect(self.handle_logout)
-        layout.addWidget(logout_btn)
+        # LOGOUT
+        logout = QPushButton("↪ Đăng xuất")
+        logout.clicked.connect(self.handle_logout)
+        layout.addWidget(logout)
 
         self.main_layout.addWidget(sidebar)
-
-    # ================= CREATE PAGE =================
-    def create_page(self, key):
-        if key == "overview":
-            return self.create_overview_page()
-
-        elif key == "schedule":
-            return ScheduleWidget(
-                controller=self.schedule_controller,
-                user_id=self.user_info["id"]
-            )
-
-        elif key == "courses":
-            return CoursesWidget(
-                controller=self.course_controller,
-                user_id=self.user_id
-            )
-
-        elif key == "flash":
-            return FlashcardWidget(
-                controller=self.flash_controller,
-                user_id=self.user_id
-            )
-
-        elif key == "summary":
-            return SummaryWidget(
-                controller=self.summary_controller,
-                user_id=self.user_info["id"]
-            )
 
     # ================= CONTENT =================
     def setup_content(self):
         container = QWidget()
         layout = QVBoxLayout(container)
+        layout.setContentsMargins(30, 25, 30, 25)
+        layout.setSpacing(25)
 
+        # HEADER
         header = QHBoxLayout()
 
-        greeting = QLabel(f"Chào {self.user_info['name']} 👋")
-        greeting.setStyleSheet("font-size:22px;font-weight:bold;")
+        greeting = QLabel(self.get_greeting())
+        greeting.setTextFormat(Qt.RichText)
+        greeting.setStyleSheet("font-size:24px;font-weight:bold;")
 
         search = QLineEdit()
         search.setPlaceholderText("🔍 Tìm kiếm...")
+        search.setFixedWidth(250)
+
+        btn_add = QPushButton("+")
+        btn_add.setFixedSize(40, 40)
+        btn_add.setStyleSheet("""
+            background:#2D60FF;
+            color:white;
+            border-radius:10px;
+            font-size:18px;
+        """)
 
         header.addWidget(greeting)
         header.addStretch()
         header.addWidget(search)
+        header.addWidget(btn_add)
 
         layout.addLayout(header)
         layout.addWidget(self.pages)
 
         self.main_layout.addWidget(container)
+
+    # ================= GREETING =================
+    def get_greeting(self):
+        now = datetime.now()
+        hour = now.hour
+
+        # Sáng / chiều / tối
+        if hour < 12:
+            time_str = "Chào buổi sáng"
+        elif hour < 18:
+            time_str = "Chào buổi chiều"
+        else:
+            time_str = "Chào buổi tối"
+
+        # Việt hóa thứ
+        days = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm",
+                "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"]
+
+        day_name = days[now.weekday()]
+
+        date_str = f"{day_name}, ngày {now.day} tháng {now.month} năm {now.year}"
+
+        return f"""
+        {time_str}! 👋<br>
+        <span style='font-size:13px;color:#6F767E;'>
+        {date_str}
+        </span>
+        """
 
     # ================= SWITCH =================
     def switch_page(self, key):
@@ -182,27 +187,125 @@ class EduDashboard(QMainWindow):
 
         self.pages.setCurrentWidget(self.page_map[key])
 
+    # ================= CREATE PAGE =================
+    def create_page(self, key):
+        if key == "overview":
+            return self.create_overview_page()
+
+        elif key == "schedule":
+            return ScheduleWidget(self.schedule_controller, self.user_info["id"])
+
+        elif key == "courses":
+            return CoursesWidget(self.course_controller, self.user_info["id"])
+
+        elif key == "flash":
+            return FlashcardWidget(self.flash_controller, self.user_info["id"])
+
+        elif key == "summary":
+            return SummaryWidget(self.summary_controller, self.user_info["id"])
+
     # ================= OVERVIEW =================
     def create_overview_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
+        layout.setSpacing(25)
 
-        courses = self.db.get_courses(self.user_id)
-        total = len(courses)
+        # ===== CARDS =====
+        cards = QHBoxLayout()
 
-        avg = 0
-        if total > 0:
-            avg = sum([c.get("progress", 0) for c in courses]) // total
+        # BLUE CARD
+        blue = QFrame()
+        blue.setObjectName("CardBlue")
+        v1 = QVBoxLayout(blue)
 
-        lbl = QLabel(f"Bạn có {total} khóa học\nTiến độ TB: {avg}%")
-        lbl.setStyleSheet("font-size:18px;")
+        top = QHBoxLayout()
+        top.addWidget(QLabel("📘"))
+        top.addStretch()
 
-        layout.addWidget(lbl)
-        layout.addStretch()
+        badge = QLabel("Học kỳ 2")
+        badge.setStyleSheet("background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:10px;")
+        top.addWidget(badge)
+
+        v1.addLayout(top)
+        v1.addWidget(QLabel("Khóa học đang học"))
+
+        total = len(self.db.get_courses(self.user_info["id"]))
+        num = QLabel(str(total))
+        num.setStyleSheet("font-size:40px;font-weight:bold;")
+
+        v1.addWidget(num)
+
+        # WHITE CARD
+        white = QFrame()
+        white.setObjectName("CardWhite")
+        v2 = QVBoxLayout(white)
+
+        top2 = QHBoxLayout()
+        top2.addWidget(QLabel("✅"))
+        top2.addStretch()
+
+        percent = QLabel("+12%")
+        percent.setStyleSheet("color:#10B981;font-weight:bold;")
+        top2.addWidget(percent)
+
+        v2.addLayout(top2)
+        v2.addWidget(QLabel("Tiến độ trung bình"))
+
+        avg = QLabel("78%")
+        avg.setStyleSheet("font-size:40px;font-weight:bold;color:#2D60FF;")
+
+        v2.addWidget(avg)
+
+        cards.addWidget(blue, 2)
+        cards.addWidget(white, 1)
+
+        layout.addLayout(cards)
+
+        # ===== ROW 2 =====
+        row2 = QHBoxLayout()
+
+        # schedule
+        sch = QFrame()
+        sch.setObjectName("CardWhite")
+        v = QVBoxLayout(sch)
+
+        v.addWidget(QLabel("<b>Lịch học hôm nay</b>"))
+        v.addStretch()
+        v.addWidget(QLabel("Không có lịch học nào hôm nay.", alignment=Qt.AlignCenter))
+        v.addStretch()
+
+        # progress
+        prog = QFrame()
+        prog.setObjectName("CardWhite")
+        prog.setFixedWidth(300)
+
+        vp = QVBoxLayout(prog)
+        vp.addWidget(QLabel("<b>Tiến độ học tập</b>"))
+
+        subjects = [("Cơ sở dữ liệu", 40), ("Python", 65), ("AI", 85)]
+
+        for name, val in subjects:
+            row = QHBoxLayout()
+            row.addWidget(QLabel(name))
+            row.addStretch()
+            row.addWidget(QLabel(f"{val}%"))
+
+            bar = QProgressBar()
+            bar.setValue(val)
+            bar.setTextVisible(False)
+            bar.setFixedHeight(6)
+
+            vp.addLayout(row)
+            vp.addWidget(bar)
+
+        row2.addWidget(sch, 2)
+        row2.addWidget(prog, 1)
+
+        layout.addLayout(row2)
 
         return page
 
     # ================= LOGOUT =================
     def handle_logout(self):
         self.logout_signal.emit()
-        self.close()
+        self.deleteLater()

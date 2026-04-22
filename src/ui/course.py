@@ -83,7 +83,7 @@ class CoursesWidget(QWidget):
         self.stack = QStackedLayout(self)
 
         self.page_list = QWidget()
-        self.page_detail = CourseDetailWidget()  # ✅ FIX
+        self.page_detail = CourseDetailWidget(self.controller)  
 
         self.stack.addWidget(self.page_list)
         self.stack.addWidget(self.page_detail)

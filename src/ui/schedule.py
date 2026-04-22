@@ -74,8 +74,8 @@ class ScheduleWidget(QWidget):
             return
 
         for s in schedules:
-            row = s.get("row")
-            col = s.get("col")
+            row = s["slot"]
+            col = s["day"]
 
             if row is None or col is None:
                 continue
