@@ -132,7 +132,7 @@ class EduDashboard(QMainWindow):
         elif key == "schedule":
             return ScheduleWidget(
                 controller=self.schedule_controller,
-                user_id=self.user_id
+                user_id=self.user_info["id"]
             )
 
         elif key == "courses":
@@ -150,7 +150,7 @@ class EduDashboard(QMainWindow):
         elif key == "summary":
             return SummaryWidget(
                 controller=self.summary_controller,
-                user_id=self.user_id
+                user_id=self.user_info["id"]
             )
 
     # ================= CONTENT =================

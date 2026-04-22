@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
     QPushButton, QFrame, QLineEdit,
-    QStackedLayout, QMessageBox
+    QStackedLayout, QMessageBox,
+    QScrollArea, QApplication
 )
 from PySide6.QtCore import Qt
 
@@ -43,7 +44,6 @@ class FlashcardWidget(QWidget):
 
         self.stack = QStackedLayout(self)
 
-        # pages
         self.page_main = QWidget()
         self.page_create = QWidget()
         self.page_study = QWidget()
@@ -65,7 +65,6 @@ class FlashcardWidget(QWidget):
 
         btn_manual = QPushButton("➕ Tạo thủ công")
         btn_ai = QPushButton("🤖 Tạo bằng AI")
-
         btn_ai.setObjectName("BtnAddSchedule")
 
         btn_manual.clicked.connect(lambda: self.stack.setCurrentIndex(1))
@@ -105,10 +104,17 @@ class FlashcardWidget(QWidget):
         back = QPushButton("← Quay lại")
         back.clicked.connect(lambda: self.stack.setCurrentIndex(0))
 
-        self.container = QVBoxLayout()
+        # scroll
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+
+        content = QWidget()
+        self.container = QVBoxLayout(content)
+
+        scroll.setWidget(content)
 
         layout.addWidget(back)
-        layout.addLayout(self.container)
+        layout.addWidget(scroll)
 
     # ================= ADD =================
     def add_flashcard(self):
@@ -119,16 +125,18 @@ class FlashcardWidget(QWidget):
             QMessageBox.warning(self, "Lỗi", "Nhập đầy đủ!")
             return
 
-        # lưu DB
-        if self.controller:
-            self.controller.add_flashcard(self.user_id, q, a)
+        try:
+            if self.controller:
+                self.controller.add_flashcard(self.user_id, q, a)
 
-        self.render_flashcards()
+            self.input_q.clear()
+            self.input_a.clear()
 
-        self.input_q.clear()
-        self.input_a.clear()
+            self.render_flashcards()
+            self.stack.setCurrentIndex(2)
 
-        self.stack.setCurrentIndex(2)
+        except Exception as e:
+            QMessageBox.warning(self, "Lỗi", str(e))
 
     # ================= LOAD =================
     def render_flashcards(self):
@@ -141,21 +149,45 @@ class FlashcardWidget(QWidget):
         if not self.controller:
             return
 
-        data = self.controller.get_flashcards(self.user_id)
+        try:
+            data = self.controller.get_flashcards(self.user_id)
 
-        for item in data:
-            card = FlashcardItem(item["question"], item["answer"])
-            self.container.addWidget(card)
+            for item in data:
+                card = FlashcardItem(item["question"], item["answer"])
+                self.container.addWidget(card)
+
+        except Exception as e:
+            QMessageBox.warning(self, "Lỗi load", str(e))
 
     # ================= AI =================
     def generate_ai_flashcards(self):
         if not self.controller:
             return
 
-        cards = self.controller.generate_ai(self.user_id)
-
-        for c in cards:
-            self.controller.add_flashcard(self.user_id, c["q"], c["a"])
-
-        self.render_flashcards()
         self.stack.setCurrentIndex(2)
+
+        # loading UI
+        self.clear_container()
+        self.container.addWidget(QLabel("🤖 Đang tạo flashcard bằng AI..."))
+        QApplication.processEvents()
+
+        try:
+            cards = self.controller.generate_ai(self.user_id)
+
+            # limit tránh overload UI
+            cards = cards[:10]
+
+            for c in cards:
+                self.controller.add_flashcard(self.user_id, c["q"], c["a"])
+
+            self.render_flashcards()
+
+        except Exception as e:
+            QMessageBox.warning(self, "Lỗi AI", str(e))
+
+    # ================= HELPER =================
+    def clear_container(self):
+        for i in reversed(range(self.container.count())):
+            widget = self.container.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()

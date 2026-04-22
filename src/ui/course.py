@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QFrame, QGridLayout, QProgressBar,
-    QStackedLayout
+    QStackedLayout, QInputDialog, QMessageBox
 )
 from PySide6.QtCore import Qt
 
@@ -13,23 +13,21 @@ class CourseCard(QFrame):
     def __init__(self, course, on_click):
         super().__init__()
 
+        self.course = course
+        self.on_click = on_click
+
         self.setObjectName("CardWhite")
         self.setFixedHeight(170)
         self.setCursor(Qt.PointingHandCursor)
 
-        self.course = course
-        self.on_click = on_click
-
         layout = QVBoxLayout(self)
-        layout.setSpacing(10)
 
-        # Top
+        # TOP
         top = QHBoxLayout()
 
         icon = QLabel("📘")
-        icon.setStyleSheet("font-size: 22px;")
-
         status = QLabel("Đang học")
+
         status.setStyleSheet("""
             background: #E8FFF3;
             color: #10B981;
@@ -42,27 +40,27 @@ class CourseCard(QFrame):
         top.addStretch()
         top.addWidget(status)
 
-        # Title
+        # TITLE
         title = QLabel(course["name"])
         title.setStyleSheet("font-size:16px;font-weight:bold;")
 
         info = QLabel(f"{course['code']} • {course['professor']}")
         info.setStyleSheet("color:#6F767E;font-size:12px;")
 
-        # Progress
-        prog_layout = QHBoxLayout()
-        prog_label = QLabel("Tiến độ")
-        percent = QLabel(f"{course.get('progress', 0)}%")
+        # PROGRESS
+        progress = course.get("progress", 0)
 
-        prog_layout.addWidget(prog_label)
+        prog_layout = QHBoxLayout()
+        prog_layout.addWidget(QLabel("Tiến độ"))
         prog_layout.addStretch()
-        prog_layout.addWidget(percent)
+        prog_layout.addWidget(QLabel(f"{progress}%"))
 
         bar = QProgressBar()
-        bar.setValue(course.get("progress", 0))
+        bar.setValue(progress)
         bar.setTextVisible(False)
         bar.setFixedHeight(6)
 
+        # ADD
         layout.addLayout(top)
         layout.addWidget(title)
         layout.addWidget(info)
@@ -82,42 +80,32 @@ class CoursesWidget(QWidget):
         self.controller = controller
         self.user_id = user_id
 
-        # STACK (List + Detail)
         self.stack = QStackedLayout(self)
 
         self.page_list = QWidget()
-        self.page_detail = CourseDetailWidget(controller)
+        self.page_detail = CourseDetailWidget()  # ✅ FIX
 
         self.stack.addWidget(self.page_list)
         self.stack.addWidget(self.page_detail)
 
         self.setup_list_ui()
 
-        # Back button
+        # 👉 FIX BACK BUTTON
         self.page_detail.back_btn.clicked.connect(self.go_back)
 
-    # ================= LIST PAGE =================
+    # ================= LIST =================
     def setup_list_ui(self):
         self.layout = QVBoxLayout(self.page_list)
-        self.layout.setSpacing(20)
 
-        # Header
+        # HEADER
         header = QHBoxLayout()
 
         title_v = QVBoxLayout()
-
-        title = QLabel("Khóa học của tôi")
-        title.setStyleSheet("font-size:26px;font-weight:bold;")
-
-        subtitle = QLabel("Quản lý danh sách các môn học.")
-        subtitle.setStyleSheet("color:#6F767E;")
-
-        title_v.addWidget(title)
-        title_v.addWidget(subtitle)
+        title_v.addWidget(QLabel("Khóa học của tôi"))
+        title_v.addWidget(QLabel("Quản lý danh sách các môn học."))
 
         btn_add = QPushButton("+ Thêm khóa học")
         btn_add.setObjectName("BtnAddSchedule")
-        btn_add.setFixedHeight(40)
         btn_add.clicked.connect(self.add_course)
 
         header.addLayout(title_v)
@@ -126,27 +114,30 @@ class CoursesWidget(QWidget):
 
         self.layout.addLayout(header)
 
-        # Grid
+        # GRID
         self.grid = QGridLayout()
-        self.grid.setSpacing(20)
-
         self.layout.addLayout(self.grid)
         self.layout.addStretch()
 
-        # Load data
         self.load_courses()
 
-    # ================= LOAD COURSES =================
+    # ================= LOAD =================
     def load_courses(self):
-        # clear grid
+        # clear
         for i in reversed(range(self.grid.count())):
-            widget = self.grid.itemAt(i).widget()
-            if widget:
-                widget.deleteLater()
+            w = self.grid.itemAt(i).widget()
+            if w:
+                w.deleteLater()
 
         courses = self.controller.get_courses(self.user_id)
 
-        row, col = 0, 0
+        if not courses:
+            empty = QLabel("Chưa có khóa học nào 😢")
+            empty.setAlignment(Qt.AlignCenter)
+            self.grid.addWidget(empty, 0, 0)
+            return
+
+        row = col = 0
         for course in courses:
             card = CourseCard(course, self.open_detail)
             self.grid.addWidget(card, row, col)
@@ -156,20 +147,37 @@ class CoursesWidget(QWidget):
                 col = 0
                 row += 1
 
-    # ================= ADD COURSE =================
+    # ================= ADD =================
     def add_course(self):
-        # demo nhanh
-        self.controller.add_course(
-            self.user_id,
-            "Môn mới",
-            "NEW101",
-            "Giảng viên"
-        )
-        self.load_courses()
+        name, ok1 = QInputDialog.getText(self, "Tên môn", "Nhập tên môn:")
+        if not ok1 or not name:
+            return
 
-    # ================= OPEN DETAIL =================
+        code, ok2 = QInputDialog.getText(self, "Mã môn", "Nhập mã môn:")
+        if not ok2:
+            return
+
+        prof, ok3 = QInputDialog.getText(self, "Giảng viên", "Nhập tên GV:")
+        if not ok3:
+            return
+
+        success = self.controller.add_course(
+            self.user_id, name, code, prof
+        )
+
+        if success:
+            self.load_courses()
+        else:
+            QMessageBox.warning(self, "Lỗi", "Không thêm được!")
+
+    # ================= DETAIL =================
     def open_detail(self, course):
-        self.page_detail.load_course(course)
+        self.page_detail.set_course(
+            course["name"],
+            course["code"],
+            course["professor"],
+            course.get("progress", 0)
+        )
         self.stack.setCurrentWidget(self.page_detail)
 
     # ================= BACK =================
