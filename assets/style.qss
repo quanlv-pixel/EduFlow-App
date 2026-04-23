@@ -117,3 +117,60 @@ QPushButton#BtnLogin {
 QPushButton#BtnLogin:hover {
     background-color: #1557B0;
 }
+
+/* ===== TEXT EDIT (Ô nội dung gốc & AI) ===== */
+QTextEdit {
+    background-color: #FFFFFF;  /* nền trắng */
+    color: #1E2328;             /* chữ đậm dễ đọc */
+    border: 1px solid #EDEDED;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 14px;
+}
+
+/* Khi focus (click vào) */
+QTextEdit:focus {
+    border: 1px solid #2D60FF;  /* viền xanh khi chọn */
+}   
+
+/* ===== INPUT TEXT (search + input khác) ===== */
+QLineEdit {
+    background-color: #FFFFFF;   /* nền trắng */
+    color: #1E2328;
+    border: 1px solid #EDEDED;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+/* Khi focus */
+QLineEdit:focus {
+    border: 1px solid #2D60FF;
+}
+
+/* ===== SCROLL AREA (fix nền xám) ===== */
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+/* ===== LABEL trong content ===== */
+QLabel {
+    background-color: transparent;
+}
+/* ===== TABLE ITEM (bỏ viền khi click/double click) ===== */
+QTableWidget::item:focus {
+    outline: none;
+    border: none;
+}
+
+/* Khi item được chọn */
+QTableWidget::item:selected {
+    background-color: #E8EDFF; /* màu xanh nhạt đẹp hơn */
+    color: #1E2328;
+    border: none;
+}
