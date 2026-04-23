@@ -32,7 +32,7 @@ class CourseController:
     # ================= DELETE =================
     def delete_course(self, course_id):
         try:
-            query = "DELETE FROM courses WHERE id=%s"
+            query = "DELETE FROM courses WHERE id=?"
             return self.db.execute(query, (course_id,))
         except Exception as e:
             print("❌ Lỗi xóa course:", e)
@@ -46,8 +46,8 @@ class CourseController:
         try:
             query = """
             UPDATE courses 
-            SET name=%s, code=%s, professor=%s
-            WHERE id=%s
+            SET name=?, code=?, professor=?
+            WHERE id=?
             """
             return self.db.execute(
                 query,
