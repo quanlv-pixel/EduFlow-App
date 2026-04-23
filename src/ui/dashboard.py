@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QFrame, QLineEdit,
-    QProgressBar, QStackedWidget
+    QProgressBar, QStackedWidget, QApplication
 )
 from PySide6.QtCore import Qt, Signal
 from datetime import datetime
@@ -10,6 +10,7 @@ from src.ui.schedule import ScheduleWidget
 from src.ui.summary import SummaryWidget
 from src.ui.flashcard import FlashcardWidget
 from src.ui.course import CoursesWidget
+from src.ui.settings_widget import SettingsWidget  
 
 from src.controllers.flashcard_controller import FlashcardController
 from src.controllers.course_controller import CourseController
@@ -56,6 +57,8 @@ class EduDashboard(QMainWindow):
 
         self.setup_sidebar()
         self.setup_content()
+        self.current_theme = "light"
+        self.apply_theme("light") 
 
     # ================= SIDEBAR =================
     def setup_sidebar(self):
@@ -70,8 +73,8 @@ class EduDashboard(QMainWindow):
         logo.setStyleSheet("font-size:22px;font-weight:bold;color:#2D60FF;")
         layout.addWidget(logo)
 
-        self.menu_items = ["overview", "schedule", "courses", "flash", "summary"]
-        names = ["Tổng quan", "Thời khóa biểu", "Khóa học", "Flashcards", "Tóm tắt AI"]
+        self.menu_items = ["overview", "schedule", "courses", "flash", "summary", "settings"]  # ← THÊM "settings"
+        names = ["Tổng quan", "Thời khóa biểu", "Khóa học", "Flashcards", "Tóm tắt AI", "Cài đặt"]  # ← THÊM "Cài đặt"
 
         self.menu_buttons = {}
 
@@ -110,7 +113,7 @@ class EduDashboard(QMainWindow):
 
         # LOGOUT
         logout = QPushButton("↪ Đăng xuất")
-        logout.setObjectName("LogoutBtn")   # 👈 THÊM DÒNG NÀY
+        logout.setObjectName("LogoutBtn")
         logout.setCursor(Qt.PointingHandCursor)
         logout.clicked.connect(self.handle_logout)
         layout.addWidget(logout)
@@ -205,6 +208,9 @@ class EduDashboard(QMainWindow):
 
         elif key == "summary":
             return SummaryWidget(self.summary_controller, self.user_info["id"])
+
+        elif key == "settings":  # ← THÊM ĐOẠN NÀY
+            return SettingsWidget(self)
 
     # ================= OVERVIEW =================
     def create_overview_page(self):
@@ -306,6 +312,22 @@ class EduDashboard(QMainWindow):
         layout.addLayout(row2)
 
         return page
+
+    def load_qss(self, path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+        
+    def apply_theme(self, theme):
+        app = QApplication.instance()
+
+        if theme == "dark":
+            qss = self.load_qss("assets/style_dark.qss")
+            self.current_theme = "dark"
+        else:
+            qss = self.load_qss("assets/style.qss")
+            self.current_theme = "light"
+
+        app.setStyleSheet(qss)
 
     # ================= LOGOUT =================
     def handle_logout(self):

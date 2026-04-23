@@ -1,0 +1,103 @@
+/* ===== GLOBAL ===== */
+QMainWindow {
+    background-color: #1E1E2E;
+}
+
+QLabel {
+    color: #CDD6F4;
+    font-family: "SF Pro Display", "Segoe UI", sans-serif;
+}
+
+/* ===== SIDEBAR ===== */
+QFrame#Sidebar {
+    background-color: #181825;
+    border-right: 1px solid #313244;
+}
+
+/* ===== MENU BUTTON ===== */
+QPushButton#MenuBtn {
+    color: #A6ADC8;
+    background: transparent;
+}
+
+QPushButton#MenuBtn:hover {
+    background-color: #313244;
+    color: #89B4FA;
+}
+
+QPushButton#MenuBtn:checked {
+    background-color: #313244;
+    color: #89B4FA;
+}
+
+/* ===== CARDS ===== */
+QFrame#CardBlue {
+    background-color: #2D60FF;
+    color: white;
+}
+
+QFrame#CardWhite {
+    background-color: #313244;
+    border: 1px solid #313244; /* ẩn viền */
+}
+
+/* ===== PROGRESS ===== */
+QProgressBar {
+    background-color: #45475A;
+}
+
+QProgressBar::chunk {
+    background-color: #89B4FA;
+}
+
+/* ===== TABLE ===== */
+QTableWidget {
+    background-color: #313244;
+    border: 1px solid #313244;
+    gridline-color: #45475A;
+    color: #CDD6F4;
+}
+
+QHeaderView::section {
+    background-color: #45475A;
+    border-bottom: 2px solid #89B4FA;
+    color: #CDD6F4;
+}
+
+/* ===== INPUT ===== */
+QLineEdit {
+    background-color: #45475A;
+    color: #CDD6F4;
+    border: 1px solid #45475A; /* KHÔNG để viền sáng */
+}
+
+QLineEdit:focus {
+    border: 1px solid #89B4FA;
+}
+
+/* ===== TEXT EDIT ===== */
+QTextEdit {
+    background-color: #45475A;
+    color: #CDD6F4;
+    border: 1px solid #45475A;
+}
+
+QTextEdit:focus {
+    border: 1px solid #89B4FA;
+}
+
+/* ===== TABLE SELECT ===== */
+QTableWidget::item:selected {
+    background-color: #45475A;
+    color: #CDD6F4;
+}
+
+/* ===== LOGOUT ===== */
+QPushButton#LogoutBtn {
+    color: #F38BA8;
+}
+
+QPushButton#LogoutBtn:hover {
+    background-color: #3A1F1F;
+    color: #F87171;
+}
