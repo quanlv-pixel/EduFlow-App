@@ -110,6 +110,8 @@ class EduDashboard(QMainWindow):
 
         # LOGOUT
         logout = QPushButton("↪ Đăng xuất")
+        logout.setObjectName("LogoutBtn")   # 👈 THÊM DÒNG NÀY
+        logout.setCursor(Qt.PointingHandCursor)
         logout.clicked.connect(self.handle_logout)
         layout.addWidget(logout)
 

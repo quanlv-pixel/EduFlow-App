@@ -174,3 +174,18 @@ QTableWidget::item:selected {
     color: #1E2328;
     border: none;
 }
+
+/* ===== LOGOUT BUTTON ===== */
+QPushButton#LogoutBtn {
+    background: transparent;
+    color: #6F767E;
+    border: none;
+    padding: 10px;
+    text-align: left;
+    border-radius: 8px;
+}
+
+QPushButton#LogoutBtn:hover {
+    background-color: #FEE2E2; /* đỏ nhạt */
+    color: #EF4444;            /* đỏ */
+}
