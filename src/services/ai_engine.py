@@ -1,5 +1,6 @@
 import os
-import fitz  # PyMuPDF
+import time
+import fitz
 from docx import Document
 from google import genai
 from dotenv import load_dotenv
@@ -11,35 +12,35 @@ class AIEngine:
 
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
-            raise ValueError("❌ Thiếu GOOGLE_API_KEY trong file .env")
+            raise ValueError("❌ Thiếu GOOGLE_API_KEY trong .env")
 
-        # Init client
         self.client = genai.Client(api_key=api_key)
-        self.model_name = "gemini-2.5-flash"
 
-    # ================= FILE READER =================
+        # 👉 ưu tiên model nhanh trước
+        self.models = [
+            "gemini-1.5-flash",
+            "gemini-2.5-flash"
+        ]
+
+    # ================= FILE =================
     def read_file(self, file_path):
         ext = os.path.splitext(file_path)[1].lower()
 
-        try:
-            if ext == ".pdf":
-                return self._read_pdf(file_path)
-            elif ext == ".docx":
-                return self._read_docx(file_path)
-            else:
-                return "❌ Chỉ hỗ trợ file .pdf và .docx"
-        except Exception as e:
-            return f"❌ Lỗi đọc file: {str(e)}"
+        if ext == ".pdf":
+            return self._read_pdf(file_path)
+        elif ext == ".docx":
+            return self._read_docx(file_path)
+
+        return "❌ Chỉ hỗ trợ PDF hoặc DOCX"
 
     def _read_pdf(self, file_path):
-        text = ""
-
         try:
+            text = ""
             with fitz.open(file_path) as doc:
                 for page in doc:
                     text += page.get_text()
 
-            return text.strip() or "❌ File PDF không có nội dung"
+            return text.strip() or "❌ PDF không có nội dung"
 
         except Exception as e:
             return f"❌ Lỗi đọc PDF: {e}"
@@ -47,81 +48,94 @@ class AIEngine:
     def _read_docx(self, file_path):
         try:
             doc = Document(file_path)
-            content = "\n".join([p.text for p in doc.paragraphs])
-
-            return content.strip() or "❌ File Word trống"
+            return "\n".join(p.text for p in doc.paragraphs)
 
         except Exception as e:
-            return f"❌ Lỗi đọc Word: {e}"
+            return f"❌ Lỗi DOCX: {e}"
+
+    # ================= CORE AI =================
+    def _call_ai(self, prompt, max_retry=3):
+        last_error = ""
+
+        for model in self.models:
+            for attempt in range(max_retry):
+                try:
+                    response = self.client.models.generate_content(
+                        model=model,
+                        contents=prompt
+                    )
+
+                    if response and response.text:
+                        return response.text
+
+                except Exception as e:
+                    err = str(e)
+                    last_error = err
+
+                    # 👉 lỗi server → retry
+                    if "503" in err or "UNAVAILABLE" in err:
+                        time.sleep(2)
+                        continue
+
+                    # 👉 lỗi khác → break luôn
+                    break
+
+        return f"❌ AI lỗi: {last_error}"
 
     # ================= SUMMARY =================
     def get_summary(self, text):
-        if not text or len(text.strip()) < 10:
-            return "❌ Nội dung quá ngắn để tóm tắt"
+        if not text or len(text.strip()) < 20:
+            return "❌ Nội dung quá ngắn"
 
         safe_text = text[:30000]
 
         prompt = f"""
-Bạn là trợ lý học tập.
+            Bạn là trợ lý học tập.
 
-Hãy tóm tắt nội dung sau theo format:
+            Hãy tóm tắt nội dung sau theo format:
 
-1. Tóm tắt ngắn (2-3 câu)
-2. Ý chính (bullet points)
-3. Thuật ngữ quan trọng
+            1. Tóm tắt ngắn (2-3 câu)
+            2. Ý chính (bullet points)
+            3. Thuật ngữ quan trọng
 
-Ngôn ngữ: Tiếng Việt, rõ ràng, dễ hiểu.
+            Ngôn ngữ: Tiếng Việt, rõ ràng, dễ hiểu.
 
-NỘI DUNG:
-{safe_text}
-"""
+            NỘI DUNG:
+            {safe_text}
+            """
 
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt
-            )
+        return self._call_ai(prompt)
 
-            return response.text or "❌ Không nhận được phản hồi từ AI"
-
-        except Exception as e:
-            return f"❌ Lỗi AI: {str(e)}"
-
-    # ================= FLASHCARD AI (ĂN ĐIỂM) =================
+    # ================= FLASHCARD =================
     def generate_flashcards(self, text):
-        if not text or len(text.strip()) < 20:
+        if not text or len(text.strip()) < 50:
             return []
 
         safe_text = text[:20000]
 
         prompt = f"""
-Tạo flashcard từ nội dung sau.
+            Tạo flashcard từ nội dung sau.
 
-Trả về dạng JSON:
-[
-  {{"q": "câu hỏi", "a": "câu trả lời"}},
-  ...
-]
+            Trả về JSON:
+            [
+            {{"q": "...", "a": "..."}}
+            ]
 
-NỘI DUNG:
-{safe_text}
-"""
+            NỘI DUNG:
+            {safe_text}
+        """
 
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt
-            )
+        raw = self._call_ai(prompt)
 
-            raw = response.text
+        # 👉 parse thông minh
+        import json, re
 
-            # parse đơn giản (có thể cải thiện sau)
-            import json
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+
+        if match:
             try:
-                data = json.loads(raw)
-                return data
+                return json.loads(match.group())
             except:
-                return [{"q": "Lỗi parse", "a": raw}]
+                pass
 
-        except Exception as e:
-            return [{"q": "Lỗi AI", "a": str(e)}]
+        return [{"q": "Lỗi parse", "a": raw}]

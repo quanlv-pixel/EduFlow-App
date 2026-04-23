@@ -27,6 +27,7 @@ class SummaryWidget(QWidget):
         self.btn_upload = QPushButton("📂 Chọn file PDF/Word")
         self.btn_upload.setObjectName("BtnAddSchedule")
         self.btn_upload.setFixedHeight(45)
+        self.btn_upload.setCursor(Qt.PointingHandCursor)
         self.btn_upload.clicked.connect(self.handle_upload)
 
         self.lbl_status = QLabel("Chưa có tài liệu nào")
@@ -41,21 +42,33 @@ class SummaryWidget(QWidget):
         # ===== DISPLAY =====
         display = QHBoxLayout()
 
-        # LEFT
+        # ===== LEFT: ORIGINAL =====
         left = QVBoxLayout()
         left.addWidget(QLabel("<b>Nội dung gốc</b>"))
 
         self.txt_original = QTextEdit()
         self.txt_original.setPlaceholderText("Nội dung file sẽ hiển thị ở đây...")
+        self.txt_original.setStyleSheet("""
+            border-radius:12px;
+            border:1px solid #DDD;
+            padding:10px;
+            background:white;
+        """)
         left.addWidget(self.txt_original)
 
-        # RIGHT
+        # ===== RIGHT: SUMMARY =====
         right = QVBoxLayout()
         right.addWidget(QLabel("<b>Tóm tắt AI</b>"))
 
         self.txt_summary = QTextEdit()
         self.txt_summary.setReadOnly(True)
-        self.txt_summary.setPlaceholderText("Kết quả AI...")
+        self.txt_summary.setPlaceholderText("Kết quả AI sẽ hiển thị ở đây...")
+        self.txt_summary.setStyleSheet("""
+            border-radius:12px;
+            border:1px solid #2D60FF;
+            padding:10px;
+            background:#F4F7FF;
+        """)
         right.addWidget(self.txt_summary)
 
         display.addLayout(left)
@@ -77,12 +90,13 @@ class SummaryWidget(QWidget):
 
         filename = os.path.basename(file_path)
 
-        # ===== RESET UI =====
+        # RESET UI
         self.txt_original.clear()
         self.txt_summary.clear()
 
         self.btn_upload.setEnabled(False)
         self.lbl_status.setText(f"⌛ Đang đọc: {filename}")
+        self.txt_summary.setText("⏳ Đang xử lý...")
 
         QApplication.processEvents()
 
@@ -90,19 +104,31 @@ class SummaryWidget(QWidget):
             # ===== READ FILE =====
             content = self.controller.read_file(file_path)
 
-            if not content or len(content.strip()) < 10:
-                raise ValueError("File không có nội dung hợp lệ!")
+            if not content or content.startswith("❌") or len(content.strip()) < 10:
+                raise ValueError(content or "File không hợp lệ!")
+
+            # 🔥 GIỚI HẠN TEXT (tránh AI chết)
+            content = content[:20000]
 
             self.txt_original.setText(content)
 
             # ===== AI =====
-            self.lbl_status.setText("🤖 AI đang xử lý...")
+            self.lbl_status.setText("🤖 AI đang tóm tắt...")
             QApplication.processEvents()
 
-            summary = self.controller.summarize(content)
+            # 🔥 RETRY LOGIC (QUAN TRỌNG)
+            summary = None
+            for i in range(3):
+                summary = self.controller.summarize(content)
 
-            if not summary:
-                raise ValueError("AI không trả về kết quả!")
+                if summary and not summary.startswith("❌"):
+                    break
+
+                QApplication.processEvents()
+
+            # Nếu vẫn lỗi sau 3 lần
+            if not summary or summary.startswith("❌"):
+                summary = "⚠️ AI đang quá tải, vui lòng thử lại sau!"
 
             self.txt_summary.setText(summary)
 
@@ -122,6 +148,7 @@ class SummaryWidget(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Lỗi", str(e))
             self.lbl_status.setText("❌ Thất bại")
+            self.txt_summary.setText("")
 
         finally:
             self.btn_upload.setEnabled(True)
