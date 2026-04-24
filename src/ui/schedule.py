@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QHeaderView, QFrame, QMessageBox, QInputDialog
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QFont
 
 
 class ScheduleWidget(QWidget):
@@ -14,6 +15,9 @@ class ScheduleWidget(QWidget):
 
         self.controller = controller
         self.user_id = user_id
+
+        # 👉 lưu màu theo môn
+        self.course_colors = {}
 
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(20)
@@ -48,20 +52,44 @@ class ScheduleWidget(QWidget):
 
         card_layout = QVBoxLayout(card)
 
-        self.table = QTableWidget(10, 7)
+        # 👉 24h x 7 ngày
+        self.table = QTableWidget(24, 7)
+
+        # header ngang (ngày)
         self.table.setHorizontalHeaderLabels(self.DAYS)
 
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.verticalHeader().setVisible(False)
+        # header dọc (giờ)
+        time_labels = [f"{h:02d}:00" for h in range(24)]
+        self.table.setVerticalHeaderLabels(time_labels)
 
-        for i in range(10):
-            self.table.setRowHeight(i, 70)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.verticalHeader().setVisible(True)
+
+        # chiều cao row
+        for i in range(24):
+            self.table.setRowHeight(i, 50)
 
         card_layout.addWidget(self.table)
         main_layout.addWidget(card)
 
-        # load
+        # load data
         self.load_schedule()
+
+    # ================= COLOR GENERATOR =================
+    def get_color_for_course(self, course):
+        if course in self.course_colors:
+            return self.course_colors[course]
+
+        # 🎨 palette đẹp
+        palette = [
+            "#DCEBFF", "#E8F8F5", "#FFF4E5",
+            "#FDEDEC", "#F5EEF8", "#FEF9E7",
+            "#EAF2F8"
+        ]
+
+        color = palette[len(self.course_colors) % len(palette)]
+        self.course_colors[course] = color
+        return color
 
     # ================= LOAD =================
     def load_schedule(self):
@@ -69,24 +97,37 @@ class ScheduleWidget(QWidget):
 
         try:
             schedules = self.controller.get_schedule(self.user_id)
+
+            if not schedules:
+                return
+
         except Exception as e:
             QMessageBox.critical(self, "Lỗi DB", str(e))
             return
 
         for s in schedules:
-            row = s["slot"]
-            col = s["day"]
+            row = s.get("slot")
+            col = s.get("day")
 
             if row is None or col is None:
                 continue
 
-            text = f"{s.get('course', '')}\n{s.get('room', '')}"
+            course = s.get("course", "")
+            room = s.get("room", "")
+
+            text = f"{course}\n{room}"
 
             item = QTableWidgetItem(text)
             item.setTextAlignment(Qt.AlignCenter)
 
-            # 👉 highlight nhẹ
-            item.setBackground(Qt.lightGray)
+            # 🎨 màu theo môn
+            color = self.get_color_for_course(course)
+            item.setBackground(QColor(color))
+
+            # 🔥 font đẹp
+            font = QFont()
+            font.setBold(True)
+            item.setFont(font)
 
             self.table.setItem(row, col, item)
 
@@ -102,7 +143,7 @@ class ScheduleWidget(QWidget):
         if not ok or not room.strip():
             return
 
-        # ===== DAY (UX tốt hơn) =====
+        # ===== DAY =====
         day, ok = QInputDialog.getItem(
             self,
             "Chọn thứ",
@@ -116,14 +157,14 @@ class ScheduleWidget(QWidget):
 
         col = self.DAYS.index(day)
 
-        # ===== SLOT =====
+        # ===== HOUR =====
         slot, ok = QInputDialog.getInt(
             self,
-            "Tiết học",
-            "Chọn tiết (0-9):",
+            "Giờ học",
+            "Chọn giờ (0-23):",
+            7,
             0,
-            0,
-            9
+            23
         )
         if not ok:
             return

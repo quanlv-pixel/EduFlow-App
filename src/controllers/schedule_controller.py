@@ -3,12 +3,10 @@ class ScheduleController:
         self.db = db
 
     def get_schedule(self, user_id):
-        query = "SELECT * FROM schedule WHERE user_id=?"
-        return self.db.execute(query, (user_id,), fetch=True)
+        return self.db.get_schedule(user_id)
 
-    def add_schedule(self, user_id, course, room, day, slot):
-        query = """
-        INSERT INTO schedule (user_id, course, room, col, row)
-        VALUES (?, ?, ?, ?, ?)
-        """
-        return self.db.execute(query, (user_id, course, room, day, slot))
+    def add_schedule(self, user_id, course, room, day, start, end):
+        if end <= start:
+            return False
+
+        return self.db.add_schedule(user_id,course,room,day,start,end)

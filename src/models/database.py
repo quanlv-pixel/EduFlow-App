@@ -4,21 +4,19 @@ import os
 
 class Database:
     def __init__(self):
-        # 📁 đảm bảo file DB nằm đúng project
+        # 📁 path DB (ổn định mọi máy)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         db_path = os.path.join(base_dir, "../../eduflow.db")
         db_path = os.path.abspath(db_path)
 
-        # kết nối
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
 
-        # bật foreign key (SQLite mặc định tắt)
+        # bật foreign key
         self.cursor.execute("PRAGMA foreign_keys = ON")
 
         self.init_db()
-
         print("✅ SQLite EduFlow ready!")
 
     # ================= INIT =================
@@ -31,8 +29,7 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                password TEXT NOT NULL
             )
             """,
 
@@ -43,12 +40,11 @@ class Database:
                 user_id INTEGER,
                 name TEXT,
                 code TEXT,
-                professor TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                professor TEXT
             )
             """,
 
-            # SCHEDULE (đơn giản hóa)
+            # ✅ SCHEDULE (NEW VERSION)
             """
             CREATE TABLE IF NOT EXISTS schedule (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +52,8 @@ class Database:
                 course TEXT,
                 room TEXT,
                 day INTEGER,
-                slot INTEGER
+                start_time INTEGER,
+                end_time INTEGER
             )
             """,
 
@@ -66,8 +63,7 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 question TEXT,
-                answer TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                answer TEXT
             )
             """,
 
@@ -77,8 +73,7 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 filename TEXT,
-                content TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                content TEXT
             )
             """,
 
@@ -87,8 +82,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS summaries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 document_id INTEGER,
-                summary_text TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                summary_text TEXT
             )
             """
         ]
@@ -96,20 +90,8 @@ class Database:
         for q in queries:
             self.cursor.execute(q)
 
-        # ⚡ INDEX (tăng tốc query)
-        indexes = [
-            "CREATE INDEX IF NOT EXISTS idx_user_courses ON courses(user_id)",
-            "CREATE INDEX IF NOT EXISTS idx_user_schedule ON schedule(user_id)",
-            "CREATE INDEX IF NOT EXISTS idx_user_flash ON flashcards(user_id)",
-            "CREATE INDEX IF NOT EXISTS idx_doc_summary ON summaries(document_id)",
-        ]
-
-        for idx in indexes:
-            self.cursor.execute(idx)
-
         self.conn.commit()
 
-        # tạo user mặc định
         self.create_default_user()
 
     # ================= DEFAULT USER =================
@@ -174,16 +156,19 @@ class Database:
             fetch=True
         )
 
-    def add_schedule(self, user_id, course, room, day, slot):
+    def add_schedule(self, user_id, course, room, day, start, end):
         return self.execute(
-            "INSERT INTO schedule (user_id, course, room, day, slot) VALUES (?, ?, ?, ?, ?)",
-            (user_id, course, room, day, slot)
+            """
+            INSERT INTO schedule (user_id, course, room, day, start_time, end_time)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (user_id, course, room, day, start, end)
         )
 
     # ================= FLASHCARDS =================
     def get_flashcards(self, user_id):
         return self.execute(
-            "SELECT * FROM flashcards WHERE user_id=? ORDER BY id DESC",
+            "SELECT * FROM flashcards WHERE user_id=?",
             (user_id,),
             fetch=True
         )
@@ -219,5 +204,4 @@ class Database:
 
     # ================= CLOSE =================
     def close(self):
-        if self.conn:
-            self.conn.close()
+        self.conn.close()
