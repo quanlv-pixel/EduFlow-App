@@ -4,7 +4,7 @@ import os
 
 class Database:
     def __init__(self):
-        # path DB (ổn định mọi máy)
+        # 📁 path DB (ổn định mọi máy)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         db_path = os.path.join(base_dir, "../../eduflow.db")
         db_path = os.path.abspath(db_path)
@@ -44,7 +44,7 @@ class Database:
             )
             """,
 
-            # SCHEDULE
+            # ✅ SCHEDULE (NEW VERSION)
             """
             CREATE TABLE IF NOT EXISTS schedule (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,7 +122,7 @@ class Database:
             return True
 
         except Exception as e:
-            print("DB ERROR:", e)
+            print("❌ DB ERROR:", e)
             return None
 
     # ================= AUTH =================
@@ -157,36 +157,13 @@ class Database:
         )
 
     def add_schedule(self, user_id, course, room, day, start, end):
-        try:
-            if self.is_time_conflict(user_id, day, start, end):
-                print("Trùng lịch!")
-                return False
-
-            query = """
+        return self.execute(
+            """
             INSERT INTO schedule (user_id, course, room, day, start_time, end_time)
             VALUES (?, ?, ?, ?, ?, ?)
-            """
-            return self.execute(query, (user_id, course, room, day, start, end))
-
-        except Exception as e:
-            print("ADD SCHEDULE ERROR:", e)
-            return False
-
-    def delete_schedule(self, user_id, day, start_time):
-        return self.execute(
-            "DELETE FROM schedule WHERE user_id=? AND day=? AND start_time=?",
-            (user_id, day, start_time)
+            """,
+            (user_id, course, room, day, start, end)
         )
-
-    def is_time_conflict(self, user_id, day, start, end):
-        query = """
-        SELECT * FROM schedule
-        WHERE user_id = ?
-        AND day = ?
-        AND NOT (end_time <= ? OR start_time >= ?)
-        """
-        result = self.execute(query, (user_id, day, start, end), fetch=True)
-        return len(result) > 0
 
     # ================= FLASHCARDS =================
     def get_flashcards(self, user_id):
