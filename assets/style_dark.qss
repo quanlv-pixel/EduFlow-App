@@ -6,6 +6,7 @@ QMainWindow {
 QLabel {
     color: #CDD6F4;
     font-family: "SF Pro Display", "Segoe UI", sans-serif;
+    background-color: transparent;
 }
 
 /* ===== SIDEBAR ===== */
@@ -16,6 +17,11 @@ QFrame#Sidebar {
 
 /* ===== MENU BUTTON ===== */
 QPushButton#MenuBtn {
+    text-align: left;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
     color: #A6ADC8;
     background: transparent;
 }
@@ -23,42 +29,68 @@ QPushButton#MenuBtn {
 QPushButton#MenuBtn:hover {
     background-color: #313244;
     color: #89B4FA;
+    font-weight: bold;
 }
 
 QPushButton#MenuBtn:checked {
     background-color: #313244;
     color: #89B4FA;
+    font-weight: bold;
 }
 
 /* ===== CARDS ===== */
 QFrame#CardBlue {
+    border-radius: 20px;
+    padding: 15px;
     background-color: #2D60FF;
     color: white;
 }
 
-QFrame#CardWhite {
-    background-color: #313244;
-    border: 1px solid #313244;
+QFrame#CardBlue QLabel {
+    color: white;
 }
 
-/* ===== PROGRESS ===== */
+QFrame#CardWhite {
+    border-radius: 20px;
+    padding: 20px;
+    background-color: #313244;
+    border: 1px solid #45475A;
+}
+
+/* ===== SETTINGS SECTION ===== */
+QFrame#SettingsSection {
+    border-radius: 12px;
+    padding: 16px;
+    background-color: #313244;
+}
+
+/* ===== PROGRESS BAR ===== */
 QProgressBar {
+    border: none;
+    border-radius: 5px;
+    text-align: center;
     background-color: #45475A;
+    color: #CDD6F4;
 }
 
 QProgressBar::chunk {
+    border-radius: 5px;
     background-color: #89B4FA;
 }
 
 /* ===== TABLE ===== */
 QTableWidget {
+    border-radius: 15px;
+    font-size: 14px;
     background-color: #313244;
-    border: 1px solid #313244;
+    border: 1px solid #45475A;
     gridline-color: #45475A;
-    /* Không đặt color ở đây — để item tự quyết định màu chữ qua setForeground() */
 }
 
 QHeaderView::section {
+    padding: 10px;
+    border: none;
+    font-weight: bold;
     background-color: #45475A;
     border-bottom: 2px solid #89B4FA;
     color: #CDD6F4;
@@ -68,54 +100,108 @@ QHeaderView::section {
 QTableWidget::item {
     padding: 8px;
     border-bottom: 1px solid #45475A;
-    color: #CDD6F4; /* màu chữ mặc định cho ô trống */
+    color: #CDD6F4;
 }
 
-/* Bỏ outline khi focus */
 QTableWidget::item:focus {
     outline: none;
     border: none;
 }
 
-/* Hover: transparent để không ghi đè setBackground() của item lịch học */
 QTableWidget::item:hover {
     background-color: transparent;
 }
 
-/* Khi được chọn: giữ xanh + trắng */
 QTableWidget::item:selected {
     background-color: #2D60FF;
     color: white;
 }
 
-/* ===== INPUT ===== */
+/* ===== LINE EDIT ===== */
 QLineEdit {
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
     background-color: #45475A;
     color: #CDD6F4;
-    border: 1px solid #45475A;
+    border: 1px solid #585B70;
 }
 
 QLineEdit:focus {
     border: 1px solid #89B4FA;
 }
 
+QLineEdit#LoginInput {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #45475A;
+    color: #CDD6F4;
+    border: 1px solid #585B70;
+}
+
 /* ===== TEXT EDIT ===== */
 QTextEdit {
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 14px;
     background-color: #45475A;
     color: #CDD6F4;
-    border: 1px solid #45475A;
+    border: 1px solid #585B70;
 }
 
 QTextEdit:focus {
     border: 1px solid #89B4FA;
 }
 
-/* ===== LOGOUT ===== */
+/* ===== SCROLL AREA ===== */
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+/* ===== BUTTON ADD SCHEDULE ===== */
+QPushButton#BtnAddSchedule {
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-weight: bold;
+    background-color: #2D60FF;
+    color: white;
+}
+
+/* ===== LOGIN BUTTON ===== */
+QPushButton#BtnLogin {
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: bold;
+    background-color: #2D60FF;
+    color: white;
+}
+
+QPushButton#BtnLogin:hover {
+    background-color: #1557B0;
+}
+
+/* ===== LOGOUT BUTTON ===== */
 QPushButton#LogoutBtn {
+    background: transparent;
+    border: none;
+    padding: 10px;
+    text-align: left;
+    border-radius: 8px;
     color: #F38BA8;
 }
 
 QPushButton#LogoutBtn:hover {
     background-color: #3A1F1F;
     color: #F87171;
+}
+
+/* ===== DIALOG LOGIN ===== */
+QDialog#LoginWindow {
+    background-color: #1E1E2E;
 }
