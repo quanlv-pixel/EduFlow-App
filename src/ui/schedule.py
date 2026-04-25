@@ -110,6 +110,8 @@ class ScheduleWidget(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(True)
 
+        self.table.cellClicked.connect(self.handle_cell_click)
+
         for i in range(24):
             self.table.setRowHeight(i, 50)
 
@@ -217,6 +219,47 @@ class ScheduleWidget(QWidget):
             if success:
                 self.load_schedule()
             else:
-                QMessageBox.warning(self, "Lỗi", "Không thể thêm lịch!")
+                QMessageBox.warning(
+                    self,
+                    "Trùng lịch",
+                    "❌ Bạn đã có môn học trong khung giờ này!"
+                )
+        except Exception as e:
+            QMessageBox.critical(self, "Lỗi hệ thống", str(e))
+
+    def handle_cell_click(self, row, col):
+        item = self.table.item(row, col)
+
+        # Không có gì → bỏ qua
+        if not item:
+            return
+
+        # Không phải ô schedule → bỏ qua
+        if not item.data(Qt.UserRole):
+            return
+
+        # Xác nhận xóa
+        reply = QMessageBox.question(
+            self,
+            "Xóa lịch học",
+            "Bạn có chắc muốn xóa lịch này không?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        try:
+            success = self.controller.delete_schedule(
+                self.user_id,
+                col,   # day
+                row    # start_time
+            )
+
+            if success:
+                self.load_schedule()
+            else:
+                QMessageBox.warning(self, "Lỗi", "Không thể xóa lịch!")
+
         except Exception as e:
             QMessageBox.critical(self, "Lỗi hệ thống", str(e))

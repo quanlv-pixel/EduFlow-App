@@ -9,4 +9,7 @@ class ScheduleController:
         if end <= start:
             return False
 
-        return self.db.add_schedule(user_id,course,room,day,start,end)
+        return self.db.add_schedule(user_id, course, room, day, start, end)
+    
+    def delete_schedule(self, user_id, day, start):
+        return self.db.delete_schedule(user_id, day, start)
