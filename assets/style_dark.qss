@@ -38,7 +38,7 @@ QFrame#CardBlue {
 
 QFrame#CardWhite {
     background-color: #313244;
-    border: 1px solid #313244; /* ẩn viền */
+    border: 1px solid #313244;
 }
 
 /* ===== PROGRESS ===== */
@@ -55,7 +55,7 @@ QTableWidget {
     background-color: #313244;
     border: 1px solid #313244;
     gridline-color: #45475A;
-    color: #CDD6F4;
+    /* Không đặt color ở đây — để item tự quyết định màu chữ qua setForeground() */
 }
 
 QHeaderView::section {
@@ -64,11 +64,35 @@ QHeaderView::section {
     color: #CDD6F4;
 }
 
+/* ===== TABLE ITEM ===== */
+QTableWidget::item {
+    padding: 8px;
+    border-bottom: 1px solid #45475A;
+    color: #CDD6F4; /* màu chữ mặc định cho ô trống */
+}
+
+/* Bỏ outline khi focus */
+QTableWidget::item:focus {
+    outline: none;
+    border: none;
+}
+
+/* Hover: transparent để không ghi đè setBackground() của item lịch học */
+QTableWidget::item:hover {
+    background-color: transparent;
+}
+
+/* Khi được chọn: giữ xanh + trắng */
+QTableWidget::item:selected {
+    background-color: #2D60FF;
+    color: white;
+}
+
 /* ===== INPUT ===== */
 QLineEdit {
     background-color: #45475A;
     color: #CDD6F4;
-    border: 1px solid #45475A; /* KHÔNG để viền sáng */
+    border: 1px solid #45475A;
 }
 
 QLineEdit:focus {
@@ -84,12 +108,6 @@ QTextEdit {
 
 QTextEdit:focus {
     border: 1px solid #89B4FA;
-}
-
-/* ===== TABLE SELECT ===== */
-QTableWidget::item:selected {
-    background-color: #45475A;
-    color: #CDD6F4;
 }
 
 /* ===== LOGOUT ===== */

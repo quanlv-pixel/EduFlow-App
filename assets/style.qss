@@ -15,24 +15,23 @@ QPushButton#MenuBtn {
     border: none;
     border-radius: 8px;
     font-size: 15px;
-    color: #6F767E; /* Màu chữ chưa active */
+    color: #6F767E;
     background-color: transparent;
 }
 QPushButton#MenuBtn:hover {
-    background-color: #2D60FF;   /* xanh */
-    color: white; 
+    background-color: #2D60FF;
+    color: white;
     font-weight: bold;
 }
-/* Styles cho nút đang được chọn */
 QPushButton#MenuBtn:checked {
     background-color: #2D60FF;
     color: white;
     font-weight: bold;
 }
 
-/* Styles cho các Cards (ô nội dung bo góc) */
+/* Styles cho các Cards */
 QFrame#CardBlue {
-    background-color: #2D60FF; /* Xanh Royal */
+    background-color: #2D60FF;
     color: white;
     border-radius: 20px;
     padding: 15px;
@@ -55,7 +54,7 @@ QProgressBar {
     color: white;
 }
 QProgressBar::chunk {
-    background-color: #2D60FF; /* Xanh Royal */
+    background-color: #2D60FF;
     border-radius: 5px;
 }
 
@@ -65,8 +64,8 @@ QTableWidget {
     border: 1px solid #EDEDED;
     border-radius: 15px;
     gridline-color: #F0F2F5;
-    color: black;
     font-size: 14px;
+    /* Không đặt color ở đây — để item tự quyết định màu chữ qua setForeground() */
 }
 
 QHeaderView::section {
@@ -78,9 +77,28 @@ QHeaderView::section {
     color: #6F767E;
 }
 
+/* ===== TABLE ITEM ===== */
 QTableWidget::item {
-    padding: 10px;
+    padding: 8px;
     border-bottom: 1px solid #F0F2F5;
+    color: #1E2328; /* màu chữ mặc định cho ô trống */
+}
+
+/* Bỏ outline khi focus */
+QTableWidget::item:focus {
+    outline: none;
+    border: none;
+}
+
+/* Hover: transparent để không ghi đè setBackground() của item lịch học */
+QTableWidget::item:hover {
+    background-color: transparent;
+}
+
+/* Khi được chọn: giữ xanh + trắng */
+QTableWidget::item:selected {
+    background-color: #2D60FF;
+    color: white;
 }
 
 /* Nút thêm lịch học */
@@ -118,24 +136,23 @@ QPushButton#BtnLogin:hover {
     background-color: #1557B0;
 }
 
-/* ===== TEXT EDIT (Ô nội dung gốc & AI) ===== */
+/* ===== TEXT EDIT ===== */
 QTextEdit {
-    background-color: #FFFFFF;  /* nền trắng */
-    color: #1E2328;             /* chữ đậm dễ đọc */
+    background-color: #FFFFFF;
+    color: #1E2328;
     border: 1px solid #EDEDED;
     border-radius: 12px;
     padding: 10px;
     font-size: 14px;
 }
 
-/* Khi focus (click vào) */
 QTextEdit:focus {
-    border: 1px solid #2D60FF;  /* viền xanh khi chọn */
-}   
+    border: 1px solid #2D60FF;
+}
 
-/* ===== INPUT TEXT (search + input khác) ===== */
+/* ===== INPUT TEXT ===== */
 QLineEdit {
-    background-color: #FFFFFF;   /* nền trắng */
+    background-color: #FFFFFF;
     color: #1E2328;
     border: 1px solid #EDEDED;
     border-radius: 10px;
@@ -143,12 +160,11 @@ QLineEdit {
     font-size: 14px;
 }
 
-/* Khi focus */
 QLineEdit:focus {
     border: 1px solid #2D60FF;
 }
 
-/* ===== SCROLL AREA (fix nền xám) ===== */
+/* ===== SCROLL AREA ===== */
 QScrollArea {
     background-color: transparent;
     border: none;
@@ -162,18 +178,6 @@ QScrollArea > QWidget > QWidget {
 QLabel {
     background-color: transparent;
 }
-/* ===== TABLE ITEM (bỏ viền khi click/double click) ===== */
-QTableWidget::item:focus {
-    outline: none;
-    border: none;
-}
-
-/* Khi item được chọn */
-QTableWidget::item:selected {
-    background-color: #E8EDFF; /* màu xanh nhạt đẹp hơn */
-    color: #1E2328;
-    border: none;
-}
 
 /* ===== LOGOUT BUTTON ===== */
 QPushButton#LogoutBtn {
@@ -186,6 +190,6 @@ QPushButton#LogoutBtn {
 }
 
 QPushButton#LogoutBtn:hover {
-    background-color: #FEE2E2; /* đỏ nhạt */
-    color: #EF4444;            /* đỏ */
+    background-color: #FEE2E2;
+    color: #EF4444;
 }

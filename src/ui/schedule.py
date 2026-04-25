@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem,
-    QHeaderView, QFrame, QMessageBox, QInputDialog
+    QHeaderView, QFrame, QMessageBox, QInputDialog,
+    QAbstractItemView
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QColor, QFont, QBrush
 
 
 class ScheduleWidget(QWidget):
@@ -12,7 +13,6 @@ class ScheduleWidget(QWidget):
 
     def __init__(self, controller, user_id):
         super().__init__()
-
         self.controller = controller
         self.user_id = user_id
 
@@ -54,7 +54,8 @@ class ScheduleWidget(QWidget):
 
         # 👉 24h x 7 ngày
         self.table = QTableWidget(24, 7)
-
+        
+        self.table.setSelectionMode(QAbstractItemView.NoSelection)
         # header ngang (ngày)
         self.table.setHorizontalHeaderLabels(self.DAYS)
 
@@ -94,6 +95,7 @@ class ScheduleWidget(QWidget):
     # ================= LOAD =================
     def load_schedule(self):
         self.table.clearContents()
+        self.table.clearSpans()
 
         try:
             schedules = self.controller.get_schedule(self.user_id)
@@ -106,30 +108,47 @@ class ScheduleWidget(QWidget):
             return
 
         for s in schedules:
-            row = s.get("slot")
+            start = s.get("start_time")
+            end = s.get("end_time")
             col = s.get("day")
 
-            if row is None or col is None:
+
+            if start is None or end is None or col is None:
                 continue
 
             course = s.get("course", "")
             room = s.get("room", "")
 
+            # 🔥 gộp ô (quan trọng nhất)
+            self.table.setSpan(start, col, end - start, 1)
+
+            # chỉ tạo 1 item duy nhất
             text = f"{course}\n{room}"
 
             item = QTableWidgetItem(text)
-            item.setTextAlignment(Qt.AlignCenter)
+            item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item.setFlags(Qt.ItemIsEnabled)  # Bỏ ItemIsSelectable để tránh highlight đỏ khi click
 
-            # 🎨 màu theo môn
-            color = self.get_color_for_course(course)
-            item.setBackground(QColor(color))
+            # 🎨 màu
+            item.setBackground(QColor("#2D60FF"))
+            item.setForeground(QColor("#FFFFFF"))
 
-            # 🔥 font đẹp
+            # font
             font = QFont()
             font.setBold(True)
             item.setFont(font)
 
-            self.table.setItem(row, col, item)
+            # đặt vào ô đầu tiên
+            self.table.setItem(start, col, item)
+
+        # 🔄 Force repaint toàn bảng sau khi set xong tất cả item
+        self.table.setWordWrap(True)
+        self.table.viewport().update()
+        self.table.update()
+
+        # ⚡ Qt bug: spanned cell không render text ngay — QTimer force repaint sau khi widget show
+        QTimer.singleShot(0, self.table.viewport().update)
+        QTimer.singleShot(50, self.table.viewport().update)
 
     # ================= ADD =================
     def add_schedule(self):
@@ -158,13 +177,26 @@ class ScheduleWidget(QWidget):
         col = self.DAYS.index(day)
 
         # ===== HOUR =====
-        slot, ok = QInputDialog.getInt(
+        # ===== START =====
+        start, ok = QInputDialog.getInt(
             self,
-            "Giờ học",
-            "Chọn giờ (0-23):",
+            "Giờ bắt đầu",
+            "Nhập giờ bắt đầu (0-23):",
             7,
             0,
             23
+        )
+        if not ok:
+            return
+
+        # ===== END =====
+        end, ok = QInputDialog.getInt(
+            self,
+            "Giờ kết thúc",
+            "Nhập giờ kết thúc (1-24):",
+            start + 1,
+            1,
+            24
         )
         if not ok:
             return
@@ -176,7 +208,8 @@ class ScheduleWidget(QWidget):
                 course.strip(),
                 room.strip(),
                 col,
-                slot
+                start,
+                end
             )
 
             if success:
