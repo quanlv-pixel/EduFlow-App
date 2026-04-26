@@ -193,3 +193,20 @@ QPushButton#LogoutBtn:hover {
     background-color: #FEE2E2;
     color: #EF4444;
 }
+
+/* ===== NÚT XÓA LỊCH HỌC ===== */
+QPushButton#BtnDeleteSchedule {
+    background-color: #2D60FF;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-weight: bold;
+    border: none;
+}
+QPushButton#BtnDeleteSchedule:hover {
+    background-color: #1A4FE0;
+}
+QPushButton#BtnDeleteSchedule:checked {
+    background-color: #EF4444;
+    color: white;
+}

@@ -84,6 +84,13 @@ class Database:
                 document_id INTEGER,
                 summary_text TEXT
             )
+            """,
+
+            # MIGRATIONS — theo dõi các bước migrate đã chạy
+            """
+            CREATE TABLE IF NOT EXISTS migrations (
+                id TEXT PRIMARY KEY
+            )
             """
         ]
 
@@ -92,7 +99,35 @@ class Database:
 
         self.conn.commit()
 
+        self.migrate_once()
         self.create_default_user()
+
+
+    # ================= MIGRATIONS =================
+    def migrate_once(self):
+        """Chay cac buoc migrate dung 1 lan, tu dong bo qua neu da chay roi."""
+
+        def already_done(mid):
+            row = self.cursor.execute(
+                "SELECT id FROM migrations WHERE id=?", (mid,)
+            ).fetchone()
+            return row is not None
+
+        def mark_done(mid):
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)", (mid,)
+            )
+            self.conn.commit()
+
+        # v1: doi start_time/end_time tu gio sang phut
+        mid = "schedule_time_to_minutes"
+        if not already_done(mid):
+            self.cursor.execute(
+                "UPDATE schedule SET start_time = start_time * 60, end_time = end_time * 60"
+            )
+            self.conn.commit()
+            mark_done(mid)
+            print("Migration: schedule_time_to_minutes done")
 
     # ================= DEFAULT USER =================
     def create_default_user(self):
@@ -163,6 +198,12 @@ class Database:
             VALUES (?, ?, ?, ?, ?, ?)
             """,
             (user_id, course, room, day, start, end)
+        )
+
+    def delete_schedule(self, schedule_id):
+        return self.execute(
+            "DELETE FROM schedule WHERE id=?",
+            (schedule_id,)
         )
 
     # ================= FLASHCARDS =================
