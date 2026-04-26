@@ -221,3 +221,23 @@ QTextEdit#SummaryResult {
     background: #F4F7FF;
     color: #1E2328;
 }
+
+#Flashcard {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #E6E8EC;
+}
+
+#Flashcard:hover {
+    border: 1px solid #2D60FF;
+}
+
+#BtnSecondary {
+    background: #F4F7FF;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+#BtnSecondary:hover {
+    background: #E0E7FF;
+}
