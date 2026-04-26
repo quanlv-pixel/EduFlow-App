@@ -161,17 +161,25 @@ class ScheduleCanvas(QWidget):
             f_bold = QFont("Segoe UI", 9)
             f_bold.setBold(True)
             painter.setFont(f_bold)
+            fm_bold = painter.fontMetrics()
+
+            # Đo chiều cao thực tế của tên môn (có thể wrap nhiều dòng)
+            course_bound = fm_bold.boundingRect(
+                inner, Qt.TextWordWrap, course
+            )
+            course_h = min(course_bound.height(), inner.height())
+
             painter.drawText(inner, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
                              course)
 
-            # Chi tiết (phòng + giờ) — chỉ hiện khi ô đủ cao
-            if ch > 38:
+            # Chi tiết (phòng + giờ) — đặt ngay dưới tên môn thực tế
+            detail_top = inner.top() + course_h + 3
+            detail_h   = inner.bottom() - detail_top
+            if ch > 38 and detail_h > 0:
                 f_detail = QFont("Segoe UI", 8)
                 painter.setFont(f_detail)
-                fm = painter.fontMetrics()
-                detail_rect = QRect(inner.left(),
-                                    inner.top() + fm.height() + 4,
-                                    inner.width(), inner.height())
+                detail_rect = QRect(inner.left(), detail_top,
+                                    inner.width(), detail_h)
                 detail = (room + "  •  " if room else "") + time_str
                 painter.drawText(detail_rect,
                                  Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,

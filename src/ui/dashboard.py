@@ -73,6 +73,8 @@ class EduDashboard(QMainWindow):
         logo.setStyleSheet("font-size:22px;font-weight:bold;color:#2D60FF;")
         layout.addWidget(logo)
 
+        layout.addSpacing(30)    # stretch trên → đẩy nút xuống giữa
+
         self.menu_items = ["overview", "schedule", "courses", "flash", "summary", "settings"]  # ← THÊM "settings"
         names = ["Tổng quan", "Thời khóa biểu", "Khóa học", "Flashcards", "Tóm tắt AI", "Cài đặt"]  # ← THÊM "Cài đặt"
 

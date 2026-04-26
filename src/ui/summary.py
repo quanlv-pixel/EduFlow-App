@@ -47,13 +47,8 @@ class SummaryWidget(QWidget):
         left.addWidget(QLabel("<b>Nội dung gốc</b>"))
 
         self.txt_original = QTextEdit()
+        self.txt_original.setObjectName("SummaryOriginal")
         self.txt_original.setPlaceholderText("Nội dung file sẽ hiển thị ở đây...")
-        self.txt_original.setStyleSheet("""
-            border-radius:12px;
-            border:1px solid #DDD;
-            padding:10px;
-            background:white;
-        """)
         left.addWidget(self.txt_original)
 
         # ===== RIGHT: SUMMARY =====
@@ -61,14 +56,9 @@ class SummaryWidget(QWidget):
         right.addWidget(QLabel("<b>Tóm tắt AI</b>"))
 
         self.txt_summary = QTextEdit()
+        self.txt_summary.setObjectName("SummaryResult")
         self.txt_summary.setReadOnly(True)
         self.txt_summary.setPlaceholderText("Kết quả AI sẽ hiển thị ở đây...")
-        self.txt_summary.setStyleSheet("""
-            border-radius:12px;
-            border:1px solid #2D60FF;
-            padding:10px;
-            background:#F4F7FF;
-        """)
         right.addWidget(self.txt_summary)
 
         display.addLayout(left)

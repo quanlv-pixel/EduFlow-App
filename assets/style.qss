@@ -1,14 +1,15 @@
 /* Tổng thể app */
-QMainWindow { background-color: #F0F2F5; } /* Màu nền content */
+QMainWindow { background-color: #F0F2F5; }
 QLabel { color: #1E2328; font-family: "SF Pro Display", "Segoe UI", sans-serif; }
 
-/* Styles cho Sidebar */
+/* ===== SIDEBAR ===== */
 QFrame#Sidebar {
-    background-color: #FFFFFF; /* Sidebar màu trắng */
+    background-color: #FFFFFF;
     border-right: 1px solid #EDEDED;
+
 }
 
-/* Styles cho Nút Menu Sidebar */
+/* ===== MENU BUTTON ===== */
 QPushButton#MenuBtn {
     text-align: left;
     padding: 12px 18px;
@@ -29,7 +30,7 @@ QPushButton#MenuBtn:checked {
     font-weight: bold;
 }
 
-/* Styles cho các Cards */
+/* ===== CARDS ===== */
 QFrame#CardBlue {
     background-color: #2D60FF;
     color: white;
@@ -45,7 +46,7 @@ QFrame#CardWhite {
     border: 1px solid #EDEDED;
 }
 
-/* Styles cho Progress Bar */
+/* ===== PROGRESS BAR ===== */
 QProgressBar {
     border: none;
     background-color: #E0E0E0;
@@ -58,14 +59,13 @@ QProgressBar::chunk {
     border-radius: 5px;
 }
 
-/* Style cho bảng thời khóa biểu */
+/* ===== TABLE ===== */
 QTableWidget {
     background-color: white;
     border: 1px solid #EDEDED;
     border-radius: 15px;
     gridline-color: #F0F2F5;
     font-size: 14px;
-    /* Không đặt color ở đây — để item tự quyết định màu chữ qua setForeground() */
 }
 
 QHeaderView::section {
@@ -81,36 +81,51 @@ QHeaderView::section {
 QTableWidget::item {
     padding: 8px;
     border-bottom: 1px solid #F0F2F5;
-    color: #1E2328; /* màu chữ mặc định cho ô trống */
+    color: #1E2328;
 }
 
-/* Bỏ outline khi focus */
 QTableWidget::item:focus {
     outline: none;
     border: none;
 }
 
-/* Hover: transparent để không ghi đè setBackground() của item lịch học */
 QTableWidget::item:hover {
     background-color: transparent;
 }
 
-/* Khi được chọn: giữ xanh + trắng */
 QTableWidget::item:selected {
     background-color: #2D60FF;
     color: white;
 }
 
-/* Nút thêm lịch học */
+/* ===== BUTTON ADD SCHEDULE ===== */
 QPushButton#BtnAddSchedule {
     background-color: #2D60FF;
     color: white;
     border-radius: 8px;
     padding: 8px 15px;
     font-weight: bold;
+    border: none;
 }
 
-/* Style cho cửa sổ đăng nhập */
+/* ===== NÚT XÓA LỊCH HỌC ===== */
+QPushButton#BtnDeleteSchedule {
+    background-color: #2D60FF;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-weight: bold;
+    border: none;
+}
+QPushButton#BtnDeleteSchedule:hover {
+    background-color: #1A4FE0;
+}
+QPushButton#BtnDeleteSchedule:checked {
+    background-color: #EF4444;
+    color: white;
+}
+
+/* ===== LOGIN ===== */
 QDialog#LoginWindow {
     background-color: white;
 }
@@ -130,8 +145,8 @@ QPushButton#BtnLogin {
     font-weight: bold;
     border-radius: 8px;
     padding: 12px;
+    border: none;
 }
-
 QPushButton#BtnLogin:hover {
     background-color: #1557B0;
 }
@@ -145,12 +160,11 @@ QTextEdit {
     padding: 10px;
     font-size: 14px;
 }
-
 QTextEdit:focus {
     border: 1px solid #2D60FF;
 }
 
-/* ===== INPUT TEXT ===== */
+/* ===== LINE EDIT ===== */
 QLineEdit {
     background-color: #FFFFFF;
     color: #1E2328;
@@ -159,7 +173,6 @@ QLineEdit {
     padding: 8px 12px;
     font-size: 14px;
 }
-
 QLineEdit:focus {
     border: 1px solid #2D60FF;
 }
@@ -169,12 +182,11 @@ QScrollArea {
     background-color: transparent;
     border: none;
 }
-
 QScrollArea > QWidget > QWidget {
     background-color: transparent;
 }
 
-/* ===== LABEL trong content ===== */
+/* ===== LABEL ===== */
 QLabel {
     background-color: transparent;
 }
@@ -188,25 +200,24 @@ QPushButton#LogoutBtn {
     text-align: left;
     border-radius: 8px;
 }
-
 QPushButton#LogoutBtn:hover {
     background-color: #FEE2E2;
     color: #EF4444;
 }
 
-/* ===== NÚT XÓA LỊCH HỌC ===== */
-QPushButton#BtnDeleteSchedule {
-    background-color: #2D60FF;
-    color: white;
-    border-radius: 8px;
-    padding: 8px 15px;
-    font-weight: bold;
-    border: none;
+/* ===== SUMMARY WIDGET ===== */
+QTextEdit#SummaryOriginal {
+    border-radius: 12px;
+    border: 1px solid #DDD;
+    padding: 10px;
+    background: white;
+    color: #1E2328;
 }
-QPushButton#BtnDeleteSchedule:hover {
-    background-color: #1A4FE0;
-}
-QPushButton#BtnDeleteSchedule:checked {
-    background-color: #EF4444;
-    color: white;
+
+QTextEdit#SummaryResult {
+    border-radius: 12px;
+    border: 1px solid #2D60FF;
+    padding: 10px;
+    background: #F4F7FF;
+    color: #1E2328;
 }

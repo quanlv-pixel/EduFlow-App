@@ -171,6 +171,26 @@ QPushButton#BtnAddSchedule {
     font-weight: bold;
     background-color: #2D60FF;
     color: white;
+    border: none;
+}
+
+/* ===== NÚT XÓA LỊCH HỌC ===== */
+QPushButton#BtnDeleteSchedule {
+    background-color: #2D60FF;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-weight: bold;
+    border: none;
+}
+
+QPushButton#BtnDeleteSchedule:hover {
+    background-color: #1A4FE0;
+}
+
+QPushButton#BtnDeleteSchedule:checked {
+    background-color: #EF4444;
+    color: white;
 }
 
 /* ===== LOGIN BUTTON ===== */
@@ -180,6 +200,7 @@ QPushButton#BtnLogin {
     font-weight: bold;
     background-color: #2D60FF;
     color: white;
+    border: none;
 }
 
 QPushButton#BtnLogin:hover {
@@ -204,4 +225,21 @@ QPushButton#LogoutBtn:hover {
 /* ===== DIALOG LOGIN ===== */
 QDialog#LoginWindow {
     background-color: #1E1E2E;
+}
+
+/* ===== SUMMARY WIDGET ===== */
+QTextEdit#SummaryOriginal {
+    border-radius: 12px;
+    border: 1px solid #45475A;
+    padding: 10px;
+    background-color: #313244;
+    color: #CDD6F4;
+}
+
+QTextEdit#SummaryResult {
+    border-radius: 12px;
+    border: 1px solid #89B4FA;
+    padding: 10px;
+    background-color: #1E1E2E;
+    color: #CDD6F4;
 }
