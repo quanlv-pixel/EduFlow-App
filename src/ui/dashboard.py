@@ -278,11 +278,58 @@ class EduDashboard(QMainWindow):
         sch = QFrame()
         sch.setObjectName("CardWhite")
         v = QVBoxLayout(sch)
+        v.setSpacing(8)
 
         v.addWidget(QLabel("<b>Lịch học hôm nay</b>"))
-        v.addStretch()
-        v.addWidget(QLabel("Không có lịch học nào hôm nay.", alignment=Qt.AlignCenter))
-        v.addStretch()
+
+        # Lấy thứ hôm nay (Monday=0 … Sunday=6) — khớp với cột `day` trong DB
+        today_col = datetime.now().weekday()
+        all_schedules = self.db.get_schedule(self.user_info["id"]) or []
+        today_schedules = sorted(
+            [s for s in all_schedules if s.get("day") == today_col],
+            key=lambda s: s.get("start_time", 0)
+        )
+
+        if not today_schedules:
+            v.addStretch()
+            v.addWidget(QLabel("Không có lịch học nào hôm nay.", alignment=Qt.AlignCenter))
+            v.addStretch()
+        else:
+            v.addSpacing(4)
+            for s in today_schedules:
+                item = QFrame()
+                item.setStyleSheet(
+                    "background:#EEF2FF; border-radius:8px; padding:4px;"
+                )
+                h = QHBoxLayout(item)
+                h.setContentsMargins(10, 6, 10, 6)
+
+                # Accent bar màu xanh bên trái
+                bar = QFrame()
+                bar.setFixedWidth(4)
+                bar.setStyleSheet("background:#2D60FF; border-radius:2px;")
+                h.addWidget(bar)
+                h.addSpacing(8)
+
+                # Tên môn + phòng
+                info_v = QVBoxLayout()
+                lbl_course = QLabel(f"<b>{s.get('course', '')}</b>")
+                lbl_course.setStyleSheet("font-size:13px;")
+                sh, sm = s["start_time"] // 60, s["start_time"] % 60
+                eh, em = s["end_time"]   // 60, s["end_time"]   % 60
+                time_room = f"{sh:02d}:{sm:02d} – {eh:02d}:{em:02d}"
+                if s.get("room"):
+                    time_room += f"  •  {s['room']}"
+                lbl_detail = QLabel(time_room)
+                lbl_detail.setStyleSheet("font-size:11px; color:#6F767E;")
+                info_v.addWidget(lbl_course)
+                info_v.addWidget(lbl_detail)
+
+                h.addLayout(info_v)
+                h.addStretch()
+                v.addWidget(item)
+
+            v.addStretch()
 
         # progress
         prog = QFrame()
