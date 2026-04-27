@@ -25,13 +25,11 @@ QPushButton#MenuBtn {
     color: #A6ADC8;
     background: transparent;
 }
-
 QPushButton#MenuBtn:hover {
     background-color: #313244;
     color: #89B4FA;
     font-weight: bold;
 }
-
 QPushButton#MenuBtn:checked {
     background-color: #313244;
     color: #89B4FA;
@@ -45,7 +43,6 @@ QFrame#CardBlue {
     background-color: #2D60FF;
     color: white;
 }
-
 QFrame#CardBlue QLabel {
     color: white;
 }
@@ -72,7 +69,6 @@ QProgressBar {
     background-color: #45475A;
     color: #CDD6F4;
 }
-
 QProgressBar::chunk {
     border-radius: 5px;
     background-color: #89B4FA;
@@ -86,7 +82,6 @@ QTableWidget {
     border: 1px solid #45475A;
     gridline-color: #45475A;
 }
-
 QHeaderView::section {
     padding: 10px;
     border: none;
@@ -102,16 +97,13 @@ QTableWidget::item {
     border-bottom: 1px solid #45475A;
     color: #CDD6F4;
 }
-
 QTableWidget::item:focus {
     outline: none;
     border: none;
 }
-
 QTableWidget::item:hover {
     background-color: transparent;
 }
-
 QTableWidget::item:selected {
     background-color: #2D60FF;
     color: white;
@@ -126,11 +118,9 @@ QLineEdit {
     color: #CDD6F4;
     border: 1px solid #585B70;
 }
-
 QLineEdit:focus {
     border: 1px solid #89B4FA;
 }
-
 QLineEdit#LoginInput {
     padding: 12px;
     border-radius: 8px;
@@ -149,7 +139,6 @@ QTextEdit {
     color: #CDD6F4;
     border: 1px solid #585B70;
 }
-
 QTextEdit:focus {
     border: 1px solid #89B4FA;
 }
@@ -159,7 +148,6 @@ QScrollArea {
     background-color: transparent;
     border: none;
 }
-
 QScrollArea > QWidget > QWidget {
     background-color: transparent;
 }
@@ -183,11 +171,9 @@ QPushButton#BtnDeleteSchedule {
     font-weight: bold;
     border: none;
 }
-
 QPushButton#BtnDeleteSchedule:hover {
     background-color: #1A4FE0;
 }
-
 QPushButton#BtnDeleteSchedule:checked {
     background-color: #EF4444;
     color: white;
@@ -202,7 +188,6 @@ QPushButton#BtnLogin {
     color: white;
     border: none;
 }
-
 QPushButton#BtnLogin:hover {
     background-color: #1557B0;
 }
@@ -216,7 +201,6 @@ QPushButton#LogoutBtn {
     border-radius: 8px;
     color: #F38BA8;
 }
-
 QPushButton#LogoutBtn:hover {
     background-color: #3A1F1F;
     color: #F87171;
@@ -235,11 +219,153 @@ QTextEdit#SummaryOriginal {
     background-color: #313244;
     color: #CDD6F4;
 }
-
 QTextEdit#SummaryResult {
     border-radius: 12px;
     border: 1px solid #89B4FA;
     padding: 10px;
     background-color: #1E1E2E;
     color: #CDD6F4;
+}
+
+/* ===== SCHEDULE ITEM (OVERVIEW) ===== */
+QFrame#ScheduleItem {
+    background-color: #3B3F5C;
+    border-radius: 8px;
+    padding: 4px;
+}
+QFrame#ScheduleAccentBar {
+    background-color: #89B4FA;
+    border-radius: 2px;
+}
+QLabel#ScheduleItemTitle {
+    font-size: 13px;
+    color: #CDD6F4;
+}
+QLabel#ScheduleItemDetail {
+    font-size: 11px;
+    color: #A6ADC8;
+}
+
+/* ===== TODO WIDGET ===== */
+
+QFrame#TodoStatBox {
+    background-color: #313244;
+    border-radius: 14px;
+    border: 1px solid #45475A;
+}
+QLabel#TodoStatValue {
+    font-size: 26px;
+    font-weight: bold;
+    color: #89B4FA;
+}
+QLabel#TodoStatLabel {
+    font-size: 12px;
+    color: #A6ADC8;
+}
+
+QLineEdit#TodoInput {
+    background-color: #3B3F5C;
+    border: 1.5px solid #45475A;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #CDD6F4;
+}
+QLineEdit#TodoInput:focus {
+    border: 1.5px solid #89B4FA;
+}
+
+QPushButton#TodoAddBtn {
+    background-color: #2D60FF;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+}
+QPushButton#TodoAddBtn:hover {
+    background-color: #1A4FE0;
+}
+
+QLabel#TodoSectionLabel {
+    font-size: 15px;
+    font-weight: bold;
+    color: #CDD6F4;
+}
+
+QPushButton#TodoClearBtn {
+    background-color: #3A1F1F;
+    color: #F38BA8;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+}
+QPushButton#TodoClearBtn:hover {
+    background-color: #4A2525;
+    color: #F87171;
+}
+
+QFrame#TodoItem {
+    background-color: #3B3F5C;
+    border-radius: 10px;
+    border: 1px solid #45475A;
+}
+QFrame#TodoItem:hover {
+    border: 1px solid #89B4FA;
+}
+
+QCheckBox#TodoCheck {
+    spacing: 0px;
+}
+QCheckBox#TodoCheck::indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid #585B70;
+    background: #313244;
+}
+QCheckBox#TodoCheck::indicator:checked {
+    background-color: #89B4FA;
+    border: 2px solid #89B4FA;
+    image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyNCAyNCc+PHBvbHlsaW5lIHBvaW50cz0nMjAgNiA5IDE3IDQgMTInIGZpbGw9J25vbmUnIHN0cm9rZT0nIzFFMUUyRScgc3Ryb2tlLXdpZHRoPSczLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcvPjwvc3ZnPg==");
+}
+QCheckBox#TodoCheck::indicator:hover {
+    border: 2px solid #89B4FA;
+}
+
+QLabel#TodoLabel {
+    font-size: 14px;
+    color: #CDD6F4;
+}
+QLabel#TodoLabel[done="true"] {
+    color: #585B70;
+}
+
+QPushButton#TodoDeleteBtn {
+    background-color: transparent;
+    color: #585B70;
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: bold;
+}
+QPushButton#TodoDeleteBtn:hover {
+    background-color: #3A1F1F;
+    color: #F38BA8;
+}
+
+QLabel#TodoEmptyLabel {
+    color: #585B70;
+    font-size: 14px;
+    padding: 40px;
+}
+
+QLabel#TodoDate {
+    font-size: 13px;
+    color: #A6ADC8;
+    background: #45475A;
+    padding: 4px 12px;
+    border-radius: 8px;
 }
