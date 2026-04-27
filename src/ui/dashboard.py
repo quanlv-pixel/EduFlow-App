@@ -12,6 +12,7 @@ from src.ui.flashcard import FlashcardWidget
 from src.ui.course import CoursesWidget
 from src.ui.settings_widget import SettingsWidget, LanguageManager, tr
 from src.ui.todo_widget import TodoWidget
+from src.services.schedule_notifier import ScheduleNotifier
 
 from src.controllers.flashcard_controller import FlashcardController
 from src.controllers.course_controller import CourseController
@@ -43,6 +44,7 @@ class EduDashboard(QMainWindow):
         self.flash_controller = FlashcardController(self.db, self.ai)
         self.summary_controller = SummaryController(self.ai, self.db)
         self.schedule_controller = ScheduleController(self.db)
+        self.notifier = ScheduleNotifier(self.schedule_controller, self.user_info["id"])
 
         self.setWindowTitle("EduFlow - Dashboard")
         self.resize(1300, 850)
