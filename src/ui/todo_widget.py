@@ -54,7 +54,12 @@ class TodoItemWidget(QFrame):
         # ── Checkbox ──
         self.chk = QCheckBox()
         self.chk.setObjectName("TodoCheck")
+        
+        self.chk.blockSignals(True)
         self.chk.setChecked(done)
+        self.chk.blockSignals(False)
+
+        
         self.chk.setCursor(Qt.PointingHandCursor)
         self.chk.stateChanged.connect(self._on_check)
         layout.addWidget(self.chk)
@@ -76,7 +81,8 @@ class TodoItemWidget(QFrame):
         layout.addWidget(btn_del)
 
     def _on_check(self, state):
-        done = (state == Qt.Checked)
+        # stateChanged phát ra int (0=unchecked, 2=checked), không phải enum
+        done = bool(state)
         self._update_style(done)
         self.on_toggle(self.task_id, done)
 
@@ -273,8 +279,9 @@ class TodoWidget(QWidget):
         # Remove all except stretch
         while self.list_layout.count() > 1:
             item = self.list_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            w = item.widget()
+            if w and w is not self.empty_lbl:
+                w.deleteLater()
 
         if not self._todos:
             self.list_layout.insertWidget(0, self.empty_lbl)
