@@ -10,7 +10,7 @@ from src.ui.schedule import ScheduleWidget
 from src.ui.summary import SummaryWidget
 from src.ui.flashcard import FlashcardWidget
 from src.ui.course import CoursesWidget
-from src.ui.settings_widget import SettingsWidget  
+from src.ui.settings_widget import SettingsWidget, LanguageManager, tr
 from src.ui.todo_widget import TodoWidget
 
 from src.controllers.flashcard_controller import FlashcardController
@@ -59,7 +59,12 @@ class EduDashboard(QMainWindow):
         self.setup_sidebar()
         self.setup_content()
         self.current_theme = "light"
-        self.apply_theme("light") 
+        self.apply_theme("light")
+
+        # Cập nhật sidebar text mỗi khi ngôn ngữ thay đổi
+        LanguageManager.instance().language_changed.connect(
+            lambda _: self.retranslate_ui()
+        )
 
     # ================= SIDEBAR =================
     def setup_sidebar(self):
@@ -77,7 +82,10 @@ class EduDashboard(QMainWindow):
         layout.addSpacing(30)    # stretch trên → đẩy nút xuống giữa
 
         self.menu_items = ["overview", "schedule", "courses", "flash", "summary", "todo", "settings"]
-        names = ["Tổng quan", "Thời khóa biểu", "Khóa học", "Flashcards", "Tóm tắt AI", "Todo List", "Cài đặt"]
+        names = [
+            tr("menu_overview"), tr("menu_schedule"), tr("menu_courses"),
+            tr("menu_flash"), tr("menu_summary"), tr("menu_todo"), tr("menu_settings"),
+        ]
 
         self.menu_buttons = {}
 
@@ -115,11 +123,11 @@ class EduDashboard(QMainWindow):
         layout.addWidget(user_frame)
 
         # LOGOUT
-        logout = QPushButton("↪ Đăng xuất")
-        logout.setObjectName("LogoutBtn")
-        logout.setCursor(Qt.PointingHandCursor)
-        logout.clicked.connect(self.handle_logout)
-        layout.addWidget(logout)
+        self.logout_btn = QPushButton(tr("logout"))
+        self.logout_btn.setObjectName("LogoutBtn")
+        self.logout_btn.setCursor(Qt.PointingHandCursor)
+        self.logout_btn.clicked.connect(self.handle_logout)
+        layout.addWidget(self.logout_btn)
 
         self.main_layout.addWidget(sidebar)
 
@@ -379,6 +387,33 @@ class EduDashboard(QMainWindow):
             self.current_theme = "light"
 
         app.setStyleSheet(qss)
+
+    # ================= RETRANSLATE =================
+    def retranslate_ui(self):
+        """Cập nhật toàn bộ text sidebar khi người dùng đổi ngôn ngữ.
+        Guard hasattr để tránh lỗi khi được gọi trong lúc sidebar chưa build xong.
+        """
+        # menu_buttons có thể chưa tồn tại nếu gọi quá sớm
+        if not hasattr(self, "menu_buttons"):
+            return
+
+        menu_keys = {
+            "overview": "menu_overview",
+            "schedule": "menu_schedule",
+            "courses":  "menu_courses",
+            "flash":    "menu_flash",
+            "summary":  "menu_summary",
+            "todo":     "menu_todo",
+            "settings": "menu_settings",
+        }
+        for key, tr_key in menu_keys.items():
+            btn = self.menu_buttons.get(key)
+            if btn:
+                btn.setText(f"  {tr(tr_key)}")
+
+        # logout_btn được tạo sau vòng lặp menu, nên cũng cần guard
+        if hasattr(self, "logout_btn"):
+            self.logout_btn.setText(tr("logout"))
 
     # ================= LOGOUT =================
     def handle_logout(self):
