@@ -120,6 +120,14 @@ TRANSLATIONS = {
 
         "input_course":         "Môn học",
         "input_course_label":   "Nhập tên môn:",
+        # Days of week
+        "mon":                  "Thứ Hai",
+        "tue":                  "Thứ Ba",
+        "wed":                  "Thứ Tư",
+        "thu":                  "Thứ Năm",
+        "fri":                  "Thứ Sáu",
+        "sat":                  "Thứ Bảy",
+        "sun":                  "Chủ Nhật",
         
         # COURSE
         # Course UI (bổ sung)
@@ -266,6 +274,14 @@ TRANSLATIONS = {
 
         "input_course":         "Course",
         "input_course_label":   "Enter course name:",
+        # Days of week
+        "mon":                  "Monday",
+        "tue":                  "Tuesday",
+        "wed":                  "Wednesday",
+        "thu":                  "Thursday",
+        "fri":                  "Friday",
+        "sat":                  "Saturday",
+        "sun":                  "Sunday",
 
         # COURSE
         # Course UI
@@ -412,6 +428,15 @@ TRANSLATIONS = {
 
         "input_course":         "课程",
         "input_course_label":   "输入课程名称:",
+
+        # Days of week
+        "mon":                  "周一",
+        "tue":                  "周二",
+        "wed":                  "周三",
+        "thu":                  "周四",
+        "fri":                  "周五",
+        "sat":                  "周六",
+        "sun":                  "周日",
 
         # COURSE
         # Course UI
