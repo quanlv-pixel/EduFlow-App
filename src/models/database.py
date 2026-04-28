@@ -4,7 +4,6 @@ import os
 
 class Database:
     def __init__(self):
-        # 📁 path DB (ổn định mọi máy)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         db_path = os.path.join(base_dir, "../../eduflow.db")
         db_path = os.path.abspath(db_path)
@@ -13,7 +12,6 @@ class Database:
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
 
-        # bật foreign key
         self.cursor.execute("PRAGMA foreign_keys = ON")
 
         self.init_db()
@@ -27,9 +25,9 @@ class Database:
             """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                name TEXT,
+                email TEXT UNIQUE,
+                password TEXT
             )
             """,
 
@@ -44,7 +42,28 @@ class Database:
             )
             """,
 
-            # ✅ SCHEDULE (NEW VERSION)
+            # 🔥 LESSONS (NEW)
+            """
+            CREATE TABLE IF NOT EXISTS lessons (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                course_id INTEGER,
+                title TEXT,
+                url TEXT,
+                source TEXT
+            )
+            """,
+
+            # 🔥 RESOURCES (NEW)
+            """
+            CREATE TABLE IF NOT EXISTS course_resources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                course_id INTEGER,
+                title TEXT,
+                url TEXT
+            )
+            """,
+
+            # SCHEDULE
             """
             CREATE TABLE IF NOT EXISTS schedule (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +105,7 @@ class Database:
             )
             """,
 
-            # MIGRATIONS — theo dõi các bước migrate đã chạy
+            # MIGRATIONS
             """
             CREATE TABLE IF NOT EXISTS migrations (
                 id TEXT PRIMARY KEY
@@ -98,36 +117,25 @@ class Database:
             self.cursor.execute(q)
 
         self.conn.commit()
-
         self.migrate_once()
         self.create_default_user()
 
-
-    # ================= MIGRATIONS =================
+    # ================= MIGRATION =================
     def migrate_once(self):
-        """Chay cac buoc migrate dung 1 lan, tu dong bo qua neu da chay roi."""
+        mid = "schedule_time_to_minutes"
 
-        def already_done(mid):
-            row = self.cursor.execute(
-                "SELECT id FROM migrations WHERE id=?", (mid,)
-            ).fetchone()
-            return row is not None
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid,)
+        ).fetchone()
 
-        def mark_done(mid):
+        if not row:
+            self.cursor.execute(
+                "UPDATE schedule SET start_time = start_time * 60, end_time = end_time * 60"
+            )
             self.cursor.execute(
                 "INSERT INTO migrations (id) VALUES (?)", (mid,)
             )
             self.conn.commit()
-
-        # v1: doi start_time/end_time tu gio sang phut
-        mid = "schedule_time_to_minutes"
-        if not already_done(mid):
-            self.cursor.execute(
-                "UPDATE schedule SET start_time = start_time * 60, end_time = end_time * 60"
-            )
-            self.conn.commit()
-            mark_done(mid)
-            print("Migration: schedule_time_to_minutes done")
 
     # ================= DEFAULT USER =================
     def create_default_user(self):
@@ -150,8 +158,7 @@ class Database:
             cur.execute(query, params)
 
             if fetch:
-                rows = cur.fetchall()
-                return [dict(r) for r in rows]
+                return [dict(r) for r in cur.fetchall()]
 
             self.conn.commit()
             return True
@@ -174,13 +181,44 @@ class Database:
         return self.execute(
             "SELECT * FROM courses WHERE user_id=?",
             (user_id,),
-            fetch=True
+            True
         )
 
     def add_course(self, user_id, name, code, professor):
-        return self.execute(
+        cur = self.conn.cursor()
+        cur.execute(
             "INSERT INTO courses (user_id, name, code, professor) VALUES (?, ?, ?, ?)",
             (user_id, name, code, professor)
+        )
+        self.conn.commit()
+        return cur.lastrowid  # 🔥 IMPORTANT
+
+    # ================= LESSON =================
+    def add_lesson(self, course_id, title, url, source):
+        return self.execute(
+            "INSERT INTO lessons (course_id, title, url, source) VALUES (?, ?, ?, ?)",
+            (course_id, title, url, source)
+        )
+
+    def get_lessons(self, course_id):
+        return self.execute(
+            "SELECT * FROM lessons WHERE course_id=?",
+            (course_id,),
+            True
+        )
+
+    # ================= RESOURCE =================
+    def add_resource(self, course_id, title, url):
+        return self.execute(
+            "INSERT INTO course_resources (course_id, title, url) VALUES (?, ?, ?)",
+            (course_id, title, url)
+        )
+
+    def get_resources(self, course_id):
+        return self.execute(
+            "SELECT * FROM course_resources WHERE course_id=?",
+            (course_id,),
+            True
         )
 
     # ================= SCHEDULE =================
@@ -188,7 +226,7 @@ class Database:
         return self.execute(
             "SELECT * FROM schedule WHERE user_id=?",
             (user_id,),
-            fetch=True
+            True
         )
 
     def add_schedule(self, user_id, course, room, day, start, end):
@@ -211,7 +249,7 @@ class Database:
         return self.execute(
             "SELECT * FROM flashcards WHERE user_id=?",
             (user_id,),
-            fetch=True
+            True
         )
 
     def add_flashcard(self, user_id, q, a):

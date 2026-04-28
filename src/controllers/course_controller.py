@@ -1,6 +1,14 @@
+from src.services.course_fetcher import CourseFetcher
+from src.services.ai_ranker import AIRanker
+from src.services.lesson_mapper import LessonMapper
+
+
 class CourseController:
     def __init__(self, db, ai=None):
         self.db = db
+        self.course_fetcher = CourseFetcher()
+        self.ai_ranker = AIRanker()
+        self.lesson_mapper = LessonMapper()
         self.ai = ai  # optional (sau này dùng AI gợi ý khóa học)
 
     # ================= GET =================
@@ -14,17 +22,40 @@ class CourseController:
 
     # ================= ADD =================
     def add_course(self, user_id, name, code, professor):
-        # validate
         if not name or not name.strip():
             raise ValueError("Tên khóa học không được để trống")
 
         try:
-            return self.db.add_course(
+            # 1. lưu course
+            course_id = self.db.add_course(
                 user_id,
                 name.strip(),
                 code.strip() if code else "",
                 professor.strip() if professor else ""
             )
+
+            # 2. search internet
+            results = self.fetcher.search_courses(name)
+
+            # 3. AI lọc
+            ranked = self.ranker.rank(results)
+
+            # 4. convert → lesson
+            lessons = self.mapper.map_to_lessons(ranked)
+
+            # 5. lưu lesson
+            for l in lessons:
+                self.db.add_lesson(
+                    course_id,
+                    l["title"],
+                    l["duration"],
+                    l["type"],
+                    l["url"],
+                    l["has_exercise"]
+                )
+
+            return True
+
         except Exception as e:
             print("❌ Lỗi thêm course:", e)
             return False
