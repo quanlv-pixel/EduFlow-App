@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QRect, QTimer, QSize, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QPen
+from src.ui.settings_widget import LanguageManager, tr
 
 # ================================================================
 #  Hằng số layout
@@ -16,7 +17,6 @@ TIME_W      = 64                         # chiều rộng cột giờ bên trái
 EVENT_PAD   = 3                          # khoảng cách giữa event và viền cột
 CORNER_R    = 6                          # bo góc event
 
-DAYS_SHORT     = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 MINUTE_OPTIONS = ["00", "15", "30", "45"]
 
 # ─── Màu sắc ─────────────────────────────────────────────────────
@@ -195,6 +195,7 @@ class DayHeaderWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.days = []
         self.setFixedHeight(36)
 
     def paintEvent(self, _event):
@@ -213,7 +214,7 @@ class DayHeaderWidget(QWidget):
         painter.setFont(font)
         painter.setPen(C_DAY_LBL)
 
-        for i, day in enumerate(DAYS_SHORT):
+        for i, day in enumerate(self.days):
             x  = int(TIME_W + i * col_w)
             cw = int(col_w)
             painter.drawText(x, 0, cw, self.height(), Qt.AlignCenter, day)
@@ -228,6 +229,15 @@ class ScheduleWidget(QWidget):
 
     def __init__(self, controller, user_id):
         super().__init__()
+        
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
+
+        self.days = [
+            tr("mon"), tr("tue"), tr("wed"),
+            tr("thu"), tr("fri"), tr("sat"), tr("sun")
+        ]
+
         self.controller = controller
         self.user_id    = user_id
 
@@ -238,19 +248,19 @@ class ScheduleWidget(QWidget):
         header_layout = QHBoxLayout()
 
         title_v  = QVBoxLayout()
-        title    = QLabel("Thời khóa biểu")
-        title.setStyleSheet("font-size: 26px; font-weight: bold;")
-        subtitle = QLabel("Quản lý lịch học theo tuần.")
-        subtitle.setStyleSheet("color: #6F767E;")
-        title_v.addWidget(title)
-        title_v.addWidget(subtitle)
+        self.title = QLabel()
+        self.title.setStyleSheet("font-size: 26px; font-weight: bold;")
+        self.subtitle = QLabel()
+        self.subtitle.setStyleSheet("color: #6F767E;")
+        title_v.addWidget(self.title)
+        title_v.addWidget(self.subtitle)
 
-        self.btn_add = QPushButton("+ Thêm lịch học")
+        self.btn_add = QPushButton()
         self.btn_add.setObjectName("BtnAddSchedule")
         self.btn_add.setFixedHeight(40)
         self.btn_add.clicked.connect(self.add_schedule)
 
-        self.btn_delete = QPushButton("🗑 Xóa lịch học")
+        self.btn_delete = QPushButton()
         self.btn_delete.setObjectName("BtnDeleteSchedule")
         self.btn_delete.setFixedHeight(40)
         self.btn_delete.setCheckable(True)
@@ -263,7 +273,7 @@ class ScheduleWidget(QWidget):
         main_layout.addLayout(header_layout)
 
         # Nhãn gợi ý khi đang ở chế độ xóa
-        self.lbl_hint = QLabel("🗑 Đang ở chế độ xóa — bấm vào lịch học để xóa")
+        self.lbl_hint = QLabel()
         self.lbl_hint.setStyleSheet(
             "color: #EF4444; font-size: 13px; padding: 6px 12px;"
             "background: #FEE2E2; border-radius: 8px;"
@@ -281,6 +291,7 @@ class ScheduleWidget(QWidget):
 
         # Hàng ngày cố định (không cuộn)
         self.day_header = DayHeaderWidget()
+        self.day_header.days = self.days 
         card_layout.addWidget(self.day_header)
 
         # Scroll area chứa canvas lưới + event
@@ -305,6 +316,7 @@ class ScheduleWidget(QWidget):
         ))
 
         self.load_schedule()
+        self._retranslate()
 
     # ─── DELETE MODE ──────────────────────────────────────────
     def toggle_delete_mode(self):
@@ -326,8 +338,8 @@ class ScheduleWidget(QWidget):
             return
 
         if schedule is None:
-            QMessageBox.warning(self, "Không có lịch học",
-                                "Không có lịch học để xóa tại vị trí này!")
+            QMessageBox.warning(self, tr("no_schedule_title"),
+                                tr("no_schedule_msg"))
             return
 
         course = schedule.get("course", "")
@@ -364,7 +376,9 @@ class ScheduleWidget(QWidget):
 
     # ─── ADD ──────────────────────────────────────────────────
     def add_schedule(self):
-        course, ok = QInputDialog.getText(self, "Môn học", "Nhập tên môn:")
+        course, ok = QInputDialog.getText(
+            self, tr("input_course"), tr("input_course_label")
+        )
         if not ok or not course.strip():
             return
 
@@ -373,11 +387,12 @@ class ScheduleWidget(QWidget):
             return
 
         day, ok = QInputDialog.getItem(
-            self, "Chọn thứ", "Chọn ngày:", DAYS_SHORT, 0, False
+            self, tr("choose_day"), tr("choose_day_label"), self.days, 0, False
         )
         if not ok:
             return
-        col = DAYS_SHORT.index(day)
+
+        col = self.days.index(day)
 
         start_h, ok = QInputDialog.getInt(
             self, "Giờ bắt đầu", "Giờ bắt đầu (0 – 23):", 7, 0, 23
@@ -427,3 +442,18 @@ class ScheduleWidget(QWidget):
                 QMessageBox.warning(self, "Lỗi", "Không thể thêm lịch!")
         except Exception as e:
             QMessageBox.critical(self, "Lỗi hệ thống", str(e))
+
+    def _retranslate(self):
+        self.title.setText(tr("schedule_title"))
+        self.subtitle.setText(tr("schedule_subtitle"))
+
+        self.btn_add.setText(tr("schedule_add"))
+        self.btn_delete.setText(tr("schedule_delete"))
+
+        self.lbl_hint.setText(tr("schedule_delete_hint"))
+        self.days = [
+            tr("mon"), tr("tue"), tr("wed"),
+            tr("thu"), tr("fri"), tr("sat"), tr("sun")
+        ]
+        self.day_header.days = self.days
+        self.day_header.update()

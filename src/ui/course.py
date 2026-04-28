@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont, QColor, QPalette, QIcon
+from src.ui.settings_widget import LanguageManager, tr
 
 from src.ui.course_detail import CourseDetailWidget
 
@@ -14,6 +15,9 @@ from src.ui.course_detail import CourseDetailWidget
 class CourseCard(QFrame):
     def __init__(self, course, on_click):
         super().__init__()
+
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self.update)
 
         self.course = course
         self.on_click = on_click
@@ -42,7 +46,7 @@ class CourseCard(QFrame):
         icon = QLabel("📘")
         icon.setStyleSheet("font-size: 22px; background: transparent;")
 
-        status_text = course.get("status", "Đang học")
+        status_text = course.get("status", tr("course_status_learning"))
         status = QLabel(status_text)
         status.setStyleSheet("""
             background: #ECFDF5;
@@ -81,7 +85,7 @@ class CourseCard(QFrame):
         prog_row = QHBoxLayout()
         prog_row.setContentsMargins(0, 0, 0, 0)
 
-        lbl_progress = QLabel("Tiến độ")
+        lbl_progress = QLabel(tr("progress"))
         lbl_progress.setStyleSheet("color: #6F767E; font-size: 12px; background: transparent;")
 
         lbl_pct = QLabel(f"{progress}%")
@@ -144,6 +148,9 @@ class CoursesWidget(QWidget):
     def __init__(self, controller, user_id):
         super().__init__()
 
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
+
         self.controller = controller
         self.user_id = user_id
 
@@ -159,6 +166,8 @@ class CoursesWidget(QWidget):
         self.setup_list_ui()
 
         self.page_detail.back_btn.clicked.connect(self.go_back)
+        
+        self._retranslate()
 
     # ================= LIST PAGE =================
     def setup_list_ui(self):
@@ -175,30 +184,30 @@ class CoursesWidget(QWidget):
         title_v = QVBoxLayout()
         title_v.setSpacing(4)
 
-        lbl_title = QLabel("Khóa học của tôi")
-        lbl_title.setStyleSheet("""
+        self.lbl_title = QLabel()
+        self.lbl_title.setStyleSheet("""
             font-size: 26px;
             font-weight: bold;
             color: #1E2328;
             background: transparent;
         """)
 
-        lbl_sub = QLabel("Quản lý danh sách các môn học trong học kỳ này.")
-        lbl_sub.setStyleSheet("""
+        self.lbl_sub = QLabel()
+        self.lbl_sub.setStyleSheet("""
             font-size: 13px;
             color: #6F767E;
             background: transparent;
         """)
 
-        title_v.addWidget(lbl_title)
-        title_v.addWidget(lbl_sub)
+        title_v.addWidget(self.lbl_title)
+        title_v.addWidget(self.lbl_sub)
 
-        btn_add = QPushButton("  +  Thêm khóa học")
-        btn_add.setObjectName("BtnAddSchedule")
-        btn_add.setFixedHeight(42)
-        btn_add.setMinimumWidth(160)
-        btn_add.setCursor(Qt.PointingHandCursor)
-        btn_add.setStyleSheet("""
+        self.btn_add = QPushButton()
+        self.btn_add.setObjectName("BtnAddSchedule")
+        self.btn_add.setFixedHeight(42)
+        self.btn_add.setMinimumWidth(160)
+        self.btn_add.setCursor(Qt.PointingHandCursor)
+        self.btn_add.setStyleSheet("""
             QPushButton#BtnAddSchedule {
                 background-color: #2D60FF;
                 color: white;
@@ -212,11 +221,11 @@ class CoursesWidget(QWidget):
                 background-color: #1A4FE0;
             }
         """)
-        btn_add.clicked.connect(self.add_course)
+        self.btn_add.clicked.connect(self.add_course)
 
         header_layout.addLayout(title_v)
         header_layout.addStretch()
-        header_layout.addWidget(btn_add)
+        header_layout.addWidget(self.btn_add)
 
         outer.addWidget(header_widget)
 
@@ -255,10 +264,10 @@ class CoursesWidget(QWidget):
         courses = self.controller.get_courses(self.user_id)
 
         if not courses:
-            empty = QLabel("Chưa có khóa học nào 😢")
-            empty.setAlignment(Qt.AlignCenter)
-            empty.setStyleSheet("color: #6F767E; font-size: 15px; background: transparent;")
-            self.grid.addWidget(empty, 0, 0, 1, 3)
+            self.empty_label = QLabel()
+            self.empty_label.setAlignment(Qt.AlignCenter)
+            self.empty_label.setStyleSheet("color: #6F767E; font-size: 15px; background: transparent;")
+            self.grid.addWidget(self.empty_label, 0, 0, 1, 3)
             return
 
         row = col = 0
@@ -272,15 +281,21 @@ class CoursesWidget(QWidget):
 
     # ================= ADD =================
     def add_course(self):
-        name, ok1 = QInputDialog.getText(self, "Tên môn", "Nhập tên môn học:")
+        name, ok1 = QInputDialog.getText(
+            self, tr("input_course"), tr("input_course_label")
+        )
         if not ok1 or not name.strip():
             return
 
-        code, ok2 = QInputDialog.getText(self, "Mã môn", "Nhập mã môn:")
+        code, ok2 = QInputDialog.getText(
+            self, tr("input_code"), tr("input_code_label")
+        )
         if not ok2:
             return
 
-        prof, ok3 = QInputDialog.getText(self, "Giảng viên", "Nhập tên giảng viên:")
+        prof, ok3 = QInputDialog.getText(
+            self, tr("input_prof"), tr("input_prof_label")
+        )
         if not ok3:
             return
 
@@ -289,7 +304,7 @@ class CoursesWidget(QWidget):
         if success:
             self.load_courses()
         else:
-            QMessageBox.warning(self, "Lỗi", "Không thêm được khóa học!")
+            QMessageBox.warning(self, tr("error"), tr("error_add_course"))
 
     # ================= DETAIL =================
     def open_detail(self, course):
@@ -307,4 +322,14 @@ class CoursesWidget(QWidget):
     # ================= BACK =================
     def go_back(self):
         self.stack.setCurrentWidget(self.page_list)
+        self.load_courses()
+
+    def _retranslate(self):
+        self.lbl_title.setText(tr("course_title"))
+        self.lbl_sub.setText(tr("course_subtitle"))
+        self.btn_add.setText(tr("course_add"))
+
+        if hasattr(self, "empty_label"):
+            self.empty_label.setText(tr("course_empty"))
+
         self.load_courses()

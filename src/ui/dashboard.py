@@ -63,6 +63,8 @@ class EduDashboard(QMainWindow):
         self.current_theme = "light"
         self.apply_theme("light")
 
+        self.retranslate_ui()
+
         # Cập nhật sidebar text mỗi khi ngôn ngữ thay đổi
         LanguageManager.instance().language_changed.connect(
             lambda _: self.retranslate_ui()
@@ -143,16 +145,16 @@ class EduDashboard(QMainWindow):
         # HEADER
         header = QHBoxLayout()
 
-        greeting = QLabel(self.get_greeting())
-        greeting.setTextFormat(Qt.RichText)
-        greeting.setStyleSheet("font-size:24px;font-weight:bold;")
+        self.greeting = QLabel()
+        self.greeting.setTextFormat(Qt.RichText)
+        self.greeting.setStyleSheet("font-size:24px;font-weight:bold;")
 
-        search = QLineEdit()
-        search.setPlaceholderText("🔍 Tìm kiếm...")
-        search.setFixedWidth(250)
+        self.search = QLineEdit()
+        self.search.setFixedWidth(250)
 
         btn_add = QPushButton("+")
         btn_add.setFixedSize(40, 40)
+
         btn_add.setStyleSheet("""
             background:#2D60FF;
             color:white;
@@ -160,9 +162,9 @@ class EduDashboard(QMainWindow):
             font-size:18px;
         """)
 
-        header.addWidget(greeting)
+        header.addWidget(self.greeting)
         header.addStretch()
-        header.addWidget(search)
+        header.addWidget(self.search)
         header.addWidget(btn_add)
 
         layout.addLayout(header)
@@ -175,21 +177,21 @@ class EduDashboard(QMainWindow):
         now = datetime.now()
         hour = now.hour
 
-        # Sáng / chiều / tối
         if hour < 12:
-            time_str = "Chào buổi sáng"
+            time_str = tr("greeting_morning")
         elif hour < 18:
-            time_str = "Chào buổi chiều"
+            time_str = tr("greeting_afternoon")
         else:
-            time_str = "Chào buổi tối"
+            time_str = tr("greeting_evening")
 
-        # Việt hóa thứ
-        days = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm",
-                "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"]
+        days = [
+            tr("mon"), tr("tue"), tr("wed"),
+            tr("thu"), tr("fri"), tr("sat"), tr("sun")
+        ]
 
         day_name = days[now.weekday()]
 
-        date_str = f"{day_name}, ngày {now.day} tháng {now.month} năm {now.year}"
+        date_str = f"{day_name}, {now.day}/{now.month}/{now.year}"
 
         return f"""
         {time_str}! 👋<br>
@@ -197,7 +199,6 @@ class EduDashboard(QMainWindow):
         {date_str}
         </span>
         """
-
     # ================= SWITCH =================
     def switch_page(self, key):
         for k, btn in self.menu_buttons.items():
@@ -246,12 +247,13 @@ class EduDashboard(QMainWindow):
         top.addWidget(QLabel("📘"))
         top.addStretch()
 
-        badge = QLabel("Học kỳ 2")
+        badge = QLabel(tr("semester"))
         badge.setStyleSheet("background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:10px;")
         top.addWidget(badge)
 
         v1.addLayout(top)
-        v1.addWidget(QLabel("Khóa học đang học"))
+        self.lbl_courses = QLabel()
+        v1.addWidget(self.lbl_courses)      
 
         total = len(self.db.get_courses(self.user_info["id"]))
         num = QLabel(str(total))
@@ -273,7 +275,8 @@ class EduDashboard(QMainWindow):
         top2.addWidget(percent)
 
         v2.addLayout(top2)
-        v2.addWidget(QLabel("Tiến độ trung bình"))
+        self.lbl_avg = QLabel()
+        v2.addWidget(self.lbl_avg)
 
         avg = QLabel("78%")
         avg.setStyleSheet("font-size:40px;font-weight:bold;color:#2D60FF;")
@@ -294,7 +297,8 @@ class EduDashboard(QMainWindow):
         v = QVBoxLayout(sch)
         v.setSpacing(8)
 
-        v.addWidget(QLabel("<b>Lịch học hôm nay</b>"))
+        self.lbl_today = QLabel()
+        v.addWidget(self.lbl_today)
 
         # Lấy thứ hôm nay (Monday=0 … Sunday=6) — khớp với cột `day` trong DB
         today_col = datetime.now().weekday()
@@ -306,7 +310,7 @@ class EduDashboard(QMainWindow):
 
         if not today_schedules:
             v.addStretch()
-            v.addWidget(QLabel("Không có lịch học nào hôm nay.", alignment=Qt.AlignCenter))
+            v.addWidget(QLabel(tr("no_schedule"), alignment=Qt.AlignCenter))
             v.addStretch()
         else:
             v.addSpacing(4)
@@ -349,7 +353,8 @@ class EduDashboard(QMainWindow):
         prog.setFixedWidth(300)
 
         vp = QVBoxLayout(prog)
-        vp.addWidget(QLabel("<b>Tiến độ học tập</b>"))
+        self.lbl_progress = QLabel()
+        vp.addWidget(self.lbl_progress)
 
         subjects = [("Cơ sở dữ liệu", 40), ("Python", 65), ("AI", 85)]
 
@@ -408,6 +413,7 @@ class EduDashboard(QMainWindow):
             "todo":     "menu_todo",
             "settings": "menu_settings",
         }
+        
         for key, tr_key in menu_keys.items():
             btn = self.menu_buttons.get(key)
             if btn:
@@ -417,7 +423,27 @@ class EduDashboard(QMainWindow):
         if hasattr(self, "logout_btn"):
             self.logout_btn.setText(tr("logout"))
 
+            # ===== HEADER =====
+        if hasattr(self, "greeting"):
+            self.greeting.setText(self.get_greeting())
+
+        if hasattr(self, "search"):
+            self.search.setPlaceholderText(f"🔍 {tr('search')}")
+
+        # ===== OVERVIEW =====
+        if hasattr(self, "lbl_courses"):
+            self.lbl_courses.setText(tr("courses_studying"))
+
+        if hasattr(self, "lbl_avg"):
+            self.lbl_avg.setText(tr("avg_progress"))
+
+        if hasattr(self, "lbl_today"):
+            self.lbl_today.setText(f"<b>{tr('today_schedule')}</b>")
+
+        if hasattr(self, "lbl_progress"):
+            self.lbl_progress.setText(f"<b>{tr('study_progress')}</b>")
+
     # ================= LOGOUT =================
     def handle_logout(self):
         self.logout_signal.emit()
-        self.deleteLater()
+        self.deleteLater()  

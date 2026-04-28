@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from src.ui.settings_widget import tr, LanguageManager
 
 
 TODO_FILE = "assets/todos.json"
@@ -42,6 +43,8 @@ class TodoItemWidget(QFrame):
 
     def __init__(self, task_id: str, text: str, done: bool, on_toggle, on_delete):
         super().__init__()
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
         self.task_id   = task_id
         self.on_toggle = on_toggle
         self.on_delete = on_delete
@@ -102,9 +105,14 @@ class TodoWidget(QWidget):
 
     def __init__(self):
         super().__init__()
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
+        
         self._todos: dict = {}   # {task_id: {text, done}}
         self._build_ui()
         self._load_today()
+
+        self._retranslate()
 
     # ── UI ────────────────────────────────────
     def _build_ui(self):
@@ -143,24 +151,24 @@ class TodoWidget(QWidget):
 
         self.input = QLineEdit()
         self.input.setObjectName("TodoInput")
-        self.input.setPlaceholderText("✏️  Thêm nhiệm vụ mới...")
+        self.input.setPlaceholderText(tr("todo_placeholder"))
         self.input.returnPressed.connect(self._add_task)
 
-        btn_add = QPushButton("+ Thêm")
-        btn_add.setObjectName("TodoAddBtn")
-        btn_add.setCursor(Qt.PointingHandCursor)
-        btn_add.clicked.connect(self._add_task)
+        self.btn_add = QPushButton()  
+        self.btn_add.setObjectName("TodoAddBtn")
+        self.btn_add.setCursor(Qt.PointingHandCursor)
+        self.btn_add.clicked.connect(self._add_task)
 
         input_row.addWidget(self.input)
-        input_row.addWidget(btn_add)
+        input_row.addWidget(self.btn_add)
         hc_lay.addLayout(input_row)
 
         root.addWidget(header_card)
 
         # ── Stats row ──
-        self.stat_total  = self._stat_box("📋", "0", "Tổng nhiệm vụ")
-        self.stat_done   = self._stat_box("✅", "0", "Hoàn thành")
-        self.stat_remain = self._stat_box("⏳", "0", "Còn lại")
+        self.stat_total  = self._stat_box("📋", "0", "")
+        self.stat_done   = self._stat_box("✅", "0", "")
+        self.stat_remain = self._stat_box("⏳", "0", "")
 
         stats_row = QHBoxLayout()
         stats_row.setSpacing(14)
@@ -176,15 +184,15 @@ class TodoWidget(QWidget):
         list_lay.setSpacing(0)
 
         list_header = QHBoxLayout()
-        list_lbl = QLabel("Danh sách nhiệm vụ hôm nay")
-        list_lbl.setObjectName("TodoSectionLabel")
+        self.list_lbl = QLabel()  
+        self.list_lbl.setObjectName("TodoSectionLabel")
 
-        self.btn_clear = QPushButton("🗑  Xóa hoàn thành")
+        self.btn_clear = QPushButton()
         self.btn_clear.setObjectName("TodoClearBtn")
         self.btn_clear.setCursor(Qt.PointingHandCursor)
         self.btn_clear.clicked.connect(self._clear_done)
 
-        list_header.addWidget(list_lbl)
+        list_header.addWidget(self.list_lbl)
         list_header.addStretch()
         list_header.addWidget(self.btn_clear)
         list_lay.addLayout(list_header)
@@ -205,11 +213,25 @@ class TodoWidget(QWidget):
         list_lay.addWidget(scroll)
 
         # Empty state
-        self.empty_lbl = QLabel("Chưa có nhiệm vụ nào.\nHãy thêm nhiệm vụ đầu tiên! 🎯")
+        self.empty_lbl = QLabel()
         self.empty_lbl.setAlignment(Qt.AlignCenter)
         self.empty_lbl.setObjectName("TodoEmptyLabel")
 
         root.addWidget(list_card, 1)
+
+    def _retranslate(self):
+        self.input.setPlaceholderText(tr("todo_placeholder"))
+        self.btn_add.setText(tr("todo_add"))
+
+        self.list_lbl.setText(tr("todo_today_list"))
+        self.btn_clear.setText(tr("todo_clear"))
+
+        self.empty_lbl.setText(tr("todo_empty"))
+
+        self.stat_total.findChild(QLabel, "TodoStatLabel").setText(tr("todo_total"))
+        self.stat_done.findChild(QLabel, "TodoStatLabel").setText(tr("todo_done"))
+        self.stat_remain.findChild(QLabel, "TodoStatLabel").setText(tr("todo_remain"))
+
 
     def _stat_box(self, icon: str, value: str, label: str) -> QFrame:
         box = QFrame()

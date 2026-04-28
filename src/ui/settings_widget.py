@@ -30,6 +30,7 @@ TRANSLATIONS = {
         "save_btn":             "💾 Lưu cài đặt",
         "language_title":       "🌐 Ngôn ngữ",
         "language_desc":        "Chọn ngôn ngữ hiển thị cho toàn bộ ứng dụng.",
+        
         # Dialogs
         "invalid_input":        "Đầu vào không hợp lệ",
         "invalid_input_msg":    "Giới hạn flashcard phải là số nguyên dương.",
@@ -43,6 +44,7 @@ TRANSLATIONS = {
         "import_ok":            "Nhập thành công",
         "import_ok_msg":        "Đã tải {count} flashcard(s) từ:\n{path}",
         "import_fail":          "Nhập thất bại",
+        
         # Sidebar
         "menu_overview":        "Tổng quan",
         "menu_schedule":        "Thời khóa biểu",
@@ -52,6 +54,109 @@ TRANSLATIONS = {
         "menu_todo":            "Todo List",
         "menu_settings":        "Cài đặt",
         "logout":               "↪ Đăng xuất",
+        
+        # Summary
+        "summary_title":        "🤖 Trợ lý Tóm tắt Tài liệu",
+        "upload_btn":           "📂 Chọn file PDF/Word",
+        "no_file":              "Chưa có tài liệu nào",
+        "reading":              "⌛ Đang đọc: {file}",
+        "processing":           "⏳ Đang xử lý...",
+        "ai_working":           "🤖 AI đang tóm tắt...",
+        "done":                 "✅ Hoàn thành: {file}",
+        "failed":               "❌ Thất bại",
+        "original":             "Nội dung gốc",
+        "summary":              "Tóm tắt AI",
+
+        # Todo List
+        "todo_title":           "Todo List",
+        "todo_placeholder":     "✏️ Thêm nhiệm vụ mới...",
+        "todo_add":             "+ Thêm",
+        "todo_today_list":      "Danh sách nhiệm vụ hôm nay",
+        "todo_clear":           "🗑 Xóa hoàn thành",
+        "todo_empty":           "Chưa có nhiệm vụ nào.\nHãy thêm nhiệm vụ đầu tiên! 🎯",
+        "todo_total":           "Tổng nhiệm vụ",
+        "todo_done":            "Hoàn thành",
+        "todo_remain":          "Còn lại",
+
+        # Flash Card
+        "flash_title":          "📚 Flashcards AI",
+        "flash_subtitle":       "Tạo flashcard từ tài liệu hoặc nội dung",
+        "flash_from_file":      "📂 Tạo từ tài liệu",
+        "flash_from_text":      "💬 Tạo từ nội dung",
+        "flash_view":           "📖 Xem flashcards",
+        "flash_back":           "← Quay lại",
+        "flash_empty":          "Chưa có flashcard nào",
+        "flash_loading_file":   "📂 Đang đọc file...",
+        "flash_ai_generating":  "🤖 AI đang tạo flashcards...",
+        "flash_error_load":     "Lỗi load",
+        "flash_error_ai":       "Lỗi AI",
+        "flash_error":          "Lỗi",
+        "flash_input_title":    "Nhập nội dung",
+        "flash_input_label":    "Nhập nội dung cần học:",
+        "flash_show_answer":    "👁 Xem đáp án",
+        "flash_back_answer":    "↩️ Quay lại",
+
+        # DashBoard
+        "greeting_morning":     "Chào buổi sáng",
+        "greeting_afternoon":   "Chào buổi chiều",
+        "greeting_evening":     "Chào buổi tối",
+
+        "today_schedule":       "Lịch học hôm nay",
+        "no_schedule":          "Không có lịch học nào hôm nay.",
+        "study_progress":       "Tiến độ học tập",
+        "courses_studying":     "Khóa học đang học",
+        "semester":             "Học kỳ 2",
+        "avg_progress":         "Tiến độ trung bình",
+
+        # Schedule
+        "schedule_title":       "📅 Thời khóa biểu",
+        "schedule_subtitle":    "Quản lý lịch học của bạn",
+        "schedule_add":         "+ Thêm lịch",
+        "schedule_delete":      "🗑 Xóa",
+        "schedule_delete_hint": "Nhấn vào lịch để xóa",
+
+        "choose_day":           "Chọn thứ",
+        "choose_day_label":     "Chọn ngày:",
+
+        "input_course":         "Môn học",
+        "input_course_label":   "Nhập tên môn:",
+        
+        # COURSE
+        # Course UI (bổ sung)
+        "course_title":         "Khóa học của tôi",
+        "course_subtitle":      "Quản lý danh sách các môn học trong học kỳ này.",
+        "course_add":           "+ Thêm khóa học",
+        "course_empty":         "Chưa có khóa học nào 😢",
+        "course_status_learning": "Đang học",
+        "progress":             "Tiến độ",
+
+        # Input dialog
+        "input_course":         "Tên môn",
+        "input_course_label":   "Nhập tên môn học:",
+
+        "input_code":           "Mã môn",
+        "input_code_label":     "Nhập mã môn:",
+
+        "input_prof":           "Giảng viên",
+        "input_prof_label":     "Nhập tên giảng viên:",
+
+        "error_add_course":     "Không thêm được khóa học!",
+
+        # Course Detail
+        "course_detail_back":   "Quay lại danh sách",
+        "course_detail_content":"Nội dung học tập",
+        "course_detail_no_data":"Không tìm thấy dữ liệu khóa học.",
+        "course_detail_no_lessons": "Chưa có bài học nào.",
+        "course_detail_description": "Mô tả khóa học",
+        "course_detail_resources":   "Nguồn tài liệu",
+        "course_detail_continue":    "Tiếp tục học",
+        "course_detail_continue_desc": "Bạn đang dừng lại ở giai đoạn đầu của khóa học. Bắt đầu bài học đầu tiên ngay nhé!",
+        "course_detail_open_latest": "Mở bài học mới nhất",
+        "course_detail_flash_created": "Đã tạo {count} flashcard!",
+        "error": "Lỗi",
+        "stat_lessons":         "BÀI GIẢNG",
+        "stat_exercises":       "BÀI TẬP",
+        "stat_progress":        "TIẾN ĐỘ",
     },
     "en": {
         # Settings page
@@ -71,6 +176,7 @@ TRANSLATIONS = {
         "save_btn":             "💾 Save Settings",
         "language_title":       "🌐 Language",
         "language_desc":        "Select the display language for the entire application.",
+        
         # Dialogs
         "invalid_input":        "Invalid Input",
         "invalid_input_msg":    "Flashcard limit must be a positive integer.",
@@ -84,6 +190,7 @@ TRANSLATIONS = {
         "import_ok":            "Import Successful",
         "import_ok_msg":        "Loaded {count} flashcard(s) from:\n{path}",
         "import_fail":          "Import Failed",
+        
         # Sidebar
         "menu_overview":        "Overview",
         "menu_schedule":        "Schedule",
@@ -93,47 +200,255 @@ TRANSLATIONS = {
         "menu_todo":            "Todo List",
         "menu_settings":        "Settings",
         "logout":               "↪ Logout",
+        
+        # Summary
+        "summary_title":        "🤖 Document Summary Assistant",
+        "upload_btn":           "📂 Upload PDF/Word",
+        "no_file":              "No file selected",
+        "reading":              "⌛ Reading: {file}",
+        "processing":           "⏳ Processing...",
+        "ai_working":           "🤖 AI is summarizing...",
+        "done":                 "✅ Completed: {file}",
+        "failed":               "❌ Failed",
+        "original":             "Original Content",
+        "summary":              "AI Summary",
+
+        # Todo List
+        "todo_title":           "Todo List",
+        "todo_placeholder":     "✏️ Add new task...",
+        "todo_add":             "+ Add",
+        "todo_today_list":      "Today's Tasks",
+        "todo_clear":           "🗑 Clear Completed",
+        "todo_empty":           "No tasks yet.\nAdd your first task! 🎯",
+        "todo_total":           "Total",
+        "todo_done":            "Completed",
+        "todo_remain":          "Remaining",
+
+        # Flashcard
+        "flash_title":          "📚 Flashcards AI",
+        "flash_subtitle":       "Create flashcards from documents or text",
+        "flash_from_file":      "📂 Generate from file",
+        "flash_from_text":      "💬 Generate from text",
+        "flash_view":           "📖 View flashcards",
+        "flash_back":           "← Back",
+        "flash_empty":          "No flashcards yet",
+        "flash_loading_file":   "📂 Reading file...",
+        "flash_ai_generating":  "🤖 AI is generating flashcards...",
+        "flash_error_load":     "Load Error",
+        "flash_error_ai":       "AI Error",
+        "flash_error":          "Error",
+        "flash_input_title":    "Enter Content",
+        "flash_input_label":    "Enter content to study:",
+        "flash_show_answer":    "👁 Show Answer",
+        "flash_back_answer":    "↩️ Back",
+
+        # Dashboard
+        "greeting_morning":     "Good morning",
+        "greeting_afternoon":   "Good afternoon",
+        "greeting_evening":     "Good evening",
+
+        "today_schedule":       "Today's Schedule",
+        "no_schedule":          "No schedule today.",
+        "study_progress":       "Study Progress",
+        "courses_studying":     "Current Courses",
+        "semester":             "Semester 2",
+        "avg_progress":         "Average Progress",
+
+        # Schedule
+        "schedule_title":       "📅 Schedule",
+        "schedule_subtitle":    "Manage your study schedule",
+        "schedule_add":         "+ Add",
+        "schedule_delete":      "🗑 Delete",
+        "schedule_delete_hint": "Click a schedule to delete",
+
+        "choose_day":           "Choose day",
+        "choose_day_label":     "Select day:",
+
+        "input_course":         "Course",
+        "input_course_label":   "Enter course name:",
+
+        # COURSE
+        # Course UI
+        "course_title":         "My Courses",
+        "course_subtitle":      "Manage your courses for this semester.",
+        "course_add":           "+ Add Course",
+        "course_empty":         "No courses yet 😢",
+        "course_status_learning": "Learning",
+        "progress":             "Progress",
+
+        # Input dialog
+        "input_course":         "Course Name",
+        "input_course_label":   "Enter course name:",
+
+        "input_code":           "Course Code",
+        "input_code_label":     "Enter course code:",
+
+        "input_prof":           "Professor",
+        "input_prof_label":     "Enter professor name:",
+
+        "error_add_course":     "Cannot add course!",
+
+        # Course Detail
+        "course_detail_back":   "Back to courses",
+        "course_detail_content": "Course Content",
+        "course_detail_no_data": "Course data not found.",
+        "course_detail_no_lessons": "No lessons yet.",
+        "course_detail_description": "Course Description",
+        "course_detail_resources": "Resources",
+        "course_detail_continue": "Continue Learning",
+        "course_detail_continue_desc": "You're at the beginning of this course. Start your first lesson now!",
+        "course_detail_open_latest": "Open latest lesson",
+        "course_detail_flash_created": "Created {count} flashcards!",
+        "error": "Error",
+        "stat_lessons":         "LESSONS",
+        "stat_exercises":       "EXERCISES",
+        "stat_progress":        "PROGRESS",
     },
-    "ja": {
+    "cn": {
         # Settings page
-        "settings_title":       "⚙️ 設定",
-        "appearance_title":     "🎨 外観",
-        "appearance_desc":      "ライトとダークテーマを切り替えます。",
-        "dark_mode_on":         "🌙 ダークモード",
-        "dark_mode_off":        "☀️ ライトモード",
-        "ai_title":             "🤖 AI設定",
-        "ai_desc":              "AIセッションごとに生成されるフラッシュカードの最大数。",
-        "ai_limit_lbl":         "フラッシュカード上限:",
-        "ai_limit_placeholder": "数字を入力 (例: 10)",
-        "data_title":           "🗂 データ",
-        "data_desc":            "フラッシュカードデータをJSONでエクスポート/インポート。",
-        "export_btn":           "⬆ エクスポート",
-        "import_btn":           "⬇ インポート",
-        "save_btn":             "💾 設定を保存",
-        "language_title":       "🌐 言語",
-        "language_desc":        "アプリ全体の表示言語を選択します。",
+        "settings_title":       "⚙️ 设置",
+        "appearance_title":     "🎨 外观",
+        "appearance_desc":      "在浅色和深色主题之间切换。",
+        "dark_mode_on":         "🌙 深色模式",
+        "dark_mode_off":        "☀️ 浅色模式",
+        "ai_title":             "🤖 AI设置",
+        "ai_desc":              "每个AI会话生成的闪卡最大数量。",
+        "ai_limit_lbl":         "闪卡上限：",
+        "ai_limit_placeholder": "输入数字（例如：10）",
+        "data_title":           "🗂 数据",
+        "data_desc":            "以 SON格式导出/导入闪卡数据。",
+        "export_btn":           "⬆ 导出",
+        "import_btn":           "⬇ 导入",
+        "save_btn":             "💾 保存设置",
+        "language_title":       "🌐 语言",
+        "language_desc":        "选择应用程序的显示语言。",
+        
         # Dialogs
-        "invalid_input":        "無効な入力",
-        "invalid_input_msg":    "フラッシュカード上限は正の整数でなければなりません。",
-        "saved_title":          "保存完了",
-        "saved_msg":            "設定を保存しました！\n\n• AI上限: {limit}\n• ダークモード: {dark}",
-        "dark_on":              "オン",
-        "dark_off":             "オフ",
-        "export_ok":            "エクスポート成功",
-        "export_ok_msg":        "エクスポート先:\n{path}",
-        "export_fail":          "エクスポート失敗",
-        "import_ok":            "インポート成功",
-        "import_ok_msg":        "{count}件のフラッシュカードを読み込みました:\n{path}",
-        "import_fail":          "インポート失敗",
+        "invalid_input":        "无效输入",
+        "invalid_input_msg":    "闪卡上限必须是正整数。",
+        "saved_title":          "保存成功",
+        "saved_msg":            "设置已保存！\n\n• AI上限: {limit}\n• 深色模式: {dark}",
+        "dark_on":              "开启",
+        "dark_off":             "关闭",
+        "export_ok":            "导出成功",
+        "export_ok_msg":        "导出位置：\n{path}",
+        "export_fail":          "导出失败",
+        "import_ok":            "导入成功",
+        "import_ok_msg":        "已加载 {count} 张闪卡：\n{path}",
+        "import_fail":          "导入失败",
+        
         # Sidebar
-        "menu_overview":        "概要",
-        "menu_schedule":        "時間割",
-        "menu_courses":         "コース",
-        "menu_flash":           "フラッシュカード",
-        "menu_summary":         "AI要約",
-        "menu_todo":            "Todoリスト",
-        "menu_settings":        "設定",
-        "logout":               "↪ ログアウト",
+        "menu_overview":        "概览",
+        "menu_schedule":        "课程表",
+        "menu_courses":         "课程",
+        "menu_flash":           "闪卡",
+        "menu_summary":         "AI总结",
+        "menu_todo":            "待办事项",
+        "menu_settings":        "设置",
+        "logout":               "↪ 退出登录",
+
+        # Summary 
+        "summary_title":        "🤖 文档摘要助手",
+        "upload_btn":           "📂 选择PDF/Word文件",
+        "no_file":              "尚未选择文件",
+        "reading":              "⌛ 正在读取：{file}",
+        "processing":           "⏳ 处理中...",
+        "ai_working":           "🤖 AI正在总结...",
+        "done":                 "✅ 完成：{file}",
+        "failed":               "❌ 失败",
+        "original":             "原始内容",
+        "summary":              "AI摘要",
+
+        # Todo List
+        "todo_title":           "待办事项",
+        "todo_placeholder":     "✏️ 添加新任务...",
+        "todo_add":             "+ 添加",
+        "todo_today_list":      "今日任务",
+        "todo_clear":           "🗑 清除已完成",
+        "todo_empty":           "还没有任务。\n添加你的第一个任务吧！🎯",
+        "todo_total":           "总任务",
+        "todo_done":            "已完成",
+        "todo_remain":          "剩余",
+
+        # Flashcard
+        "flash_title":          "📚 AI 闪卡",
+        "flash_subtitle":       "从文档或文本创建闪卡",
+        "flash_from_file":      "📂 从文件生成",
+        "flash_from_text":      "💬 从文本生成",
+        "flash_view":           "📖 查看闪卡",
+        "flash_back":           "← 返回",
+        "flash_empty":          "还没有闪卡",
+        "flash_loading_file":   "📂 正在读取文件...",
+        "flash_ai_generating":  "🤖 AI 正在生成闪卡...",
+        "flash_error_load":     "加载错误",
+        "flash_error_ai":       "AI错误",
+        "flash_error":          "错误",
+        "flash_input_title":    "输入内容",
+        "flash_input_label":    "输入学习内容：",
+        "flash_show_answer":    "👁 查看答案",
+        "flash_back_answer":    "↩️ 返回",
+
+        # DashBoard
+        "greeting_morning":     "早上好",
+        "greeting_afternoon":   "下午好",
+        "greeting_evening":     "晚上好",
+
+        "today_schedule":       "今日课程",
+        "no_schedule":          "今天没有课程",
+        "study_progress":       "学习进度",
+        "courses_studying":     "正在学习的课程",
+        "semester":             "第二学期",
+        "avg_progress":         "平均进度",
+
+        # Schedule
+        "schedule_title":       "📅 课程表",
+        "schedule_subtitle":    "管理你的课程安排",
+        "schedule_add":         "+ 添加",
+        "schedule_delete":      "🗑 删除",
+        "schedule_delete_hint": "点击课程以删除",
+
+        "choose_day":           "选择日期",
+        "choose_day_label":     "选择一天:",
+
+        "input_course":         "课程",
+        "input_course_label":   "输入课程名称:",
+
+        # COURSE
+        # Course UI
+        "course_title":         "我的课程",
+        "course_subtitle":      "管理本学期的课程列表。",
+        "course_add":           "+ 添加课程",
+        "course_empty":         "还没有课程 😢",
+        "course_status_learning": "学习中",
+        "progress":             "进度",
+
+        # Input dialog
+        "input_course":         "课程名称",
+        "input_course_label":   "输入课程名称:",
+
+        "input_code":           "课程代码",
+        "input_code_label":     "输入课程代码:",
+
+        "input_prof":           "教师",
+        "input_prof_label":     "输入教师姓名:",
+
+        "error_add_course":     "无法添加课程！",
+
+        # Course Detail
+        "course_detail_back": "返回课程列表",
+        "course_detail_content": "学习内容",
+        "course_detail_no_data": "未找到课程数据。",
+        "course_detail_no_lessons": "暂无课程内容。",
+        "course_detail_description": "课程描述",
+        "course_detail_resources": "学习资源",
+        "course_detail_continue": "继续学习",
+        "course_detail_continue_desc": "你刚开始学习这门课程，现在就开始第一课吧！",
+        "course_detail_open_latest": "打开最新课程",
+        "course_detail_flash_created": "已创建 {count} 张闪卡！",
+        "error": "错误",
+        "stat_lessons":         "课程",
+        "stat_exercises":       "练习",
+        "stat_progress":        "进度",
     },
 }
 
@@ -252,7 +567,7 @@ class LangButton(QPushButton):
     """A toggleable pill button for one language option."""
 
     # Map locale code → display label
-    _LABELS = {"vi": "🇻🇳  Tiếng Việt", "en": "🇬🇧  English", "ja": "🇯🇵  日本語"}
+    _LABELS = {"vi": "🇻🇳  Tiếng Việt", "en": "🇬🇧  English", "cn": "cn  中國人"}
 
     def __init__(self, code: str, parent=None):
         super().__init__(self._LABELS.get(code, code), parent)
@@ -413,7 +728,7 @@ class SettingsWidget(QWidget):
         buttons: dict[str, LangButton] = {}
         current = self._lm.lang
 
-        for code in ("vi", "en", "ja"):
+        for code in ("vi", "en", "cn"):
             btn = LangButton(code)
             btn.set_active(code == current)
             btn.clicked.connect(lambda _, c=code: self._select_language(c))

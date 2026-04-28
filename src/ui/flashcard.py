@@ -2,12 +2,16 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 import os
-
+from src.ui.settings_widget import tr, LanguageManager
 
 # ================= FLASHCARD ITEM =================
 class FlashcardItem(QFrame):
     def __init__(self, question, answer):
         super().__init__()
+
+        
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
 
         self.setObjectName("Flashcard")
         self.setMinimumHeight(140)
@@ -28,7 +32,7 @@ class FlashcardItem(QFrame):
         font.setBold(True)
         self.label.setFont(font)
 
-        self.btn = QPushButton("👁 Xem đáp án")
+        self.btn = QPushButton()
         self.btn.setObjectName("BtnSecondary")
         self.btn.clicked.connect(self.flip)
 
@@ -37,17 +41,28 @@ class FlashcardItem(QFrame):
         layout.addStretch()
         layout.addWidget(self.btn)
 
+        self._retranslate()
+
     def flip(self):
         self.is_answer = not self.is_answer
         self.label.setText(self.a if self.is_answer else self.q)
-        self.btn.setText("↩️ Quay lại" if self.is_answer else "👁 Xem đáp án")
 
+        self.btn.setText(
+            tr("flash_back_answer") if self.is_answer else tr("flash_show_answer")
+        )
+
+    def _retranslate(self):
+        if self.is_answer:
+            self.btn.setText(tr("flash_back"))
+        else:
+            self.btn.setText(tr("flash_show_answer")) 
 
 # ================= MAIN =================
 class FlashcardWidget(QWidget):
     def __init__(self, controller, user_id):
         super().__init__()
-
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)    
         self.controller = controller
         self.user_id = user_id
 
@@ -62,16 +77,18 @@ class FlashcardWidget(QWidget):
         self.setup_home()
         self.setup_study()
 
+        self._retranslate()
+
     # ================= HOME =================
     def setup_home(self):
         layout = QVBoxLayout(self.page_home)
         layout.setSpacing(20)
 
-        title = QLabel("📚 Flashcards AI")
-        title.setStyleSheet("font-size:26px;font-weight:bold;")
+        self.title = QLabel()
+        self.title.setStyleSheet("font-size:26px;font-weight:bold;")
 
-        subtitle = QLabel("Tạo flashcard từ tài liệu hoặc nội dung")
-        subtitle.setStyleSheet("color:#6F767E;")
+        self.subtitle = QLabel()
+        self.subtitle.setStyleSheet("color:#6F767E;")
 
         card = QFrame()
         card.setObjectName("CardWhite")
@@ -79,25 +96,25 @@ class FlashcardWidget(QWidget):
         card_layout.setSpacing(15)
 
         # ===== BUTTONS =====
-        btn_file = QPushButton("📂 Tạo từ tài liệu")
-        btn_file.setObjectName("BtnAddSchedule")
-        btn_file.setFixedHeight(45)
-        btn_file.clicked.connect(self.generate_from_file)
+        self.btn_file = QPushButton()
+        self.btn_file.setObjectName("BtnAddSchedule")
+        self.btn_file.setFixedHeight(45)
+        self.btn_file.clicked.connect(self.generate_from_file)
 
-        btn_text = QPushButton("💬 Tạo từ nội dung")
-        btn_text.setObjectName("BtnSecondary")
-        btn_text.setFixedHeight(45)
-        btn_text.clicked.connect(self.generate_from_text)
+        self.btn_text = QPushButton()
+        self.btn_text.setObjectName("BtnSecondary")
+        self.btn_text.setFixedHeight(45)
+        self.btn_text.clicked.connect(self.generate_from_text)
 
-        btn_view = QPushButton("📖 Xem flashcards")
-        btn_view.clicked.connect(self.open_study)
+        self.btn_view = QPushButton()
+        self.btn_view.clicked.connect(self.open_study)
 
-        card_layout.addWidget(btn_file)
-        card_layout.addWidget(btn_text)
-        card_layout.addWidget(btn_view)
+        card_layout.addWidget(self.btn_file)
+        card_layout.addWidget(self.btn_text)
+        card_layout.addWidget(self.btn_view)
 
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
+        layout.addWidget(self.title)
+        layout.addWidget(self.subtitle)
         layout.addWidget(card)
         layout.addStretch()
 
@@ -105,9 +122,9 @@ class FlashcardWidget(QWidget):
     def setup_study(self):
         layout = QVBoxLayout(self.page_study)
 
-        back = QPushButton("← Quay lại")
-        back.setObjectName("BtnSecondary")
-        back.clicked.connect(lambda: self.stack.setCurrentIndex(0))
+        self.back = QPushButton()
+        self.back.setObjectName("BtnSecondary")
+        self.back.clicked.connect(lambda: self.stack.setCurrentIndex(0))
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -118,8 +135,9 @@ class FlashcardWidget(QWidget):
 
         scroll.setWidget(content)
 
-        layout.addWidget(back)
+        layout.addWidget(self.back)
         layout.addWidget(scroll)
+
 
     # ================= LOAD =================
     def render_flashcards(self):
@@ -129,7 +147,7 @@ class FlashcardWidget(QWidget):
             data = self.controller.get_flashcards(self.user_id)
 
             if not data:
-                self.container.addWidget(QLabel("Chưa có flashcard nào"))
+                self.container.addWidget(QLabel(tr("flash_empty")))
                 return
 
             for item in data:
@@ -137,7 +155,7 @@ class FlashcardWidget(QWidget):
                 self.container.addWidget(card)
 
         except Exception as e:
-            QMessageBox.critical(self, "Lỗi load", str(e))
+            QMessageBox.critical(self, tr("flash_error_load"), str(e))
 
     def open_study(self):
         self.stack.setCurrentIndex(1)
@@ -147,7 +165,7 @@ class FlashcardWidget(QWidget):
     def generate_from_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Chọn file",
+            tr("flash_from_file"),
             "",
             "Documents (*.pdf *.docx)"
         )
@@ -157,7 +175,7 @@ class FlashcardWidget(QWidget):
 
         self.stack.setCurrentIndex(1)
         self.clear_container()
-        self.container.addWidget(QLabel("📂 Đang đọc file..."))
+        self.container.addWidget(QLabel(tr("flash_loading_file")))
         QApplication.processEvents()
 
         try:
@@ -166,7 +184,7 @@ class FlashcardWidget(QWidget):
             if not content or content.startswith("❌"):
                 raise ValueError(content)
 
-            self.container.addWidget(QLabel("🤖 AI đang tạo flashcards..."))
+            self.container.addWidget(QLabel(tr("flash_ai_generating")))
             QApplication.processEvents()
 
             cards = self.controller.generate_ai(content)
@@ -180,14 +198,14 @@ class FlashcardWidget(QWidget):
             self.render_flashcards()
 
         except Exception as e:
-            QMessageBox.critical(self, "Lỗi", str(e))
+            QMessageBox.critical(self, tr("flash_error"), str(e))
 
     # ================= TEXT =================
     def generate_from_text(self):
         text, ok = QInputDialog.getMultiLineText(
             self,
-            "Nhập nội dung",
-            "Nhập nội dung cần học:"
+            tr("flash_input_title"),
+            tr("flash_input_label")
         )
 
         if not ok or not text.strip():
@@ -195,7 +213,7 @@ class FlashcardWidget(QWidget):
 
         self.stack.setCurrentIndex(1)
         self.clear_container()
-        self.container.addWidget(QLabel("🤖 AI đang tạo flashcards..."))
+        self.container.addWidget(QLabel(tr("flash_ai_generating")))
         QApplication.processEvents()
 
         try:
@@ -210,7 +228,7 @@ class FlashcardWidget(QWidget):
             self.render_flashcards()
 
         except Exception as e:
-            QMessageBox.critical(self, "Lỗi AI", str(e))
+            QMessageBox.critical(self, tr("flash_error_ai"), str(e))
 
     # ================= CLEAR =================
     def clear_container(self):
@@ -218,3 +236,14 @@ class FlashcardWidget(QWidget):
             widget = self.container.itemAt(i).widget()
             if widget:
                 widget.deleteLater()
+
+    def _retranslate(self):
+        self.title.setText(tr("flash_title"))
+        self.subtitle.setText(tr("flash_subtitle"))
+
+        self.btn_file.setText(tr("flash_from_file"))
+        self.btn_text.setText(tr("flash_from_text"))
+        self.btn_view.setText(tr("flash_view"))
+
+        self.back.setText(tr("flash_back"))
+        self.render_flashcards() 

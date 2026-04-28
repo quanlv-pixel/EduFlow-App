@@ -12,7 +12,7 @@ def show_notification(title, message):
 
 
 def send_email(to_email, subject, body):
-    sender_email = "quanle19112007@gmail.com"
+    sender_email = "quocthangbon@gmail.com"
     app_password = "kzdsqmnbrsczilrm"
 
     msg = MIMEText(body)
