@@ -210,7 +210,10 @@ TRANSLATIONS = {
         "cc_optional": "Chuyên cần – tùy chọn",
         "bt_optional": "Bài tập – tùy chọn",
         "gk_score": "Giữa kỳ",
-        "ck_score": "Cuối kỳ"
+        "ck_score": "Cuối kỳ",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "credits": "Tín chỉ",
     },
     "en": {
         # Settings page
@@ -369,8 +372,8 @@ TRANSLATIONS = {
 
         # Grades
         "grade_title":         "Grade Management",
-        "hs_mode":              "High School",
-        "sv_mode":              "University",
+        "hs_mode":              "🎒 High School",
+        "sv_mode":              "🎓 University",
         "grade_add_subject":    "+ Add Subject",
 
         "subject":              "Subject",
@@ -416,7 +419,10 @@ TRANSLATIONS = {
         "cc_optional": "Attendance (optional)",
         "bt_optional": "Assignments (optional)",
         "gk_score": "Midterm",
-        "ck_score": "Final"
+        "ck_score": "Final",
+        "save": "Save",
+        "cancel": "Cancel",
+        "credits": "Credits",
     },
     "cn": {
         # Settings page
@@ -576,8 +582,8 @@ TRANSLATIONS = {
 
         # Grades
         "grade_title":          "成绩管理",
-        "hs_mode":              "高中",
-        "sv_mode":              "大学",
+        "hs_mode":              "🎒 高中",
+        "sv_mode":              "🎓 大学",
         "grade_add_subject":    "+ 添加课程",
 
         "subject":              "科目",
@@ -625,7 +631,10 @@ TRANSLATIONS = {
         "cc_optional": "考勤（可选）",
         "bt_optional": "作业（可选）",
         "gk_score": "期中",
-        "ck_score": "期末"
+        "ck_score": "期末",
+        "save": "保存",
+        "cancel": "取消",
+        "credits": "学分",
     },
 }
 

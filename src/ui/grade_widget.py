@@ -19,6 +19,10 @@ from src.controllers.grade_controller import GradeController
 class HSSubjectDialog(QDialog):
     def __init__(self, parent=None, data=None):
         super().__init__(parent)
+
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
+
         self.setWindowTitle(tr("add_subject"))
         self.setMinimumWidth(400)
         self.setObjectName("LoginWindow")
@@ -35,7 +39,6 @@ class HSSubjectDialog(QDialog):
 
         self.inp_name = QLineEdit()
         self.inp_name.setObjectName("LoginInput")
-        self.inp_name.setPlaceholderText("VD: Toán, Văn, Anh …")
         form.addRow(tr("subject_name"), self.inp_name)
 
         # Điểm thường xuyên (tối đa 4)
@@ -77,15 +80,15 @@ class HSSubjectDialog(QDialog):
 
         layout.addLayout(form)
 
-        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        btns.accepted.connect(self._validate)
-        btns.rejected.connect(self.reject)
-        btns.button(QDialogButtonBox.Ok).setText("Lưu")
-        btns.button(QDialogButtonBox.Cancel).setText("Hủy")
-        btns.button(QDialogButtonBox.Ok).setStyleSheet(
+        self.btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.btns.accepted.connect(self._validate)
+        self.btns.rejected.connect(self.reject)
+        self.btns.button(QDialogButtonBox.Ok).setText(tr("save"))
+        self.btns.button(QDialogButtonBox.Cancel).setText(tr("cancel"))
+        self.btns.button(QDialogButtonBox.Ok).setStyleSheet(
             "background:#2D60FF;color:white;border-radius:8px;padding:8px 20px;font-weight:bold;border:none;"
         )
-        layout.addWidget(btns)
+        layout.addWidget(self.btns)
 
         if data:
             self._fill(data)
@@ -118,6 +121,13 @@ class HSSubjectDialog(QDialog):
             "credits": 1,
             "scores": {"tx": tx, "gk": gk, "ck": ck},
         }
+    
+    def _retranslate(self):
+        self.setWindowTitle(tr("add_subject"))
+        self.title.setText(tr("add_subject"))
+
+        self.btns.button(QDialogButtonBox.Ok).setText(tr("save"))
+        self.btns.button(QDialogButtonBox.Cancel).setText(tr("cancel"))
 
 
 # =====================================================
@@ -142,14 +152,14 @@ class SVSubjectDialog(QDialog):
 
         self.inp_name = QLineEdit()
         self.inp_name.setObjectName("LoginInput")
-        self.inp_name.setPlaceholderText("VD: Giải tích, CTDL&GT …")
         form.addRow(tr("subject_name"), self.inp_name)
 
         self.sp_credits = QSpinBox()
         self.sp_credits.setRange(1, 10)
         self.sp_credits.setValue(3)
         self.sp_credits.setObjectName("GradeSpinBox")
-        form.addRow("Số tín chỉ:", self.sp_credits)
+        self.lbl_credits = tr("credits")
+        form.addRow(self.lbl_credits, self.sp_credits)
 
         def score_spin(optional=True):
             sp = QDoubleSpinBox()
@@ -177,15 +187,15 @@ class SVSubjectDialog(QDialog):
         note.setObjectName("GradeNote")
         layout.addWidget(note)
 
-        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        btns.accepted.connect(self._validate)
-        btns.rejected.connect(self.reject)
-        btns.button(QDialogButtonBox.Ok).setText("Lưu")
-        btns.button(QDialogButtonBox.Cancel).setText("Hủy")
-        btns.button(QDialogButtonBox.Ok).setStyleSheet(
+        self.btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.btns.accepted.connect(self._validate)
+        self.btns.rejected.connect(self.reject)
+        self.btns.button(QDialogButtonBox.Ok).setText("Lưu")
+        self.btns.button(QDialogButtonBox.Cancel).setText("Hủy")
+        self.btns.button(QDialogButtonBox.Ok).setStyleSheet(
             "background:#2D60FF;color:white;border-radius:8px;padding:8px 20px;font-weight:bold;border:none;"
         )
-        layout.addWidget(btns)
+        layout.addWidget(self.btns)
 
         if data:
             self._fill(data)
@@ -217,6 +227,12 @@ class SVSubjectDialog(QDialog):
                 "ck": val(self.sp_ck),
             },
         }
+    
+    def _retranslate(self):
+        self.setWindowTitle(tr("add_subject"))
+        self.lbl_credits = tr("credits")
+        self.btns.button(QDialogButtonBox.Ok).setText(tr("save"))
+        self.btns.button(QDialogButtonBox.Cancel).setText(tr("cancel"))
 
 
 # =====================================================
