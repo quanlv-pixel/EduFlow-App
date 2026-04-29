@@ -28,10 +28,7 @@ class AIWorker(QThread):
                 cards = self.controller.generate_ai_from_topic(self.payload)
 
             if not cards:
-                self.error.emit(
-                    "AI không tạo được flashcard.\n"
-                    "Thử lại hoặc viết yêu cầu cụ thể hơn."
-                )
+                self.error.emit(tr("flash_ai_error_empty"))
             else:
                 self.finished.emit(cards)
         except Exception as e:
@@ -104,7 +101,7 @@ class FlashcardItem(QFrame):
         self.lbl.setStyleSheet("color: #1E2328; background: transparent;")
 
         # ── Hint ──
-        self.hint = QLabel("👆 Click để xem đáp án")
+        self.hint = QLabel(tr("flash_click_answer"))
         self.hint.setAlignment(Qt.AlignCenter)
         self.hint.setStyleSheet(
             "color: #9BA3AF; font-size: 11px; background: transparent;"
@@ -125,8 +122,8 @@ class FlashcardItem(QFrame):
         self.is_answer = not self.is_answer
         self.lbl.setText(self.a if self.is_answer else self.q)
         self.hint.setText(
-            "👆 Click để xem câu hỏi" if self.is_answer
-            else "👆 Click để xem đáp án"
+            tr("flash_click_question") if self.is_answer
+            else tr("flash_click_answer")
         )
         self._apply_style(self.is_answer)
         self._apply_badge(self.is_answer)
@@ -179,21 +176,21 @@ class OptionCard(QFrame):
         lbl_icon = QLabel(icon)
         lbl_icon.setStyleSheet("font-size: 36px; background: transparent;")
 
-        lbl_title = QLabel(title)
-        lbl_title.setStyleSheet(
+        self.lbl_title = QLabel(title)
+        self.lbl_title.setStyleSheet(
             "font-size: 17px; font-weight: bold; color: #1E2328; background: transparent;"
         )
 
-        lbl_desc = QLabel(desc)
-        lbl_desc.setStyleSheet(
+        self.lbl_desc = QLabel(desc)
+        self.lbl_desc.setStyleSheet(
             "font-size: 13px; color: #6F767E; background: transparent;"
         )
-        lbl_desc.setWordWrap(True)
+        self.lbl_desc.setWordWrap(True)
 
-        btn = QPushButton(btn_text)
-        btn.setCursor(Qt.PointingHandCursor)
-        btn.setFixedHeight(42)
-        btn.setStyleSheet("""
+        self.btn = QPushButton(btn_text)
+        self.btn.setCursor(Qt.PointingHandCursor)
+        self.btn.setFixedHeight(42)
+        self.btn.setStyleSheet("""
             QPushButton {
                 background-color: #2D60FF;
                 color: white;
@@ -204,20 +201,25 @@ class OptionCard(QFrame):
             }
             QPushButton:hover { background-color: #1A4FE0; }
         """)
-        btn.clicked.connect(on_click)
+        self.btn.clicked.connect(on_click)
 
         layout.addWidget(lbl_icon)
-        layout.addWidget(lbl_title)
-        layout.addWidget(lbl_desc)
+        layout.addWidget(self.lbl_title)
+        layout.addWidget(self.lbl_desc)
         layout.addStretch()
-        layout.addWidget(btn)
+        layout.addWidget(self.btn)
+
+    def retranslate(self, title: str, desc: str, btn_text: str):
+        self.lbl_title.setText(title)
+        self.lbl_desc.setText(desc)
+        self.btn.setText(btn_text)
 
 
 # ================= PROMPT DIALOG =================
 class PromptDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Tạo Flashcard bằng AI")
+        self.setWindowTitle(tr("flash_prompt_title"))
         self.setFixedSize(480, 300)
         self.setStyleSheet("background: #FFFFFF;")
 
@@ -225,23 +227,18 @@ class PromptDialog(QDialog):
         layout.setContentsMargins(32, 28, 32, 28)
         layout.setSpacing(14)
 
-        title = QLabel("🤖 Nhập yêu cầu cho AI")
+        title = QLabel(tr("flash_prompt_label"))
         title.setStyleSheet(
             "font-size: 18px; font-weight: bold; color: #1E2328;"
         )
         layout.addWidget(title)
 
-        subtitle = QLabel(
-            "Mô tả chủ đề bạn muốn ôn tập. AI sẽ tự tạo flashcard phù hợp."
-        )
+        subtitle = QLabel(tr("flash_prompt_subtitle"))
         subtitle.setStyleSheet("font-size: 13px; color: #6F767E;")
         subtitle.setWordWrap(True)
         layout.addWidget(subtitle)
 
-        examples = QLabel(
-            '💡  "Tạo flashcard về Python cơ bản"  •  '
-            '"Ôn tập Giải tích"  •  "Lý thuyết đồ thị"'
-        )
+        examples = QLabel(tr("flash_prompt_examples"))
         examples.setStyleSheet("""
             background: #F0F4FF;
             color: #2D60FF;
@@ -253,7 +250,7 @@ class PromptDialog(QDialog):
         layout.addWidget(examples)
 
         self.text_input = QTextEdit()
-        self.text_input.setPlaceholderText("Nhập yêu cầu của bạn ở đây...")
+        self.text_input.setPlaceholderText(tr("flash_prompt_placeholder"))
         self.text_input.setFixedHeight(72)
         self.text_input.setStyleSheet("""
             QTextEdit {
@@ -273,7 +270,7 @@ class PromptDialog(QDialog):
 
         btn_row = QHBoxLayout()
 
-        btn_cancel = QPushButton("Huỷ")
+        btn_cancel = QPushButton(tr("cancel"))
         btn_cancel.setCursor(Qt.PointingHandCursor)
         btn_cancel.setFixedHeight(40)
         btn_cancel.setStyleSheet("""
@@ -286,7 +283,7 @@ class PromptDialog(QDialog):
         """)
         btn_cancel.clicked.connect(self.reject)
 
-        self.btn_ok = QPushButton("✨  Tạo ngay")
+        self.btn_ok = QPushButton(tr("flash_prompt_generate"))
         self.btn_ok.setCursor(Qt.PointingHandCursor)
         self.btn_ok.setFixedHeight(40)
         self.btn_ok.setStyleSheet("""
@@ -320,8 +317,10 @@ class PromptDialog(QDialog):
 
 # ================= LOADING WIDGET =================
 class LoadingWidget(QFrame):
-    def __init__(self, message="AI đang tạo flashcard..."):
+    def __init__(self, message: str = ""):
         super().__init__()
+        if not message:
+            message = tr("flash_ai_generating")
         self.setStyleSheet("background: transparent;")
         self.setObjectName("LoadingWidget")
 
@@ -414,16 +413,16 @@ class FlashcardWidget(QWidget):
 
         self.card_file = OptionCard(
             icon="📄",
-            title="Tải lên tài liệu",
-            desc="Upload file PDF hoặc DOCX.\nAI đọc nội dung và tự tạo flashcard.",
-            btn_text="📂  Chọn file",
+            title=tr("flash_card_file_title"),
+            desc=tr("flash_card_file_desc"),
+            btn_text=tr("flash_card_file_btn"),
             on_click=self._on_upload_file
         )
         self.card_topic = OptionCard(
             icon="🤖",
-            title="Nhập yêu cầu",
-            desc="Gõ chủ đề muốn ôn tập.\nVí dụ: \"Tạo flashcard về Python cơ bản\".",
-            btn_text="✍️  Nhập yêu cầu",
+            title=tr("flash_card_topic_title"),
+            desc=tr("flash_card_topic_desc"),
+            btn_text=tr("flash_card_topic_btn"),
             on_click=self._on_enter_prompt
         )
 
@@ -483,7 +482,7 @@ class FlashcardWidget(QWidget):
         )
 
         # Nút xoá tất cả
-        self.btn_clear_all = QPushButton("🗑  Xóa tất cả")
+        self.btn_clear_all = QPushButton(tr("flash_clear_all"))
         self.btn_clear_all.setCursor(Qt.PointingHandCursor)
         self.btn_clear_all.setFixedHeight(34)
         self.btn_clear_all.setStyleSheet("""
@@ -529,14 +528,17 @@ class FlashcardWidget(QWidget):
     # ================================================================
     def _on_upload_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Chọn tài liệu học tập", "", "Documents (*.pdf *.docx)"
+            self, tr("flash_choose_file"), "", "Documents (*.pdf *.docx)"
         )
         if not file_path:
             return
 
         content = self.controller.ai.read_file(file_path)
         if not content or content.startswith("❌"):
-            QMessageBox.warning(self, "Lỗi đọc file", content or "Không đọc được file.")
+            QMessageBox.warning(
+                self, tr("flash_file_error_title"),
+                content or tr("flash_file_error_msg")
+            )
             return
 
         import os
@@ -558,7 +560,7 @@ class FlashcardWidget(QWidget):
         self._start_ai(mode="topic", payload=prompt)
 
     def _open_saved(self):
-        self.lbl_study_title.setText("📚 Flashcard đã lưu")
+        self.lbl_study_title.setText(tr("flash_saved_label"))
         self.stack.setCurrentIndex(1)
         self._render_from_db()
 
@@ -587,7 +589,7 @@ class FlashcardWidget(QWidget):
 
         if saved > 0:
             # Thông báo nhỏ màu xanh lá ở đầu
-            msg = QLabel(f"✅  Đã tạo và lưu {saved} flashcard mới!")
+            msg = QLabel(tr("flash_new_saved", saved=saved))
             msg.setAlignment(Qt.AlignCenter)
             msg.setFixedHeight(42)
             msg.setStyleSheet("""
@@ -615,7 +617,7 @@ class FlashcardWidget(QWidget):
         data = self.controller.get_flashcards(self.user_id)
 
         if not data:
-            empty = QLabel("Chưa có flashcard nào.\nHãy tạo mới bằng 2 nút bên trên!")
+            empty = QLabel(tr("flash_empty_msg"))
             empty.setAlignment(Qt.AlignCenter)
             empty.setWordWrap(True)
             empty.setStyleSheet(
@@ -668,15 +670,15 @@ class FlashcardWidget(QWidget):
                 "DELETE FROM flashcards WHERE id=?", (card_id,)
             )
         except Exception as e:
-            QMessageBox.warning(self, "Lỗi", str(e))
+            QMessageBox.warning(self, tr("flash_error"), str(e))
             return
         self._render_from_db()
 
     def _clear_all_flashcards(self):
         """Xoá toàn bộ flashcard của user."""
         reply = QMessageBox.question(
-            self, "Xác nhận xóa",
-            "Xóa toàn bộ flashcard đã lưu?\nHành động này không thể hoàn tác.",
+            self, tr("flash_confirm_clear"),
+            tr("flash_confirm_clear_msg"),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -688,7 +690,7 @@ class FlashcardWidget(QWidget):
                 "DELETE FROM flashcards WHERE user_id=?", (self.user_id,)
             )
         except Exception as e:
-            QMessageBox.warning(self, "Lỗi", str(e))
+            QMessageBox.warning(self, tr("flash_error"), str(e))
             return
 
         self._render_from_db()
@@ -701,3 +703,16 @@ class FlashcardWidget(QWidget):
         self.lbl_sub.setText(tr("flash_subtitle"))
         self.btn_view.setText("📖  " + tr("flash_view"))
         self.btn_back.setText("← " + tr("flash_back"))
+        self.btn_clear_all.setText(tr("flash_clear_all"))
+
+        # Option cards on home page
+        self.card_file.retranslate(
+            title=tr("flash_card_file_title"),
+            desc=tr("flash_card_file_desc"),
+            btn_text=tr("flash_card_file_btn"),
+        )
+        self.card_topic.retranslate(
+            title=tr("flash_card_topic_title"),
+            desc=tr("flash_card_topic_desc"),
+            btn_text=tr("flash_card_topic_btn"),
+        )

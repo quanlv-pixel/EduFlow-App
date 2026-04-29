@@ -115,6 +115,17 @@ class Database:
             CREATE TABLE IF NOT EXISTS migrations (
                 id TEXT PRIMARY KEY
             )
+            """,
+
+            """
+            CREATE TABLE IF NOT EXISTS grade_subjects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            mode TEXT,
+            subject_name TEXT,
+            credits INTEGER,
+            scores_data TEXT
+            )
             """
         ]
 

@@ -18,7 +18,7 @@ class BadgeDialog(QDialog):
     """
     def __init__(self, course_name: str, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("🎉 Hoàn thành khóa học!")
+        self.setWindowTitle(tr("badge_title"))
         self.setFixedSize(420, 360)
         self.setStyleSheet("background: #FFFFFF; border-radius: 20px;")
 
@@ -34,7 +34,7 @@ class BadgeDialog(QDialog):
         layout.addWidget(medal)
 
         # Tiêu đề
-        title = QLabel("Xuất sắc!")
+        title = QLabel(tr("badge_congrats"))
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("""
             font-size: 26px;
@@ -45,10 +45,7 @@ class BadgeDialog(QDialog):
         layout.addWidget(title)
 
         # Nội dung
-        msg = QLabel(
-            f"Bạn đã hoàn thành toàn bộ\nkhóa học <b>{course_name}</b>.\n"
-            "Hãy tiếp tục phát huy nhé!"
-        )
+        msg = QLabel(tr("badge_msg", course_name=course_name))
         msg.setAlignment(Qt.AlignCenter)
         msg.setWordWrap(True)
         msg.setStyleSheet("""
@@ -60,7 +57,7 @@ class BadgeDialog(QDialog):
         layout.addWidget(msg)
 
         # Badge label
-        badge = QLabel("✅  Đã nhận Chứng chỉ Hoàn thành")
+        badge = QLabel(tr("badge_certificate"))
         badge.setAlignment(Qt.AlignCenter)
         badge.setStyleSheet("""
             background: #ECFDF5;
@@ -75,7 +72,7 @@ class BadgeDialog(QDialog):
         layout.addSpacing(6)
 
         # Nút đóng
-        btn_close = QPushButton("Tuyệt vời! 🎊")
+        btn_close = QPushButton(tr("badge_btn"))
         btn_close.setCursor(Qt.PointingHandCursor)
         btn_close.setFixedHeight(44)
         btn_close.setStyleSheet("""
@@ -151,7 +148,7 @@ class LessonItem(QFrame):
         # Nút mở link
         url = lesson.get("url", "")
         if url:
-            btn_open = QPushButton("🔗 Mở")
+            btn_open = QPushButton(tr("lesson_open_btn"))
             btn_open.setCursor(Qt.PointingHandCursor)
             btn_open.setStyleSheet("""
                 QPushButton {
@@ -169,7 +166,7 @@ class LessonItem(QFrame):
             layout.addWidget(btn_open)
 
         # Nút Flashcard
-        btn_flash = QPushButton("⚡ Flashcard")
+        btn_flash = QPushButton(tr("lesson_flash_btn"))
         btn_flash.setCursor(Qt.PointingHandCursor)
         btn_flash.setStyleSheet("""
             QPushButton {
@@ -600,7 +597,7 @@ class CourseDetailWidget(QWidget):
                 item.widget().deleteLater()
 
         if self.course_id is None:
-            empty = QLabel("Không tìm thấy dữ liệu khóa học.")
+            empty = QLabel(tr("course_detail_no_data"))
             empty.setStyleSheet("color: #9BA3AF; font-size: 13px; background: transparent;")
             self.layout_lessons.insertWidget(0, empty)
             return
@@ -622,7 +619,7 @@ class CourseDetailWidget(QWidget):
 
         # Cập nhật status badge
         if progress == 100:
-            self.lbl_status_badge.setText("✅ Hoàn thành")
+            self.lbl_status_badge.setText(tr("course_detail_completed"))
             self.lbl_status_badge.setStyleSheet("""
                 background: #ECFDF5; color: #10B981;
                 border-radius: 12px; padding: 4px 14px;
@@ -644,7 +641,7 @@ class CourseDetailWidget(QWidget):
             self.layout_lessons.insertWidget(self.layout_lessons.count() - 1, item)
 
         if not lessons:
-            empty = QLabel(tr("course_detail_empty") if hasattr(self, '_retranslated') else "Chưa có bài giảng nào.")
+            empty = QLabel(tr("course_detail_no_lessons"))
             empty.setStyleSheet("color: #9BA3AF; font-size: 13px; background: transparent;")
             self.layout_lessons.insertWidget(0, empty)
 
@@ -660,14 +657,15 @@ class CourseDetailWidget(QWidget):
 
         # Cập nhật status badge
         if progress == 100:
-            self.lbl_status_badge.setText("✅ Hoàn thành")
+            self.lbl_status_badge.setText(tr("course_detail_completed"))
             self.lbl_status_badge.setStyleSheet("""
                 background: #ECFDF5; color: #10B981;
                 border-radius: 12px; padding: 4px 14px;
                 font-size: 12px; font-weight: 600;
             """)
             # Hiển thị badge/certificate dialog
-            course_name = self.course_data.get("name", "khóa học này") if self.course_data else "khóa học này"
+            course_name = (self.course_data.get("name", tr("course_detail_this_course"))
+                           if self.course_data else tr("course_detail_this_course"))
             dlg = BadgeDialog(course_name, self)
             dlg.exec()
 
@@ -675,11 +673,17 @@ class CourseDetailWidget(QWidget):
         try:
             cards = self.controller.generate_flashcard_for_lesson(lesson)
             if cards:
-                QMessageBox.information(self, "Flashcard", f"Đã tạo {len(cards)} flashcard!")
+                QMessageBox.information(
+                    self, tr("lesson_flash_btn"),
+                    tr("course_detail_flash_created", count=len(cards))
+                )
             else:
-                QMessageBox.information(self, "Flashcard", "Không có AI để tạo flashcard.")
+                QMessageBox.information(
+                    self, tr("lesson_flash_btn"),
+                    tr("course_detail_no_ai")
+                )
         except Exception as e:
-            QMessageBox.warning(self, "Lỗi", str(e))
+            QMessageBox.warning(self, tr("flash_error"), str(e))
 
     # Legacy compat
     def set_course(self, name, code, professor, progress=0):
@@ -693,10 +697,10 @@ class CourseDetailWidget(QWidget):
 
     def _retranslate(self):
         self._retranslated = True
-        self.back_btn.setText("← " + tr("flash_back"))
+        self.back_btn.setText("← " + tr("course_detail_back"))
         self.lbl_content.setText(tr("course_detail_content"))
         self.lbl_status_badge.setText(tr("course_status_learning"))
-        self.lbl_cta_desc.setText(tr("course_detail_cta_desc"))
+        self.lbl_cta_desc.setText(tr("course_detail_continue_desc"))
         self.lbl_cta_title.setText(tr("course_detail_continue"))
         self.btn_cta.setText(tr("course_detail_open_latest"))
         self.lbl_pop.setText(tr("course_detail_resources"))
@@ -704,3 +708,10 @@ class CourseDetailWidget(QWidget):
         self._stat_label_lessons.setText(tr("stat_lessons"))
         self._stat_label_exercises.setText(tr("stat_exercises"))
         self._stat_label_progress.setText(tr("stat_progress"))
+
+        # Re-render professor label and lessons list when language changes
+        if self.course_data:
+            self.lbl_prof.setText(
+                f"{tr('course_detail_professor')} {self.course_data.get('professor', '')}"
+            )
+            self.load_lessons()
