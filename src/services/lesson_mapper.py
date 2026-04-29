@@ -1,29 +1,103 @@
 class LessonMapper:
+    """
+    Nhận 1 course đã được chọn bởi user (từ search results)
+    và chia thành danh sách các bài giảng cụ thể.
+    """
 
-    def map_to_lessons(self, results):
+    # ================= ENTRY POINT =================
+    def split_course(self, course: dict) -> list:
+        """
+        Nhận 1 dict course {"title": ..., "link": ...}
+        Trả về list lessons tương ứng.
+        """
+        title = course.get("title", "Khóa học")
+        link = course.get("link", "")
+
+        source = self.detect_source(link)
+        type_ = self.detect_type(link)
+        num_lessons = self.get_lesson_count(link)
+        topics = self.get_topics(num_lessons)
+
         lessons = []
-
-        for i, r in enumerate(results):
+        for i, topic in enumerate(topics):
             lessons.append({
-                "title": r.get("title", f"Lesson {i+1}"),
-                "duration": "15-60 phút",
-                "type": self.detect_type(r.get("link", "")),
-                "url": r.get("link", ""),
-                "has_exercise": False
+                "title": f"{topic} — {title}",
+                "duration": f"{10 + i * 5} phút",
+                "type": type_,
+                "url": link,
+                "source": source,
+                "has_exercise": (i % 3 == 2),  # cứ 3 bài thì có 1 bài tập
             })
 
         return lessons
 
-    def detect_type(self, link):
-        link = link.lower()
+    # ================= map_to_lessons (dùng cho batch) =================
+    # Giữ lại để tương thích với code cũ nếu cần
+    def map_to_lessons(self, results: list) -> list:
+        lessons = []
+        for r in results:
+            lessons.extend(self.split_course(r))
+        return lessons
 
+    # ================= SỐ LƯỢNG BÀI GIẢNG TÙY NGUỒN =================
+    def get_lesson_count(self, link: str) -> int:
+        link = link.lower()
+        if "coursera" in link:
+            return 10
+        elif "youtube" in link:
+            return 8
+        elif "w3schools" in link:
+            return 8
+        elif "udemy" in link:
+            return 10
+        elif "freecodecamp" in link:
+            return 8
+        else:
+            return 6
+
+    # ================= DANH SÁCH CHỦ ĐỀ =================
+    def get_topics(self, count: int) -> list:
+        # 10 topic mẫu, cắt theo số lượng cần
+        all_topics = [
+            "Giới thiệu & Tổng quan",
+            "Kiến thức nền tảng",
+            "Khái niệm cốt lõi",
+            "Ví dụ minh họa thực tế",
+            "Ứng dụng & Demo",
+            "Bài tập thực hành",
+            "Chuyên sâu & Nâng cao",
+            "Debug & Xử lý lỗi phổ biến",
+            "Best Practices",
+            "Tổng kết & Ôn tập",
+        ]
+        return all_topics[:count]
+
+    # ================= DETECT SOURCE =================
+    def detect_source(self, link: str) -> str:
+        link = link.lower()
+        if "coursera" in link:
+            return "Coursera"
+        elif "youtube" in link:
+            return "YouTube"
+        elif "w3schools" in link:
+            return "W3Schools"
+        elif "udemy" in link:
+            return "Udemy"
+        elif "freecodecamp" in link:
+            return "freeCodeCamp"
+        elif "edx" in link:
+            return "edX"
+        else:
+            return "Online"
+
+    # ================= DETECT TYPE =================
+    def detect_type(self, link: str) -> str:
+        link = link.lower()
         if "youtube" in link:
             return "Video"
-        elif "coursera" in link:
+        elif "coursera" in link or "udemy" in link or "edx" in link:
             return "Course"
         elif "w3schools" in link:
             return "Docs"
-        elif "udemy" in link:
-            return "Course"
         else:
             return "Online"

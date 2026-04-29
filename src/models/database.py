@@ -42,14 +42,19 @@ class Database:
             )
             """,
 
-            # LESSONS
+            # LESSONS — đầy đủ các cột cần thiết
+            # FIX: Thêm duration, type, has_exercise, completed so với phiên bản cũ
             """
             CREATE TABLE IF NOT EXISTS lessons (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 course_id INTEGER,
                 title TEXT,
                 url TEXT,
-                source TEXT
+                source TEXT,
+                duration TEXT DEFAULT '15-30 phút',
+                type TEXT DEFAULT 'Online',
+                has_exercise INTEGER DEFAULT 0,
+                completed INTEGER DEFAULT 0
             )
             """,
 
@@ -105,22 +110,6 @@ class Database:
             )
             """,
 
-            # ── GRADE SUBJECTS (NEW) ──────────────────────────────
-            # mode       : 'student' (học sinh) | 'university' (sinh viên)
-            # credits    : số tín chỉ (học sinh để 1)
-            # scores_data: JSON chứa điểm thành phần
-            """
-            CREATE TABLE IF NOT EXISTS grade_subjects (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER NOT NULL,
-                mode        TEXT    NOT NULL DEFAULT 'student',
-                subject_name TEXT   NOT NULL,
-                credits     INTEGER NOT NULL DEFAULT 1,
-                scores_data TEXT    NOT NULL DEFAULT '{}',
-                created_at  TEXT    DEFAULT (datetime('now','localtime'))
-            )
-            """,
-
             # MIGRATIONS
             """
             CREATE TABLE IF NOT EXISTS migrations (
@@ -138,18 +127,44 @@ class Database:
 
     # ================= MIGRATION =================
     def migrate_once(self):
-        mid = "schedule_time_to_minutes"
-
+        # Migration 1: đổi schedule time sang minutes
+        mid1 = "schedule_time_to_minutes"
         row = self.cursor.execute(
-            "SELECT id FROM migrations WHERE id=?", (mid,)
+            "SELECT id FROM migrations WHERE id=?", (mid1,)
         ).fetchone()
-
         if not row:
             self.cursor.execute(
                 "UPDATE schedule SET start_time = start_time * 60, end_time = end_time * 60"
             )
             self.cursor.execute(
-                "INSERT INTO migrations (id) VALUES (?)", (mid,)
+                "INSERT INTO migrations (id) VALUES (?)", (mid1,)
+            )
+            self.conn.commit()
+
+        # Migration 2: thêm các cột mới vào bảng lessons nếu chưa có
+        # FIX: Đây là migration để upgrade DB cũ không bị lỗi
+        mid2 = "lessons_add_extra_columns"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid2,)
+        ).fetchone()
+        if not row:
+            existing_cols = [
+                row[1] for row in
+                self.cursor.execute("PRAGMA table_info(lessons)").fetchall()
+            ]
+            new_cols = {
+                "duration":     "TEXT DEFAULT '15-30 phút'",
+                "type":         "TEXT DEFAULT 'Online'",
+                "has_exercise": "INTEGER DEFAULT 0",
+                "completed":    "INTEGER DEFAULT 0",
+            }
+            for col, definition in new_cols.items():
+                if col not in existing_cols:
+                    self.cursor.execute(
+                        f"ALTER TABLE lessons ADD COLUMN {col} {definition}"
+                    )
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)", (mid2,)
             )
             self.conn.commit()
 
@@ -159,7 +174,6 @@ class Database:
             "SELECT * FROM users WHERE email=?",
             ("admin@eduflow.com",)
         )
-
         if not self.cursor.fetchone():
             self.cursor.execute(
                 "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
@@ -207,21 +221,61 @@ class Database:
             (user_id, name, code, professor)
         )
         self.conn.commit()
-        return cur.lastrowid
+        return cur.lastrowid  # trả về id để controller dùng tiếp
+
+    def delete_course(self, course_id):
+        # Xóa lessons trước, sau đó xóa course
+        self.execute("DELETE FROM lessons WHERE course_id=?", (course_id,))
+        self.execute("DELETE FROM course_resources WHERE course_id=?", (course_id,))
+        return self.execute("DELETE FROM courses WHERE id=?", (course_id,))
+
+    def update_course(self, course_id, name, code, professor):
+        return self.execute(
+            "UPDATE courses SET name=?, code=?, professor=? WHERE id=?",
+            (name.strip(), code.strip(), professor.strip(), course_id)
+        )
 
     # ================= LESSON =================
-    def add_lesson(self, course_id, title, url, source):
+    # FIX: Thêm đủ tham số duration, type_, url, has_exercise, completed
+    def add_lesson(self, course_id, title, url, source,
+                   duration="15-30 phút", type_="Online",
+                   has_exercise=False, completed=False):
         return self.execute(
-            "INSERT INTO lessons (course_id, title, url, source) VALUES (?, ?, ?, ?)",
-            (course_id, title, url, source)
+            """
+            INSERT INTO lessons
+                (course_id, title, url, source, duration, type, has_exercise, completed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (course_id, title, url, source,
+             duration, type_, int(has_exercise), int(completed))
         )
 
     def get_lessons(self, course_id):
         return self.execute(
-            "SELECT * FROM lessons WHERE course_id=?",
+            "SELECT * FROM lessons WHERE course_id=? ORDER BY id ASC",
             (course_id,),
             True
         )
+
+    # FIX: Mới — đánh dấu lesson đã hoàn thành / chưa
+    def set_lesson_completed(self, lesson_id, completed: bool):
+        return self.execute(
+            "UPDATE lessons SET completed=? WHERE id=?",
+            (int(completed), lesson_id)
+        )
+
+    # FIX: Mới — tính progress của course (%)
+    def get_course_progress(self, course_id) -> int:
+        rows = self.execute(
+            "SELECT completed FROM lessons WHERE course_id=?",
+            (course_id,),
+            True
+        )
+        if not rows:
+            return 0
+        total = len(rows)
+        done = sum(1 for r in rows if r["completed"])
+        return int(done / total * 100)
 
     # ================= RESOURCE =================
     def add_resource(self, course_id, title, url):
@@ -278,69 +332,20 @@ class Database:
     def save_document_and_summary(self, user_id, filename, content, summary):
         try:
             cur = self.conn.cursor()
-
             cur.execute(
                 "INSERT INTO documents (user_id, filename, content) VALUES (?, ?, ?)",
                 (user_id, filename, content)
             )
             doc_id = cur.lastrowid
-
             cur.execute(
                 "INSERT INTO summaries (document_id, summary_text) VALUES (?, ?)",
                 (doc_id, summary)
             )
-
             self.conn.commit()
             return True
-
         except Exception as e:
             print("❌ SAVE ERROR:", e)
             return False
-
-    # ================= GRADES =================
-    def get_grade_subjects(self, user_id, mode):
-        """Lấy tất cả môn của user theo chế độ (student / university)."""
-        return self.execute(
-            "SELECT * FROM grade_subjects WHERE user_id=? AND mode=? ORDER BY created_at ASC",
-            (user_id, mode),
-            fetch=True
-        ) or []
-
-    def add_grade_subject(self, user_id, mode, subject_name, credits, scores_data):
-        """
-        scores_data: chuỗi JSON đã encode, hoặc dict (sẽ tự encode).
-        """
-        import json
-        if isinstance(scores_data, dict):
-            scores_data = json.dumps(scores_data, ensure_ascii=False)
-
-        return self.execute(
-            """
-            INSERT INTO grade_subjects (user_id, mode, subject_name, credits, scores_data)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (user_id, mode, subject_name, credits, scores_data)
-        )
-
-    def update_grade_subject(self, subject_id, subject_name, credits, scores_data):
-        import json
-        if isinstance(scores_data, dict):
-            scores_data = json.dumps(scores_data, ensure_ascii=False)
-
-        return self.execute(
-            """
-            UPDATE grade_subjects
-            SET subject_name=?, credits=?, scores_data=?
-            WHERE id=?
-            """,
-            (subject_name, credits, scores_data, subject_id)
-        )
-
-    def delete_grade_subject(self, subject_id):
-        return self.execute(
-            "DELETE FROM grade_subjects WHERE id=?",
-            (subject_id,)
-        )
 
     # ================= CLOSE =================
     def close(self):

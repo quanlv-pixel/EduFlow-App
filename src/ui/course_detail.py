@@ -2,56 +2,173 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QFrame, QProgressBar,
     QStackedLayout, QMessageBox, QScrollArea,
-    QSizePolicy, QGridLayout
+    QSizePolicy, QGridLayout, QDialog
 )
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QFont, QCursor
+from PySide6.QtCore import Qt, QSize, Signal
+from PySide6.QtGui import QFont, QCursor, QDesktopServices
+from PySide6.QtCore import QUrl
 from src.ui.settings_widget import LanguageManager, tr
+
+
+# ================= BADGE DIALOG (hiện khi đạt 100%) =================
+class BadgeDialog(QDialog):
+    """
+    Dialog chúc mừng khi user hoàn thành 100% khóa học.
+    Hiển thị huy hiệu + tên khóa học.
+    """
+    def __init__(self, course_name: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("🎉 Hoàn thành khóa học!")
+        self.setFixedSize(420, 360)
+        self.setStyleSheet("background: #FFFFFF; border-radius: 20px;")
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(40, 36, 40, 36)
+        layout.setSpacing(14)
+        layout.setAlignment(Qt.AlignCenter)
+
+        # Medal emoji lớn
+        medal = QLabel("🏅")
+        medal.setAlignment(Qt.AlignCenter)
+        medal.setStyleSheet("font-size: 72px; background: transparent;")
+        layout.addWidget(medal)
+
+        # Tiêu đề
+        title = QLabel("Xuất sắc!")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("""
+            font-size: 26px;
+            font-weight: bold;
+            color: #1E2328;
+            background: transparent;
+        """)
+        layout.addWidget(title)
+
+        # Nội dung
+        msg = QLabel(
+            f"Bạn đã hoàn thành toàn bộ\nkhóa học <b>{course_name}</b>.\n"
+            "Hãy tiếp tục phát huy nhé!"
+        )
+        msg.setAlignment(Qt.AlignCenter)
+        msg.setWordWrap(True)
+        msg.setStyleSheet("""
+            font-size: 14px;
+            color: #6F767E;
+            background: transparent;
+            line-height: 1.6;
+        """)
+        layout.addWidget(msg)
+
+        # Badge label
+        badge = QLabel("✅  Đã nhận Chứng chỉ Hoàn thành")
+        badge.setAlignment(Qt.AlignCenter)
+        badge.setStyleSheet("""
+            background: #ECFDF5;
+            color: #10B981;
+            border-radius: 12px;
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: 600;
+        """)
+        layout.addWidget(badge)
+
+        layout.addSpacing(6)
+
+        # Nút đóng
+        btn_close = QPushButton("Tuyệt vời! 🎊")
+        btn_close.setCursor(Qt.PointingHandCursor)
+        btn_close.setFixedHeight(44)
+        btn_close.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #2D60FF, stop:1 #5B8BFF);
+                color: white;
+                border-radius: 12px;
+                font-size: 15px;
+                font-weight: bold;
+                border: none;
+            }
+            QPushButton:hover { background: #1A4FE0; }
+        """)
+        btn_close.clicked.connect(self.accept)
+        layout.addWidget(btn_close)
+
 
 # ================= LESSON ITEM =================
 class LessonItem(QFrame):
-    def __init__(self, lesson, on_flashcard):
+    # Signal phát ra khi user toggle trạng thái done
+    completed_changed = Signal(int, bool)  # (lesson_id, is_done)
+
+    def __init__(self, lesson: dict, on_flashcard):
         super().__init__()
 
         self.lesson = lesson
-        self.setObjectName("CardWhite")
-        self.setStyleSheet("""
-            QFrame#CardWhite {
-                background: #FFFFFF;
-                border-radius: 12px;
-                border: 1px solid #EDEDED;
-            }
-        """)
-        self.setFixedHeight(60)
+        # FIX: đọc completed từ DB thay vì hard-code ✅
+        self.is_done = bool(lesson.get("completed", False))
+
+        self.setObjectName("LessonCard")
+        self.setFixedHeight(64)
+        self._apply_style()
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 0, 16, 0)
         layout.setSpacing(12)
 
-        # Check icon
-        check = QLabel("✅")
-        check.setStyleSheet("font-size: 16px; background: transparent;")
-        check.setFixedWidth(28)
+        # Checkbox icon — click để toggle done/undone
+        self.check_btn = QPushButton()
+        self.check_btn.setFixedSize(28, 28)
+        self.check_btn.setCursor(Qt.PointingHandCursor)
+        self.check_btn.setStyleSheet("border: none; background: transparent; font-size: 18px;")
+        self.check_btn.clicked.connect(self._toggle_done)
+        self._update_check_icon()
 
         # Title + meta
         info_v = QVBoxLayout()
         info_v.setSpacing(2)
 
-        name = QLabel(lesson["title"])
-        name.setStyleSheet("font-size: 14px; font-weight: 600; color: #1E2328; background: transparent;")
+        self.lbl_title = QLabel(lesson["title"])
+        self.lbl_title.setStyleSheet(
+            "font-size: 14px; font-weight: 600; color: #1E2328; background: transparent;"
+        )
 
         duration = lesson.get("duration", "")
-        type_lbl = lesson.get("type", "Video bài giảng")
-        meta = QLabel(f"{duration}  •  {type_lbl}" if duration else type_lbl)
+        type_lbl = lesson.get("type", "Online")
+        source = lesson.get("source", "")
+        meta_text = f"{duration}  •  {type_lbl}"
+        if source:
+            meta_text += f"  •  {source}"
+
+        meta = QLabel(meta_text)
         meta.setStyleSheet("font-size: 11px; color: #6F767E; background: transparent;")
 
-        info_v.addWidget(name)
+        info_v.addWidget(self.lbl_title)
         info_v.addWidget(meta)
 
-        layout.addWidget(check)
+        layout.addWidget(self.check_btn)
         layout.addLayout(info_v)
         layout.addStretch()
 
+        # Nút mở link
+        url = lesson.get("url", "")
+        if url:
+            btn_open = QPushButton("🔗 Mở")
+            btn_open.setCursor(Qt.PointingHandCursor)
+            btn_open.setStyleSheet("""
+                QPushButton {
+                    background: #F3F4F6;
+                    color: #374151;
+                    border-radius: 8px;
+                    padding: 5px 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    border: none;
+                }
+                QPushButton:hover { background: #E5E7EB; }
+            """)
+            btn_open.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(url)))
+            layout.addWidget(btn_open)
+
+        # Nút Flashcard
         btn_flash = QPushButton("⚡ Flashcard")
         btn_flash.setCursor(Qt.PointingHandCursor)
         btn_flash.setStyleSheet("""
@@ -67,8 +184,30 @@ class LessonItem(QFrame):
             QPushButton:hover { background-color: #1A4FE0; }
         """)
         btn_flash.clicked.connect(lambda: on_flashcard(self.lesson))
-
         layout.addWidget(btn_flash)
+
+    # ── Toggle done / undone ──
+    def _toggle_done(self):
+        self.is_done = not self.is_done
+        self._update_check_icon()
+        self._apply_style()
+        lesson_id = self.lesson.get("id")
+        if lesson_id is not None:
+            self.completed_changed.emit(lesson_id, self.is_done)
+
+    def _update_check_icon(self):
+        self.check_btn.setText("✅" if self.is_done else "⬜")
+
+    def _apply_style(self):
+        bg = "#F0FDF4" if self.is_done else "#FFFFFF"
+        border = "#6EE7B7" if self.is_done else "#EDEDED"
+        self.setStyleSheet(f"""
+            QFrame#LessonCard {{
+                background: {bg};
+                border-radius: 12px;
+                border: 1px solid {border};
+            }}
+        """)
 
 
 # ================= RESOURCE LINK ITEM =================
@@ -84,7 +223,11 @@ class ResourceItem(QWidget):
         icon.setStyleSheet("font-size: 13px; background: transparent;")
 
         lbl_title = QLabel(title)
-        lbl_title.setStyleSheet("font-size: 13px; font-weight: 600; color: #2D60FF; background: transparent;")
+        lbl_title.setStyleSheet(
+            "font-size: 13px; font-weight: 600; color: #2D60FF; background: transparent;"
+        )
+        lbl_title.setCursor(Qt.PointingHandCursor)
+        lbl_title.mousePressEvent = lambda _: QDesktopServices.openUrl(QUrl(url))
 
         top.addWidget(icon)
         top.addWidget(lbl_title)
@@ -133,15 +276,14 @@ class CourseDetailWidget(QWidget):
             }
             QPushButton:hover { color: #2D60FF; }
         """)
-
         main_layout.addWidget(self.back_btn)
 
-        # ── BODY: 2-COLUMN ──────────────────────
+        # ── BODY: 2-COLUMN ──
         body = QHBoxLayout()
         body.setSpacing(24)
         body.setContentsMargins(0, 0, 0, 0)
 
-        # LEFT COLUMN
+        # ── LEFT COLUMN ──
         left = QVBoxLayout()
         left.setSpacing(18)
 
@@ -161,7 +303,7 @@ class CourseDetailWidget(QWidget):
 
         # Title row
         title_row = QHBoxLayout()
-        self.lbl_title = QLabel(tr("course_detail_title"))
+        self.lbl_title = QLabel()
         self.lbl_title.setStyleSheet("""
             font-size: 26px;
             font-weight: bold;
@@ -179,7 +321,7 @@ class CourseDetailWidget(QWidget):
             font-weight: 600;
         """)
 
-        self.lbl_status_badge = QLabel(tr("course_status_learning"))
+        self.lbl_status_badge = QLabel()
         self.lbl_status_badge.setStyleSheet("""
             background: #ECFDF5;
             color: #10B981;
@@ -196,13 +338,17 @@ class CourseDetailWidget(QWidget):
 
         # Professor
         self.lbl_prof = QLabel()
-        self.lbl_prof.setStyleSheet("color: #6F767E; font-size: 13px; font-style: italic; background: transparent;")
+        self.lbl_prof.setStyleSheet(
+            "color: #6F767E; font-size: 13px; font-style: italic; background: transparent;"
+        )
 
         # Description
         self.lbl_desc_title = QLabel()
-        self.lbl_desc_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #1E2328; background: transparent;")
+        self.lbl_desc_title.setStyleSheet(
+            "font-size: 15px; font-weight: bold; color: #1E2328; background: transparent;"
+        )
 
-        self.lbl_desc = QLabel("Thiết kế và quản trị cơ sở dữ liệu quan hệ với trọng tâm là SQL.")
+        self.lbl_desc = QLabel()
         self.lbl_desc.setStyleSheet("color: #6F767E; font-size: 13px; background: transparent;")
         self.lbl_desc.setWordWrap(True)
 
@@ -219,46 +365,77 @@ class CourseDetailWidget(QWidget):
         stats_row.addLayout(self.stat_progress)
         stats_row.addStretch()
 
+        # Progress bar tổng thể
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setFixedHeight(8)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: none;
+                background-color: #EEF0F4;
+                border-radius: 4px;
+            }
+            QProgressBar::chunk {
+                background-color: #2D60FF;
+                border-radius: 4px;
+            }
+        """)
+
         header_card_layout.addLayout(title_row)
         header_card_layout.addWidget(self.lbl_prof)
-        header_card_layout.addSpacing(6)
+        header_card_layout.addSpacing(4)
         header_card_layout.addWidget(self.lbl_desc_title)
         header_card_layout.addWidget(self.lbl_desc)
         header_card_layout.addSpacing(8)
         header_card_layout.addLayout(stats_row)
+        header_card_layout.addWidget(self.progress_bar)
 
-        # Content card (Nội dung học tập)
-        content_card = QFrame()
-        content_card.setObjectName("CardWhite")
-        content_card.setStyleSheet("""
+        left.addWidget(self.header_card)
+
+        # Lessons card
+        lessons_card = QFrame()
+        lessons_card.setObjectName("CardWhite")
+        lessons_card.setStyleSheet("""
             QFrame#CardWhite {
                 background: #FFFFFF;
                 border-radius: 20px;
                 border: 1px solid #EDEDED;
             }
         """)
-        content_card_layout = QVBoxLayout(content_card)
-        content_card_layout.setContentsMargins(24, 20, 24, 20)
-        content_card_layout.setSpacing(10)
+        lessons_card_layout = QVBoxLayout(lessons_card)
+        lessons_card_layout.setContentsMargins(20, 18, 20, 18)
+        lessons_card_layout.setSpacing(10)
 
         self.lbl_content = QLabel()
-        self.lbl_content.setStyleSheet("font-size: 16px; font-weight: bold; color: #1E2328; background: transparent;")
-        content_card_layout.addWidget(self.lbl_content)
+        self.lbl_content.setStyleSheet(
+            "font-size: 16px; font-weight: bold; color: #1E2328; background: transparent;"
+        )
+        lessons_card_layout.addWidget(self.lbl_content)
 
-        self.layout_lessons = QVBoxLayout()
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background: transparent; border: none;")
+
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background: transparent;")
+
+        self.layout_lessons = QVBoxLayout(scroll_content)
+        self.layout_lessons.setContentsMargins(0, 0, 0, 0)
         self.layout_lessons.setSpacing(8)
-        content_card_layout.addLayout(self.layout_lessons)
+        self.layout_lessons.addStretch()
 
-        left.addWidget(self.header_card)
-        left.addWidget(content_card)
-        left.addStretch()
+        scroll.setWidget(scroll_content)
+        lessons_card_layout.addWidget(scroll)
+        left.addWidget(lessons_card, stretch=1)
 
-        # RIGHT COLUMN
+        # ── RIGHT COLUMN ──
         right = QVBoxLayout()
         right.setSpacing(18)
         right.setAlignment(Qt.AlignTop)
 
-        # Resources card
+        # Resource card
         res_card = QFrame()
         res_card.setObjectName("CardWhite")
         res_card.setFixedWidth(280)
@@ -282,7 +459,10 @@ class CourseDetailWidget(QWidget):
         res_layout.addLayout(self.res_container)
 
         self.lbl_pop = QLabel()
-        self.lbl_pop.setStyleSheet("font-size: 10px; color: #9BA3AF; font-weight: 700; letter-spacing: 1px; background: transparent;")
+        self.lbl_pop.setStyleSheet(
+            "font-size: 10px; color: #9BA3AF; font-weight: 700; "
+            "letter-spacing: 1px; background: transparent;"
+        )
         res_layout.addSpacing(12)
         res_layout.addWidget(self.lbl_pop)
 
@@ -316,10 +496,14 @@ class CourseDetailWidget(QWidget):
         cta_layout.setSpacing(10)
 
         self.lbl_cta_title = QLabel()
-        self.lbl_cta_title.setStyleSheet("font-size: 16px; font-weight: bold; color: white; background: transparent;")
+        self.lbl_cta_title.setStyleSheet(
+            "font-size: 16px; font-weight: bold; color: white; background: transparent;"
+        )
 
-        self.lbl_cta_desc = QLabel("Bạn đang dừng lại ở giai đoạn đầu của khóa học. Bắt đầu bài học đầu tiên ngay nhé!")
-        self.lbl_cta_desc.setStyleSheet("font-size: 12px; color: rgba(255,255,255,0.85); background: transparent;")
+        self.lbl_cta_desc = QLabel()
+        self.lbl_cta_desc.setStyleSheet(
+            "font-size: 12px; color: rgba(255,255,255,0.85); background: transparent;"
+        )
         self.lbl_cta_desc.setWordWrap(True)
 
         self.btn_cta = QPushButton()
@@ -359,30 +543,33 @@ class CourseDetailWidget(QWidget):
         icon = QLabel(icon_text)
         icon.setStyleSheet("font-size: 18px; background: transparent;")
         lbl_label = QLabel(label)
-        lbl_label.setStyleSheet("font-size: 10px; color: #9BA3AF; font-weight: 700; letter-spacing: 0.8px; background: transparent;")
+        lbl_label.setStyleSheet(
+            "font-size: 10px; color: #9BA3AF; font-weight: 700; "
+            "letter-spacing: 0.8px; background: transparent;"
+        )
         row.addWidget(icon)
         row.addWidget(lbl_label)
         row.addStretch()
 
         lbl_val = QLabel(value)
-        lbl_val.setStyleSheet("font-size: 22px; font-weight: bold; color: #1E2328; background: transparent;")
+        lbl_val.setStyleSheet(
+            "font-size: 22px; font-weight: bold; color: #1E2328; background: transparent;"
+        )
 
         lay.addLayout(row)
         lay.addWidget(lbl_val)
 
-        # store reference for update
         setattr(self, f"_stat_label_{key}", lbl_label)
         setattr(self, f"_stat_val_{key}", lbl_val)
         return lay
 
-    def _set_stat(self, label, value):
-        w = getattr(self, f"_stat_val_{label}", None)
+    def _set_stat(self, key, value):
+        w = getattr(self, f"_stat_val_{key}", None)
         if w:
             w.setText(str(value))
 
     # ================= LOAD DATA =================
-    def load_course(self, course):
-        # Lấy id linh hoạt: hỗ trợ "id", "course_id", "_id"
+    def load_course(self, course: dict):
         self.course_id = course.get("id") or course.get("course_id") or course.get("_id")
         self.course_data = course
 
@@ -393,10 +580,7 @@ class CourseDetailWidget(QWidget):
         desc = course.get("description", "")
         self.lbl_desc.setText(desc)
 
-        progress = course.get("progress", 0)
-        self._set_stat("stat_progress", f"{progress}%")
-
-        # Resources — xóa cũ
+        # Resources
         for i in reversed(range(self.res_container.count())):
             item = self.res_container.itemAt(i)
             if item and item.widget():
@@ -409,16 +593,16 @@ class CourseDetailWidget(QWidget):
         self.load_lessons()
 
     def load_lessons(self):
+        # Xóa lessons cũ khỏi UI (bỏ qua stretch ở cuối)
         for i in reversed(range(self.layout_lessons.count())):
             item = self.layout_lessons.itemAt(i)
             if item and item.widget():
                 item.widget().deleteLater()
 
-        # Nếu chưa có course_id thì không load
         if self.course_id is None:
             empty = QLabel("Không tìm thấy dữ liệu khóa học.")
             empty.setStyleSheet("color: #9BA3AF; font-size: 13px; background: transparent;")
-            self.layout_lessons.addWidget(empty)
+            self.layout_lessons.insertWidget(0, empty)
             return
 
         try:
@@ -427,28 +611,77 @@ class CourseDetailWidget(QWidget):
             print(f"[CourseDetail] Lỗi load_lessons: {e}")
             lessons = []
 
-        self._set_stat("stat_lessons", len(lessons))
+        total = len(lessons)
         exercises = sum(1 for l in lessons if l.get("has_exercise", False))
-        self._set_stat("stat_exercises", exercises)
+        progress = self.controller.get_progress(self.course_id) if total > 0 else 0
+
+        self._set_stat("lessons", total)
+        self._set_stat("exercises", exercises)
+        self._set_stat("progress", f"{progress}%")
+        self.progress_bar.setValue(progress)
+
+        # Cập nhật status badge
+        if progress == 100:
+            self.lbl_status_badge.setText("✅ Hoàn thành")
+            self.lbl_status_badge.setStyleSheet("""
+                background: #ECFDF5; color: #10B981;
+                border-radius: 12px; padding: 4px 14px;
+                font-size: 12px; font-weight: 600;
+            """)
+        else:
+            self.lbl_status_badge.setText(tr("course_status_learning"))
+            self.lbl_status_badge.setStyleSheet("""
+                background: #EEF2FF; color: #2D60FF;
+                border-radius: 12px; padding: 4px 14px;
+                font-size: 12px; font-weight: 600;
+            """)
 
         for l in lessons:
             item = LessonItem(l, self.handle_flashcard)
-            self.layout_lessons.addWidget(item)
+            # FIX: Kết nối signal để cập nhật progress khi user tick
+            item.completed_changed.connect(self._on_lesson_completed)
+            # Chèn trước stretch
+            self.layout_lessons.insertWidget(self.layout_lessons.count() - 1, item)
 
         if not lessons:
-            self.empty_label = QLabel()
-            self.empty_label.setStyleSheet("color: #9BA3AF; font-size: 13px; background: transparent;")
-            self.layout_lessons.addWidget(self.empty_label)
+            empty = QLabel(tr("course_detail_empty") if hasattr(self, '_retranslated') else "Chưa có bài giảng nào.")
+            empty.setStyleSheet("color: #9BA3AF; font-size: 13px; background: transparent;")
+            self.layout_lessons.insertWidget(0, empty)
 
     # ================= ACTIONS =================
-    def handle_flashcard(self, lesson):
+    # FIX: Mới — xử lý khi user tick/untick 1 lesson
+    def _on_lesson_completed(self, lesson_id: int, is_done: bool):
+        self.controller.mark_lesson_done(lesson_id, is_done)
+
+        # Tính lại progress
+        progress = self.controller.get_progress(self.course_id)
+        self._set_stat("progress", f"{progress}%")
+        self.progress_bar.setValue(progress)
+
+        # Cập nhật status badge
+        if progress == 100:
+            self.lbl_status_badge.setText("✅ Hoàn thành")
+            self.lbl_status_badge.setStyleSheet("""
+                background: #ECFDF5; color: #10B981;
+                border-radius: 12px; padding: 4px 14px;
+                font-size: 12px; font-weight: 600;
+            """)
+            # Hiển thị badge/certificate dialog
+            course_name = self.course_data.get("name", "khóa học này") if self.course_data else "khóa học này"
+            dlg = BadgeDialog(course_name, self)
+            dlg.exec()
+
+    def handle_flashcard(self, lesson: dict):
         try:
             cards = self.controller.generate_flashcard_for_lesson(lesson)
-            QMessageBox.information(self, "Flashcard", f"Đã tạo {len(cards)} flashcard!")
+            if cards:
+                QMessageBox.information(self, "Flashcard", f"Đã tạo {len(cards)} flashcard!")
+            else:
+                QMessageBox.information(self, "Flashcard", "Không có AI để tạo flashcard.")
         except Exception as e:
             QMessageBox.warning(self, "Lỗi", str(e))
 
-    # ── Legacy compat: some callers use set_course() ──
+    # Legacy compat
     def set_course(self, name, code, professor, progress=0):
         self.load_course({
             "id": getattr(self, "course_id", None),
@@ -459,28 +692,15 @@ class CourseDetailWidget(QWidget):
         })
 
     def _retranslate(self):
+        self._retranslated = True
         self.back_btn.setText("← " + tr("flash_back"))
-
         self.lbl_content.setText(tr("course_detail_content"))
-
-        # header
         self.lbl_status_badge.setText(tr("course_status_learning"))
-
-        # CTA
         self.lbl_cta_desc.setText(tr("course_detail_cta_desc"))
         self.lbl_cta_title.setText(tr("course_detail_continue"))
         self.btn_cta.setText(tr("course_detail_open_latest"))
         self.lbl_pop.setText(tr("course_detail_resources"))
-
-        self.lbl_cta_desc.setText(tr("course_detail_cta_desc"))
-
+        self.lbl_desc_title.setText(tr("course_detail_description"))
         self._stat_label_lessons.setText(tr("stat_lessons"))
         self._stat_label_exercises.setText(tr("stat_exercises"))
         self._stat_label_progress.setText(tr("stat_progress"))
-        self.lbl_desc_title.setText(tr("course_detail_description"))
-        # resource
-        # nếu bạn có label resource title thì thêm
-
-        # empty lessons
-        if hasattr(self, "empty_label"):
-            self.empty_label.setText(tr("course_detail_empty"))
