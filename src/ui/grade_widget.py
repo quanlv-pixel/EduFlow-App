@@ -173,7 +173,6 @@ class SVSubjectDialog(QDialog):
         form.addRow(tr("ck_score"), self.sp_ck)
 
         layout.addLayout(form)
-
         note = QLabel("💡 Nếu không có CC/BT, trọng số tự động điều chỉnh.")
         note.setObjectName("GradeNote")
         layout.addWidget(note)
@@ -227,7 +226,7 @@ class SummaryBanner(QFrame):
     def __init__(self):
         super().__init__()
         self.setObjectName("CardBlue")
-        self.setFixedHeight(110)
+        self.setFixedHeight(140)
         lay = QHBoxLayout(self)
         lay.setSpacing(40)
 
@@ -415,7 +414,10 @@ class GradeWidget(QWidget):
         hh = self.table.horizontalHeader()
         hh.setSectionResizeMode(0, QHeaderView.Stretch)
         for c in range(1, 6):
-            hh.setSectionResizeMode(c, QHeaderView.ResizeToContents)
+            if c == 4:  # cột avg
+                hh.setSectionResizeMode(c, QHeaderView.Stretch)
+            else:
+                hh.setSectionResizeMode(c, QHeaderView.ResizeToContents)
         hh.setSectionResizeMode(6, QHeaderView.Fixed)
         self.table.setColumnWidth(6, 100)
 
@@ -441,9 +443,13 @@ class GradeWidget(QWidget):
             for col, val in enumerate(row_data):
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
-                if col == 4 and avg:
+                if col == 4 and avg is not None:
                     item.setForeground(QColor("#2D60FF"))
-                    item.setFont(QFont("", -1, QFont.Bold))
+
+                    font = item.font()
+                    font.setPointSize(11)
+                    font.setBold(True)
+                    item.setFont(font)
                 if col == 5:
                     item.setForeground(QColor(color))
                     item.setFont(QFont("", -1, QFont.Bold))
@@ -493,7 +499,7 @@ class GradeWidget(QWidget):
                 s["subject_name"],
                 str(s["credits"]),
                 fmt("cc"), fmt("bt"), fmt("gk"), fmt("ck"),
-                f"{avg10:.2f}" if avg10 else "–",
+                f"{avg10:.2f}" if avg10 is not None else "–",
                 letter,
                 f"{gpa4:.1f}",
             ]
@@ -501,9 +507,13 @@ class GradeWidget(QWidget):
             for col, val in enumerate(row_data):
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignCenter)
-                if col == 6 and avg10:
+                if col == 6 and avg10 is not None:
                     item.setForeground(QColor("#2D60FF"))
-                    item.setFont(QFont("", -1, QFont.Bold))
+
+                    font = item.font()
+                    font.setPointSize(11)
+                    font.setBold(True)
+                    item.setFont(font)
                 if col == 7:
                     item.setForeground(QColor(l_color))
                     item.setFont(QFont("", -1, QFont.Bold))
