@@ -253,7 +253,6 @@ QLabel#ScheduleItemDetail {
 }
 
 /* ===== TODO WIDGET ===== */
-
 QFrame#TodoStatBox {
     background-color: #FFFFFF;
     border-radius: 14px;
@@ -268,7 +267,6 @@ QLabel#TodoStatLabel {
     font-size: 12px;
     color: #6F767E;
 }
-
 QLineEdit#TodoInput {
     background-color: #F4F7FF;
     border: 1.5px solid #D0D9FF;
@@ -280,7 +278,6 @@ QLineEdit#TodoInput {
 QLineEdit#TodoInput:focus {
     border: 1.5px solid #2D60FF;
 }
-
 QPushButton#TodoAddBtn {
     background-color: #2D60FF;
     color: white;
@@ -293,13 +290,11 @@ QPushButton#TodoAddBtn {
 QPushButton#TodoAddBtn:hover {
     background-color: #1A4FE0;
 }
-
 QLabel#TodoSectionLabel {
     font-size: 15px;
     font-weight: bold;
     color: #1E2328;
 }
-
 QPushButton#TodoClearBtn {
     background-color: #FEE2E2;
     color: #EF4444;
@@ -311,7 +306,6 @@ QPushButton#TodoClearBtn {
 QPushButton#TodoClearBtn:hover {
     background-color: #FECACA;
 }
-
 QFrame#TodoItem {
     background-color: #F8FAFF;
     border-radius: 10px;
@@ -320,7 +314,6 @@ QFrame#TodoItem {
 QFrame#TodoItem:hover {
     border: 1px solid #B0C1FF;
 }
-
 QCheckBox#TodoCheck {
     spacing: 0px;
 }
@@ -339,7 +332,6 @@ QCheckBox#TodoCheck::indicator:checked {
 QCheckBox#TodoCheck::indicator:hover {
     border: 2px solid #2D60FF;
 }
-
 QLabel#TodoLabel {
     font-size: 14px;
     color: #1E2328;
@@ -347,7 +339,6 @@ QLabel#TodoLabel {
 QLabel#TodoLabel[done="true"] {
     color: #A0A8B8;
 }
-
 QPushButton#TodoDeleteBtn {
     background-color: transparent;
     color: #CBD5E1;
@@ -360,17 +351,121 @@ QPushButton#TodoDeleteBtn:hover {
     background-color: #FEE2E2;
     color: #EF4444;
 }
-
 QLabel#TodoEmptyLabel {
     color: #A0A8B8;
     font-size: 14px;
     padding: 40px;
 }
-
 QLabel#TodoDate {
     font-size: 13px;
     color: #6F767E;
     background: #F0F2F5;
     padding: 4px 12px;
     border-radius: 8px;
+}
+
+/* ===== GRADE WIDGET ===== */
+QLabel#GradeTitle {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1E2328;
+}
+QLabel#GradeDialogTitle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1E2328;
+}
+QLabel#GradeNote {
+    color: #6F767E;
+    font-size: 12px;
+}
+QFrame#GradeModeToggle {
+    background: #F0F2F5;
+    border-radius: 10px;
+}
+QPushButton#GradeModeBtn {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #6F767E;
+    background: transparent;
+}
+QPushButton#GradeModeBtn:checked {
+    background: #2D60FF;
+    color: white;
+}
+QPushButton#GradeModeBtn:hover:!checked {
+    background: #E5E9F0;
+    color: #1E2328;
+}
+QDoubleSpinBox#GradeSpinBox,
+QSpinBox#GradeSpinBox {
+    background: #F9FAFB;
+    color: #1E2328;
+    border: 1.5px solid #D0D9FF;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 13px;
+    font-weight: bold;
+}
+QDoubleSpinBox#GradeSpinBox:focus,
+QSpinBox#GradeSpinBox:focus {
+    border: 1.5px solid #2D60FF;
+    background: #F4F7FF;
+}
+QDoubleSpinBox#GradeSpinBox::up-button,
+QSpinBox#GradeSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 18px;
+    border-left: 1px solid #D0D9FF;
+    border-bottom: 1px solid #D0D9FF;
+    border-top-right-radius: 5px;
+    background: #EEF2FF;
+}
+QDoubleSpinBox#GradeSpinBox::up-button:hover,
+QSpinBox#GradeSpinBox::up-button:hover {
+    background: #2D60FF;
+}
+QDoubleSpinBox#GradeSpinBox::down-button,
+QSpinBox#GradeSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 18px;
+    border-left: 1px solid #D0D9FF;
+    border-top: 1px solid #D0D9FF;
+    border-bottom-right-radius: 5px;
+    background: #EEF2FF;
+}
+QDoubleSpinBox#GradeSpinBox::down-button:hover,
+QSpinBox#GradeSpinBox::down-button:hover {
+    background: #2D60FF;
+}
+QDoubleSpinBox#GradeSpinBox::up-arrow,
+QSpinBox#GradeSpinBox::up-arrow {
+    width: 7px; height: 7px;
+}
+QDoubleSpinBox#GradeSpinBox::down-arrow,
+QSpinBox#GradeSpinBox::down-arrow {
+    width: 7px; height: 7px;
+}
+QPushButton#GradeEditBtn {
+    background: #EEF2FF;
+    border-radius: 6px;
+    border: none;
+    font-size: 13px;
+}
+QPushButton#GradeEditBtn:hover {
+    background: #C7D2FE;
+}
+QPushButton#GradeDeleteBtn {
+    background: #FEE2E2;
+    border-radius: 6px;
+    border: none;
+    font-size: 13px;
+}
+QPushButton#GradeDeleteBtn:hover {
+    background: #FECACA;
 }

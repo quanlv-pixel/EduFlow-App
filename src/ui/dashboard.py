@@ -12,12 +12,15 @@ from src.ui.flashcard import FlashcardWidget
 from src.ui.course import CoursesWidget
 from src.ui.settings_widget import SettingsWidget, LanguageManager, tr
 from src.ui.todo_widget import TodoWidget
+from src.ui.grade_widget import GradeWidget                      # ← NEW
 from src.services.schedule_notifier import ScheduleNotifier
 
 from src.controllers.flashcard_controller import FlashcardController
 from src.controllers.course_controller import CourseController
 from src.controllers.summary_controller import SummaryController
 from src.controllers.schedule_controller import ScheduleController
+from src.controllers.grade_controller import GradeController     # ← NEW
+
 
 # ================= MENU BUTTON =================
 class DashMenuButton(QPushButton):
@@ -40,10 +43,11 @@ class EduDashboard(QMainWindow):
         self.ai = ai
 
         # Controllers
-        self.course_controller = CourseController(self.db, self.ai)
-        self.flash_controller = FlashcardController(self.db, self.ai)
-        self.summary_controller = SummaryController(self.ai, self.db)
+        self.course_controller   = CourseController(self.db, self.ai)
+        self.flash_controller    = FlashcardController(self.db, self.ai)
+        self.summary_controller  = SummaryController(self.ai, self.db)
         self.schedule_controller = ScheduleController(self.db)
+        self.grade_controller    = GradeController(self.db)      # ← NEW
         self.notifier = ScheduleNotifier(self.schedule_controller, self.user_info["id"])
 
         self.setWindowTitle("EduFlow - Dashboard")
@@ -83,12 +87,20 @@ class EduDashboard(QMainWindow):
         logo.setStyleSheet("font-size:22px;font-weight:bold;color:#2D60FF;")
         layout.addWidget(logo)
 
-        layout.addSpacing(30)    # stretch trên → đẩy nút xuống giữa
+        layout.addSpacing(30)
 
-        self.menu_items = ["overview", "schedule", "courses", "flash", "summary", "todo", "settings"]
+        # ── "grades" được chèn giữa "todo" và "settings" ──
+        self.menu_items = [
+            "overview", "schedule", "courses",
+            "flash", "summary", "todo",
+            "grades",        # ← NEW (nằm giữa todo và settings)
+            "settings",
+        ]
         names = [
             tr("menu_overview"), tr("menu_schedule"), tr("menu_courses"),
-            tr("menu_flash"), tr("menu_summary"), tr("menu_todo"), tr("menu_settings"),
+            tr("menu_flash"),    tr("menu_summary"),  tr("menu_todo"),
+            tr("menu_grades"),   # ← NEW
+            tr("menu_settings"),
         ]
 
         self.menu_buttons = {}
@@ -109,7 +121,7 @@ class EduDashboard(QMainWindow):
         layout.addStretch()
 
         # USER INFO
-        user_frame = QFrame()
+        user_frame  = QFrame()
         user_layout = QHBoxLayout(user_frame)
 
         avatar = QLabel(self.user_info["name"][0])
@@ -154,7 +166,6 @@ class EduDashboard(QMainWindow):
 
         btn_add = QPushButton("+")
         btn_add.setFixedSize(40, 40)
-
         btn_add.setStyleSheet("""
             background:#2D60FF;
             color:white;
@@ -174,7 +185,7 @@ class EduDashboard(QMainWindow):
 
     # ================= GREETING =================
     def get_greeting(self):
-        now = datetime.now()
+        now  = datetime.now()
         hour = now.hour
 
         if hour < 12:
@@ -190,7 +201,6 @@ class EduDashboard(QMainWindow):
         ]
 
         day_name = days[now.weekday()]
-
         date_str = f"{day_name}, {now.day}/{now.month}/{now.year}"
 
         return f"""
@@ -199,6 +209,7 @@ class EduDashboard(QMainWindow):
         {date_str}
         </span>
         """
+
     # ================= SWITCH =================
     def switch_page(self, key):
         for k, btn in self.menu_buttons.items():
@@ -226,7 +237,10 @@ class EduDashboard(QMainWindow):
         elif key == "todo":
             return TodoWidget()
 
-        elif key == "settings":  # ← THÊM ĐOẠN NÀY
+        elif key == "grades":                                       # ← NEW
+            return GradeWidget(self.grade_controller, self.user_info["id"])
+
+        elif key == "settings":
             return SettingsWidget(self)
 
     # ================= OVERVIEW =================
@@ -253,12 +267,11 @@ class EduDashboard(QMainWindow):
 
         v1.addLayout(top)
         self.lbl_courses = QLabel()
-        v1.addWidget(self.lbl_courses)      
+        v1.addWidget(self.lbl_courses)
 
         total = len(self.db.get_courses(self.user_info["id"]))
         num = QLabel(str(total))
         num.setStyleSheet("font-size:40px;font-weight:bold;")
-
         v1.addWidget(num)
 
         # WHITE CARD
@@ -280,7 +293,6 @@ class EduDashboard(QMainWindow):
 
         avg = QLabel("78%")
         avg.setStyleSheet("font-size:40px;font-weight:bold;color:#2D60FF;")
-
         v2.addWidget(avg)
 
         cards.addWidget(blue, 2)
@@ -300,9 +312,8 @@ class EduDashboard(QMainWindow):
         self.lbl_today = QLabel()
         v.addWidget(self.lbl_today)
 
-        # Lấy thứ hôm nay (Monday=0 … Sunday=6) — khớp với cột `day` trong DB
-        today_col = datetime.now().weekday()
-        all_schedules = self.db.get_schedule(self.user_info["id"]) or []
+        today_col      = datetime.now().weekday()
+        all_schedules  = self.db.get_schedule(self.user_info["id"]) or []
         today_schedules = sorted(
             [s for s in all_schedules if s.get("day") == today_col],
             key=lambda s: s.get("start_time", 0)
@@ -320,14 +331,12 @@ class EduDashboard(QMainWindow):
                 h = QHBoxLayout(item)
                 h.setContentsMargins(10, 6, 10, 6)
 
-                # Accent bar màu xanh bên trái
                 bar = QFrame()
                 bar.setObjectName("ScheduleAccentBar")
                 bar.setFixedWidth(4)
                 h.addWidget(bar)
                 h.addSpacing(8)
 
-                # Tên môn + phòng
                 info_v = QVBoxLayout()
                 lbl_course = QLabel(f"<b>{s.get('course', '')}</b>")
                 lbl_course.setObjectName("ScheduleItemTitle")
@@ -379,10 +388,11 @@ class EduDashboard(QMainWindow):
 
         return page
 
+    # ================= THEME =================
     def load_qss(self, path):
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
-        
+
     def apply_theme(self, theme):
         app = QApplication.instance()
 
@@ -397,10 +407,6 @@ class EduDashboard(QMainWindow):
 
     # ================= RETRANSLATE =================
     def retranslate_ui(self):
-        """Cập nhật toàn bộ text sidebar khi người dùng đổi ngôn ngữ.
-        Guard hasattr để tránh lỗi khi được gọi trong lúc sidebar chưa build xong.
-        """
-        # menu_buttons có thể chưa tồn tại nếu gọi quá sớm
         if not hasattr(self, "menu_buttons"):
             return
 
@@ -411,26 +417,24 @@ class EduDashboard(QMainWindow):
             "flash":    "menu_flash",
             "summary":  "menu_summary",
             "todo":     "menu_todo",
+            "grades":   "menu_grades",   # ← NEW
             "settings": "menu_settings",
         }
-        
+
         for key, tr_key in menu_keys.items():
             btn = self.menu_buttons.get(key)
             if btn:
                 btn.setText(f"  {tr(tr_key)}")
 
-        # logout_btn được tạo sau vòng lặp menu, nên cũng cần guard
         if hasattr(self, "logout_btn"):
             self.logout_btn.setText(tr("logout"))
 
-            # ===== HEADER =====
         if hasattr(self, "greeting"):
             self.greeting.setText(self.get_greeting())
 
         if hasattr(self, "search"):
             self.search.setPlaceholderText(f"🔍 {tr('search')}")
 
-        # ===== OVERVIEW =====
         if hasattr(self, "lbl_courses"):
             self.lbl_courses.setText(tr("courses_studying"))
 
@@ -446,4 +450,4 @@ class EduDashboard(QMainWindow):
     # ================= LOGOUT =================
     def handle_logout(self):
         self.logout_signal.emit()
-        self.deleteLater()  
+        self.deleteLater()

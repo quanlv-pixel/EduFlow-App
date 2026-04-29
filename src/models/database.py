@@ -42,7 +42,7 @@ class Database:
             )
             """,
 
-            # 🔥 LESSONS (NEW)
+            # LESSONS
             """
             CREATE TABLE IF NOT EXISTS lessons (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +53,7 @@ class Database:
             )
             """,
 
-            # 🔥 RESOURCES (NEW)
+            # RESOURCES
             """
             CREATE TABLE IF NOT EXISTS course_resources (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,6 +102,22 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 document_id INTEGER,
                 summary_text TEXT
+            )
+            """,
+
+            # ── GRADE SUBJECTS (NEW) ──────────────────────────────
+            # mode       : 'student' (học sinh) | 'university' (sinh viên)
+            # credits    : số tín chỉ (học sinh để 1)
+            # scores_data: JSON chứa điểm thành phần
+            """
+            CREATE TABLE IF NOT EXISTS grade_subjects (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL,
+                mode        TEXT    NOT NULL DEFAULT 'student',
+                subject_name TEXT   NOT NULL,
+                credits     INTEGER NOT NULL DEFAULT 1,
+                scores_data TEXT    NOT NULL DEFAULT '{}',
+                created_at  TEXT    DEFAULT (datetime('now','localtime'))
             )
             """,
 
@@ -191,7 +207,7 @@ class Database:
             (user_id, name, code, professor)
         )
         self.conn.commit()
-        return cur.lastrowid  # 🔥 IMPORTANT
+        return cur.lastrowid
 
     # ================= LESSON =================
     def add_lesson(self, course_id, title, url, source):
@@ -280,6 +296,51 @@ class Database:
         except Exception as e:
             print("❌ SAVE ERROR:", e)
             return False
+
+    # ================= GRADES =================
+    def get_grade_subjects(self, user_id, mode):
+        """Lấy tất cả môn của user theo chế độ (student / university)."""
+        return self.execute(
+            "SELECT * FROM grade_subjects WHERE user_id=? AND mode=? ORDER BY created_at ASC",
+            (user_id, mode),
+            fetch=True
+        ) or []
+
+    def add_grade_subject(self, user_id, mode, subject_name, credits, scores_data):
+        """
+        scores_data: chuỗi JSON đã encode, hoặc dict (sẽ tự encode).
+        """
+        import json
+        if isinstance(scores_data, dict):
+            scores_data = json.dumps(scores_data, ensure_ascii=False)
+
+        return self.execute(
+            """
+            INSERT INTO grade_subjects (user_id, mode, subject_name, credits, scores_data)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user_id, mode, subject_name, credits, scores_data)
+        )
+
+    def update_grade_subject(self, subject_id, subject_name, credits, scores_data):
+        import json
+        if isinstance(scores_data, dict):
+            scores_data = json.dumps(scores_data, ensure_ascii=False)
+
+        return self.execute(
+            """
+            UPDATE grade_subjects
+            SET subject_name=?, credits=?, scores_data=?
+            WHERE id=?
+            """,
+            (subject_name, credits, scores_data, subject_id)
+        )
+
+    def delete_grade_subject(self, subject_id):
+        return self.execute(
+            "DELETE FROM grade_subjects WHERE id=?",
+            (subject_id,)
+        )
 
     # ================= CLOSE =================
     def close(self):

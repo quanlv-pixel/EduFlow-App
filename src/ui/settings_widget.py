@@ -53,6 +53,7 @@ TRANSLATIONS = {
         "menu_summary":         "Tóm tắt AI",
         "menu_todo":            "Todo List",
         "menu_settings":        "Cài đặt",
+        "menu_grades":           "Bảng điểm",
         "logout":               "↪ Đăng xuất",
         
         # Summary
@@ -165,6 +166,51 @@ TRANSLATIONS = {
         "stat_lessons":         "BÀI GIẢNG",
         "stat_exercises":       "BÀI TẬP",
         "stat_progress":        "TIẾN ĐỘ",
+
+        # Grades
+        "grade_title":          "📊 Bảng điểm",
+        "grade_add_subject":    "＋ Thêm môn",
+        "grade_student":        "🎒 Học sinh",
+        "grade_university":     "🎓 Sinh viên",
+
+        "subject":              "Môn học",
+        "credits":              "TC",
+        "tx_score":             "Điểm TX",
+        "gk_score":             "Điểm GK",
+        "ck_score":             "Điểm CK",
+        "avg_score":            "Điểm TB",
+        "avg":                  "ĐTB",
+        "rank":                 "Xếp loại",
+        "letter":               "Chữ",
+        "gpa4":                 "GPA 4.0",
+
+        "edit":                 "Sửa",
+        "delete":               "Xóa",
+        "confirm":              "Xác nhận",
+        "confirm_delete_msg":   "Bạn có chắc muốn xóa môn này?",
+        "add_subject": "Thêm môn học",
+        "subject_name": "Tên môn học",
+        "hs_mode": "Học sinh",
+        "sv_mode": "Sinh viên",
+
+        "hs_subject_dialog_title": "Thêm môn học (Học sinh)",
+        "sv_subject_dialog_title": "Thêm môn học (Sinh viên)",
+
+        "tx_label": "Điểm TX (hệ số 1):",
+        "gk_label": "Điểm GK (hệ số 2):",
+        "ck_label": "Điểm CK (hệ số 3):",
+        "attendance_label": "Chuyên cần – tùy chọn:",
+        "assignment_label": "Bài tập – tùy chọn:",
+        "midterm_label": "Giữa kỳ:",
+        "final_label": "Cuối kỳ:",
+        "tx_score_label": "Điểm TX (hệ số 1)",
+        "gk_score_label": "Điểm GK (hệ số 2)",
+        "ck_score_label": "Điểm CK (hệ số 3)",
+
+        "cc_optional": "Chuyên cần – tùy chọn",
+        "bt_optional": "Bài tập – tùy chọn",
+        "gk_score": "Giữa kỳ",
+        "ck_score": "Cuối kỳ"
     },
     "en": {
         # Settings page
@@ -207,6 +253,7 @@ TRANSLATIONS = {
         "menu_summary":         "AI Summary",
         "menu_todo":            "Todo List",
         "menu_settings":        "Settings",
+        "menu_grades":           "Transcript",
         "logout":               "↪ Logout",
         
         # Summary
@@ -319,6 +366,57 @@ TRANSLATIONS = {
         "stat_lessons":         "LESSONS",
         "stat_exercises":       "EXERCISES",
         "stat_progress":        "PROGRESS",
+
+        # Grades
+        "grade_title":         "Grade Management",
+        "hs_mode":              "High School",
+        "sv_mode":              "University",
+        "grade_add_subject":    "+ Add Subject",
+
+        "subject":              "Subject",
+        "subject_name":         "Subject Name",
+
+        "tx_score":             "Regular Score",
+        "gk_score":             "Midterm Score",
+        "ck_score":             "Final Score",
+        "avg_score":            "Average",
+        "rank":                 "Rank",
+
+        "cc":                   "Attendance",
+        "bt":                   "Assignments",
+        "avg":                  "Average",
+        "letter":               "Letter Grade",
+        "gpa4":                 "GPA (4.0)",
+
+        "confirm":              "Confirm",
+        "confirm_delete_msg":   "Are you sure you want to delete this subject?",
+
+        "edit":                 "Edit",
+        "delete":               "Delete",
+
+        "invalid_input":        "Invalid Input",
+        "add_subject": "Add Subject",
+
+        "hs_subject_dialog_title": "Add Subject (High School)",
+        "sv_subject_dialog_title": "Add Subject (University)",
+
+        "tx_label": "Regular Score (Coefficient 1):",
+        "gk_label": "Midterm Score (Coefficient 2):",
+        "ck_label": "Final Score (Coefficient 3):",
+        "attendance_label": "Attendance (optional):",
+        "assignment_label": "Assignments (optional):",
+        "midterm_label": "Midterm:",
+        "final_label": "Final:",
+        "grade_student": "School",
+        "grade_university": "University",
+        "tx_score_label": "Regular scores (weight 1)",
+        "gk_score_label": "Midterm score (weight 2)",
+        "ck_score_label": "Final score (weight 3)",
+
+        "cc_optional": "Attendance (optional)",
+        "bt_optional": "Assignments (optional)",
+        "gk_score": "Midterm",
+        "ck_score": "Final"
     },
     "cn": {
         # Settings page
@@ -361,6 +459,7 @@ TRANSLATIONS = {
         "menu_summary":         "AI总结",
         "menu_todo":            "待办事项",
         "menu_settings":        "设置",
+        "menu_grades":           "成绩单",
         "logout":               "↪ 退出登录",
 
         # Summary 
@@ -474,6 +573,59 @@ TRANSLATIONS = {
         "stat_lessons":         "课程",
         "stat_exercises":       "练习",
         "stat_progress":        "进度",
+
+        # Grades
+        "grade_title":          "成绩管理",
+        "hs_mode":              "高中",
+        "sv_mode":              "大学",
+        "grade_add_subject":    "+ 添加课程",
+
+        "subject":              "科目",
+        "subject_name":         "科目名称",
+
+        "tx_score":             "平时成绩",
+        "gk_score":             "期中成绩",
+        "ck_score":             "期末成绩",
+        "avg_score":            "平均分",
+        "rank":                 "等级",
+
+        "cc":                   "考勤",
+        "bt":                   "作业",
+        "avg":                  "平均分",
+        "letter":               "等级",
+        "gpa4":                 "绩点 (4.0)",
+
+        "confirm":              "确认",
+        "confirm_delete_msg": "确定要删除该课程吗？",
+
+        "edit":                 "编辑",
+        "delete":               "删除",
+
+        "invalid_input":        "输入无效",
+        "add_subject": "添加课程",
+
+        "hs_subject_dialog_title": "添加课程（高中）",
+        "sv_subject_dialog_title": "添加课程（大学）",
+
+        "tx_label": "平时成绩（系数1）：",
+        "gk_label": "期中成绩（系数2）：",
+        "ck_label": "期末成绩（系数3）：",
+        "attendance_label": "考勤（可选）：",
+        "assignment_label": "作业（可选）：",
+        "midterm_label": "期中：",
+        "final_label": "期末：",
+
+        "invalid_input_msg": "输入无效，请输入有效数字",
+        "grade_student": "学生",
+        "grade_university": "大学生",
+        "tx_score_label": "平时成绩（权重1）",
+        "gk_score_label": "期中成绩（权重2）",
+        "ck_score_label": "期末成绩（权重3）",
+
+        "cc_optional": "考勤（可选）",
+        "bt_optional": "作业（可选）",
+        "gk_score": "期中",
+        "ck_score": "期末"
     },
 }
 
