@@ -1,3 +1,5 @@
+from src.ui.settings_widget import tr
+
 class LessonMapper:
     """
     Nhận 1 course đã được chọn bởi user (từ search results)
@@ -22,7 +24,7 @@ class LessonMapper:
         for i, topic in enumerate(topics):
             lessons.append({
                 "title": f"{topic} — {title}",
-                "duration": f"{10 + i * 5} phút",
+                "duration": tr("lesson_duration", minutes=(10 + i * 5)),
                 "type": type_,
                 "url": link,
                 "source": source,
@@ -58,19 +60,19 @@ class LessonMapper:
     # ================= DANH SÁCH CHỦ ĐỀ =================
     def get_topics(self, count: int) -> list:
         # 10 topic mẫu, cắt theo số lượng cần
-        all_topics = [
-            "Giới thiệu & Tổng quan",
-            "Kiến thức nền tảng",
-            "Khái niệm cốt lõi",
-            "Ví dụ minh họa thực tế",
-            "Ứng dụng & Demo",
-            "Bài tập thực hành",
-            "Chuyên sâu & Nâng cao",
-            "Debug & Xử lý lỗi phổ biến",
-            "Best Practices",
-            "Tổng kết & Ôn tập",
+        keys = [
+            "lesson_intro",
+            "lesson_basic",
+            "lesson_core",
+            "lesson_examples",
+            "lesson_demo",
+            "lesson_exercise",
+            "lesson_advanced",
+            "lesson_debug",
+            "lesson_best_practice",
+            "lesson_summary",
         ]
-        return all_topics[:count]
+        return [tr(k) for k in keys[:count]]
 
     # ================= DETECT SOURCE =================
     def detect_source(self, link: str) -> str:

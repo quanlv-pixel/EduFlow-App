@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QObject
 
-
 # ─────────────────────────────────────────────
 #  TRANSLATIONS
 # ─────────────────────────────────────────────
@@ -173,10 +172,21 @@ TRANSLATIONS = {
         "badge_btn":                 "Tuyệt vời! 🎊",
         "lesson_open_btn":           "🔗 Mở",
         "lesson_flash_btn":          "⚡ Flashcard",
-        "error": "Lỗi",
-        "stat_lessons":         "BÀI GIẢNG",
-        "stat_exercises":       "BÀI TẬP",
-        "stat_progress":        "TIẾN ĐỘ",
+        "error":                     "Lỗi",
+        "stat_lessons":              "BÀI GIẢNG",
+        "stat_exercises":            "BÀI TẬP",
+        "stat_progress":             "TIẾN ĐỘ",
+        "lesson_intro":              "Giới thiệu & Tổng quan",
+        "lesson_basic":              "Kiến thức nền tảng",
+        "lesson_core":               "Khái niệm cốt lõi",
+        "lesson_examples":           "Ví dụ minh họa thực tế",
+        "lesson_demo":               "Ứng dụng & Demo",
+        "lesson_exercise":           "Bài tập thực hành",
+        "lesson_advanced":           "Chuyên sâu & Nâng cao",
+        "lesson_debug":              "Debug & Xử lý lỗi phổ biến",
+        "lesson_best_practice":      "Best Practices",
+        "lesson_summary":            "Tổng kết & Ôn tập",
+        "lesson_duration":           "{minutes} phút",
 
         # Grades
         "grade_title":          "📊 Bảng điểm",
@@ -414,9 +424,20 @@ TRANSLATIONS = {
         "lesson_open_btn":           "🔗 Open",
         "lesson_flash_btn":          "⚡ Flashcard",
         "error": "Error",
-        "stat_lessons":         "LESSONS",
-        "stat_exercises":       "EXERCISES",
-        "stat_progress":        "PROGRESS",
+        "stat_lessons":             "LESSONS",
+        "stat_exercises":           "EXERCISES",
+        "stat_progress":            "PROGRESS",
+        "lesson_intro":             "Introduction & Overview",
+        "lesson_basic":             "Fundamentals",
+        "lesson_core":              "Core Concepts",
+        "lesson_examples":          "Practical Examples",
+        "lesson_demo":              "Applications & Demo",
+        "lesson_exercise":          "Practice Exercises",
+        "lesson_advanced":          "Advanced Topics",
+        "lesson_debug":             "Debugging & Common Issues",
+        "lesson_best_practice":     "Best Practices",
+        "lesson_summary":           "Summary & Review",
+        "lesson_duration":          "{minutes} min",
 
         # Grades
         "grade_title":         "Grade Management",
@@ -664,6 +685,17 @@ TRANSLATIONS = {
         "stat_lessons":         "课程",
         "stat_exercises":       "练习",
         "stat_progress":        "进度",
+        "lesson_intro": "介绍与概览",
+        "lesson_basic": "基础知识",
+        "lesson_core": "核心概念",
+        "lesson_examples": "示例讲解",
+        "lesson_demo": "应用与演示",
+        "lesson_exercise": "练习",
+        "lesson_advanced": "高级内容",
+        "lesson_debug": "调试与常见问题",
+        "lesson_best_practice": "最佳实践",
+        "lesson_summary": "总结与复习",
+        "lesson_duration": "{minutes} 分钟",
 
         # Grades
         "grade_title":          "成绩管理",
