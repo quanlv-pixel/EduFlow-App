@@ -123,23 +123,16 @@ class LessonItem(QFrame):
         info_v = QVBoxLayout()
         info_v.setSpacing(2)
 
-        self.lbl_title = QLabel(lesson["title"])
+        self.lbl_title = QLabel(self._build_title())
         self.lbl_title.setStyleSheet(
             "font-size: 14px; font-weight: 600; color: #1E2328; background: transparent;"
         )
 
-        duration = lesson.get("duration", "")
-        type_lbl = lesson.get("type", "Online")
-        source = lesson.get("source", "")
-        meta_text = f"{duration}  •  {type_lbl}"
-        if source:
-            meta_text += f"  •  {source}"
-
-        meta = QLabel(meta_text)
-        meta.setStyleSheet("font-size: 11px; color: #6F767E; background: transparent;")
+        self.lbl_meta = QLabel(self._build_meta())
+        self.lbl_meta.setStyleSheet("font-size: 11px; color: #6F767E; background: transparent;")
 
         info_v.addWidget(self.lbl_title)
-        info_v.addWidget(meta)
+        info_v.addWidget(self.lbl_meta)
 
         layout.addWidget(self.check_btn)
         layout.addLayout(info_v)
@@ -205,6 +198,29 @@ class LessonItem(QFrame):
                 border: 1px solid {border};
             }}
         """)
+
+    # ── Dịch tiêu đề từ topic_key (nếu có), fallback về title đã lưu ──
+    def _build_title(self) -> str:
+        key          = self.lesson.get("topic_key")
+        course_title = self.lesson.get("course_title", "")
+        if key:
+            return f"{tr(key)} — {course_title}" if course_title else tr(key)
+        return self.lesson.get("title", "")
+
+    # ── Dịch dòng meta: duration + type + source ────────────────────
+    def _build_meta(self) -> str:
+        minutes  = self.lesson.get("_minutes")
+        duration = (
+            tr("lesson_duration", minutes=minutes)
+            if minutes is not None
+            else self.lesson.get("duration", "")
+        )
+        type_lbl = self.lesson.get("type", "Online")
+        source   = self.lesson.get("source", "")
+        meta     = f"{duration}  •  {type_lbl}"
+        if source:
+            meta += f"  •  {source}"
+        return meta
 
 
 # ================= RESOURCE LINK ITEM =================

@@ -18,17 +18,23 @@ class LessonMapper:
         source = self.detect_source(link)
         type_ = self.detect_type(link)
         num_lessons = self.get_lesson_count(link)
-        topics = self.get_topics(num_lessons)
+        keys = self.get_topic_keys(num_lessons)
 
         lessons = []
-        for i, topic in enumerate(topics):
+        for i, key in enumerate(keys):
             lessons.append({
-                "title": f"{topic} — {title}",
-                "duration": tr("lesson_duration", minutes=(10 + i * 5)),
-                "type": type_,
-                "url": link,
-                "source": source,
-                "has_exercise": (i % 3 == 2),  # cứ 3 bài thì có 1 bài tập
+                # Fallback title nếu DB cũ chưa có topic_key
+                "title":        f"{tr(key)} — {title}",
+                # ── Keys để LessonItem dịch lại khi đổi ngôn ngữ ──
+                "topic_key":    key,
+                "course_title": title,
+                # ── Duration: lưu số phút gốc để dịch lại ──────────
+                "_minutes":     10 + i * 5,
+                "duration":     tr("lesson_duration", minutes=(10 + i * 5)),
+                "type":         type_,
+                "url":          link,
+                "source":       source,
+                "has_exercise": (i % 3 == 2),
             })
 
         return lessons
@@ -58,6 +64,16 @@ class LessonMapper:
             return 6
 
     # ================= DANH SÁCH CHỦ ĐỀ =================
+    TOPIC_KEYS = [
+        "lesson_intro", "lesson_basic", "lesson_core",
+        "lesson_examples", "lesson_demo", "lesson_exercise",
+        "lesson_advanced", "lesson_debug", "lesson_best_practice",
+        "lesson_summary",
+    ]
+
+    def get_topic_keys(self, count: int) -> list:
+        return self.TOPIC_KEYS[:count]
+
     def get_topics(self, count: int) -> list:
         # 10 topic mẫu, cắt theo số lượng cần
         keys = [
