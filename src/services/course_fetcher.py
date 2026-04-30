@@ -14,7 +14,7 @@ class CourseFetcher:
         }
 
         try:
-            res = requests.get(url, params=params, timeout=10)
+            res = requests.get(url, params=params, timeout=20)
             data = res.json()
 
             results = []

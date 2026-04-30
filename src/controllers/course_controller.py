@@ -93,12 +93,12 @@ class CourseController:
                 # FIX: Gọi đúng signature của db.add_lesson()
                 self.db.add_lesson(
                     course_id,
-                    l["title"],
-                    l["url"],
-                    l["source"],
-                    l["duration"],
-                    l["type"],
-                    l["has_exercise"],
+                    l.get("title"),
+                    l.get("url"),
+                    l.get("source"),
+                    l.get("duration"),      # dùng .get()
+                    l.get("type"),
+                    l.get("has_exercise"),
                     completed=False,
                     topic_key=l.get("topic_key"),
                     course_title=l.get("course_title"),
