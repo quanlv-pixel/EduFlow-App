@@ -29,7 +29,7 @@ class LessonMapper:
                 "topic_key":    key,
                 "course_title": title,
                 # ── Duration: lưu số phút gốc để dịch lại ──────────
-                "_minutes":     10 + i * 5,
+                "minutes":      10 + i * 5,          # tên khớp với cột DB
                 "duration":     tr("lesson_duration", minutes=(10 + i * 5)),
                 "type":         type_,
                 "url":          link,

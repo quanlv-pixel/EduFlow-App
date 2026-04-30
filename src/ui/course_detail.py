@@ -227,6 +227,9 @@ class LessonItem(QFrame):
     def __init__(self, lesson: dict, on_flashcard):
         super().__init__()
 
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
+
         self.lesson = lesson
         self.is_done = bool(lesson.get("completed", False))
 
@@ -273,13 +276,13 @@ class LessonItem(QFrame):
         meta_parts = [p for p in [duration, type_lbl] if p]
         meta_basic = "  •  ".join(meta_parts)
 
-        lbl_meta = QLabel(meta_basic)
-        lbl_meta.setStyleSheet(
+        self.lbl_meta = QLabel(self._build_meta())
+        self.lbl_meta.setStyleSheet(
             "font-size: 11px; color: #9BA3AF; background: transparent;"
         )
 
         info_v.addWidget(self.lbl_title)
-        info_v.addWidget(lbl_meta)
+        info_v.addWidget(self.lbl_meta)
 
         # Dòng chú thích bài học — chỉ hiện với web source
         if not self._is_youtube:
@@ -404,15 +407,35 @@ class LessonItem(QFrame):
 
     # ── Dịch tiêu đề từ topic_key (nếu có), fallback về title đã lưu ──
     def _build_title(self) -> str:
-        key          = self.lesson.get("topic_key")
+        key = self.lesson.get("topic_key")
         course_title = self.lesson.get("course_title", "")
+
+        # ✅ Ưu tiên topic_key
         if key:
-            return f"{tr(key)} — {course_title}" if course_title else tr(key)
-        return self.lesson.get("title", "")
+            text = tr(key)
+        else:
+            # fallback: map từ title sang key
+            title = self.lesson.get("title", "").lower().strip()
+            mapping = {
+                "lesson intro": "lesson_intro",
+                "lesson basic": "lesson_basic",
+                "lesson core": "lesson_core",
+                "lesson examples": "lesson_examples",
+                "lesson demo": "lesson_demo",
+                "lesson exercise": "lesson_exercise",
+                "lesson advanced": "lesson_advanced",
+                "lesson debug": "lesson_debug",
+                "lesson best practice": "lesson_best_practice",
+                "lesson summary": "lesson_summary",
+            }
+            text = tr(mapping.get(title, title))
+
+        return f"{text} — {course_title}" if course_title else text
 
     # ── Dịch dòng meta: duration + type + source ────────────────────
     def _build_meta(self) -> str:
-        minutes  = self.lesson.get("_minutes")
+        # Hỗ trợ cả '_minutes' (từ lesson_mapper) và 'minutes' (từ DB)
+        minutes  = self.lesson.get("_minutes") or self.lesson.get("minutes")
         duration = (
             tr("lesson_duration", minutes=minutes)
             if minutes is not None
@@ -424,6 +447,11 @@ class LessonItem(QFrame):
         if source:
             meta += f"  •  {source}"
         return meta
+    
+    def _retranslate(self):
+        # update title
+        self.lbl_title.setText(self._build_title())
+        self.lbl_meta.setText(self._build_meta())
 
 
 # ================= RESOURCE LINK ITEM =================
@@ -793,8 +821,8 @@ class CourseDetailWidget(QWidget):
         self.lbl_code_badge.setText(course.get("code", ""))
         self.lbl_prof.setText(f"{tr('course_detail_professor')} {course.get('professor', '')}")
 
-        desc = course.get("description", "")
-        self.lbl_desc.setText(desc)
+        desc_key = course.get("description_key")
+        self.lbl_desc.setText(tr(desc_key) if desc_key else "")
 
         # Resources
         for i in reversed(range(self.res_container.count())):

@@ -54,7 +54,10 @@ class Database:
                 duration TEXT DEFAULT '15-30 phút',
                 type TEXT DEFAULT 'Online',
                 has_exercise INTEGER DEFAULT 0,
-                completed INTEGER DEFAULT 0
+                completed INTEGER DEFAULT 0,
+                topic_key TEXT DEFAULT NULL,
+                course_title TEXT DEFAULT NULL,
+                minutes INTEGER DEFAULT NULL
             )
             """,
 
@@ -179,6 +182,32 @@ class Database:
             )
             self.conn.commit()
 
+        # Migration 3: thêm topic_key, course_title, minutes để hỗ trợ đa ngôn ngữ
+        # FIX: Các cột này giúp LessonItem._build_title() dịch đúng khi đổi ngôn ngữ
+        mid3 = "lessons_add_i18n_columns"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid3,)
+        ).fetchone()
+        if not row:
+            existing_cols = [
+                row[1] for row in
+                self.cursor.execute("PRAGMA table_info(lessons)").fetchall()
+            ]
+            i18n_cols = {
+                "topic_key":    "TEXT DEFAULT NULL",
+                "course_title": "TEXT DEFAULT NULL",
+                "minutes":      "INTEGER DEFAULT NULL",
+            }
+            for col, definition in i18n_cols.items():
+                if col not in existing_cols:
+                    self.cursor.execute(
+                        f"ALTER TABLE lessons ADD COLUMN {col} {definition}"
+                    )
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)", (mid3,)
+            )
+            self.conn.commit()
+
     # ================= DEFAULT USER =================
     def create_default_user(self):
         self.cursor.execute(
@@ -248,17 +277,21 @@ class Database:
 
     # ================= LESSON =================
     # FIX: Thêm đủ tham số duration, type_, url, has_exercise, completed
+    # FIX i18n: Thêm topic_key, course_title, minutes để hỗ trợ chuyển ngôn ngữ
     def add_lesson(self, course_id, title, url, source,
                    duration="15-30 phút", type_="Online",
-                   has_exercise=False, completed=False):
+                   has_exercise=False, completed=False,
+                   topic_key=None, course_title=None, minutes=None):
         return self.execute(
             """
             INSERT INTO lessons
-                (course_id, title, url, source, duration, type, has_exercise, completed)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (course_id, title, url, source, duration, type, has_exercise, completed,
+                 topic_key, course_title, minutes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (course_id, title, url, source,
-             duration, type_, int(has_exercise), int(completed))
+             duration, type_, int(has_exercise), int(completed),
+             topic_key, course_title, minutes)
         )
 
     def get_lessons(self, course_id):
