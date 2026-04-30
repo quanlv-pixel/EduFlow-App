@@ -113,13 +113,28 @@ class YouTubePlayerDialog(QDialog):
         layout.setSpacing(0)
 
         if HAS_WEBENGINE and video_id:
-            # ── Nhúng YouTube embed ──────────────────────────────
-            embed_url = (
-                f"https://www.youtube.com/embed/{video_id}"
-                f"?autoplay=1&rel=0&modestbranding=1"
-            )
+            # ── Load trang watch thật (tránh lỗi 153 của embed) ──
             self.view = QWebEngineView()
-            self.view.setUrl(QUrl(embed_url))
+
+            # Set User-Agent thành Chrome — YouTube nhận diện là browser thật
+            profile = self.view.page().profile()
+            profile.setHttpUserAgent(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            )
+
+            # Bật các settings cần thiết để YouTube chạy được
+            settings = self.view.settings()
+            settings.setAttribute(QWebEngineSettings.WebAttribute.JavascriptEnabled, True)
+            settings.setAttribute(QWebEngineSettings.WebAttribute.PluginsEnabled, True)
+            settings.setAttribute(
+                QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, True
+            )
+
+            # Dùng /watch?v= thay vì /embed/ → không bị chặn origin
+            watch_url = f"https://www.youtube.com/watch?v={video_id}&autoplay=1"
+            self.view.setUrl(QUrl(watch_url))
             layout.addWidget(self.view, stretch=1)
 
             # ── Info bar phía dưới ──────────────────────────────
