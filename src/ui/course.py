@@ -353,7 +353,7 @@ class CourseSelectDialog(QDialog):
 
 # ================= COURSE CARD =================
 class CourseCard(QFrame):
-    def __init__(self, course, on_click):
+    def __init__(self, course, on_click, on_delete=None):
         super().__init__()
 
         self._lm = LanguageManager.instance()
@@ -361,6 +361,7 @@ class CourseCard(QFrame):
 
         self.course = course
         self.on_click = on_click
+        self.on_delete = on_delete
 
         self.setFixedHeight(190)
         self.setCursor(Qt.PointingHandCursor)
@@ -396,9 +397,33 @@ class CourseCard(QFrame):
             font-weight: 600;
         """)
 
+        # Nút xóa — chỉ hiện khi hover, không trigger on_click của card
+        btn_del = QPushButton("✕")
+        btn_del.setFixedSize(26, 26)
+        btn_del.setCursor(Qt.PointingHandCursor)
+        btn_del.setToolTip("Xóa khóa học")
+        btn_del.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #CBD5E1;
+                border: none;
+                font-size: 13px;
+                font-weight: bold;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background: #FEE2E2;
+                color: #EF4444;
+            }
+        """)
+        # stopPropagation: dùng lambda tắt event để card không mở detail
+        btn_del.clicked.connect(self._on_delete_clicked)
+
         top.addWidget(icon)
         top.addStretch()
         top.addWidget(status)
+        top.addSpacing(6)
+        top.addWidget(btn_del)
 
         # TITLE
         title = QLabel(course["name"])
@@ -454,6 +479,10 @@ class CourseCard(QFrame):
         layout.addStretch()
         layout.addLayout(prog_row)
         layout.addWidget(bar)
+
+    def _on_delete_clicked(self):
+        if self.on_delete:
+            self.on_delete(self.course)
 
     def _apply_style(self, hover=False):
         border = "#2D60FF" if hover else "#EDEDED"
@@ -601,12 +630,32 @@ class CoursesWidget(QWidget):
 
         row = col = 0
         for course in courses:
-            card = CourseCard(course, self.open_detail)
+            card = CourseCard(course, self.open_detail, self.delete_course)
             self.grid.addWidget(card, row, col)
             col += 1
             if col == 3:
                 col = 0
                 row += 1
+
+    # ================= DELETE =================
+    def delete_course(self, course: dict):
+        name = course.get("name", "khóa học này")
+        reply = QMessageBox.question(
+            self, "Xác nhận xóa",
+            f"Bạn có chắc muốn xóa khóa học\n\"{name}\" không?\n\nHành động này không thể hoàn tác.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        course_id = course.get("id") or course.get("course_id")
+        success = self.controller.delete_course(course_id)
+
+        if success:
+            self.load_courses()
+        else:
+            QMessageBox.warning(self, "Lỗi", "Không thể xóa khóa học. Vui lòng thử lại.")
 
     # ================= ADD (2 bước) =================
     def add_course(self):

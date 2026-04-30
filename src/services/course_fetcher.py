@@ -1,6 +1,5 @@
 import requests
 
-
 class CourseFetcher:
     def __init__(self):
         self.api_key = "d6e6f61b7f729460d0217eee6c12de607cfd275a8da95f63bc97afeaf8a19659"
