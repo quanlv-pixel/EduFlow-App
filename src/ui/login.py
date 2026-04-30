@@ -67,6 +67,20 @@ class LoginDialog(QDialog):
 
         layout.addWidget(self.btn_login)
 
+        # 👉 THÊM NÚT ĐĂNG KÝ
+        self.btn_goto_register = QPushButton("Chưa có tài khoản? Đăng ký ngay")
+        self.btn_goto_register.setObjectName("BtnRegisterLink") # Đặt tên để có thể style riêng
+        self.btn_goto_register.setCursor(Qt.PointingHandCursor)
+        self.btn_goto_register.setStyleSheet("color:#2D60FF; border:none; background:none; font-size:13px;")
+        layout.addWidget(self.btn_goto_register)
+
+        layout.addStretch()
+
+        # ================= EVENTS =================
+        self.btn_login.clicked.connect(self.handle_login)
+        self.btn_goto_register.clicked.connect(self.handle_goto_register)
+        self.is_register_mode = False
+
         layout.addStretch()
 
         # ================= EVENTS =================
@@ -107,3 +121,8 @@ class LoginDialog(QDialog):
             # ===== UI UNLOCK =====
             self.btn_login.setEnabled(True)
             self.btn_login.setText("Đăng nhập")
+    
+    def handle_goto_register(self):
+        self.is_register_mode = True  
+        self.reject()                 
+    

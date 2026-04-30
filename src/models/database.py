@@ -246,6 +246,22 @@ class Database:
         )
         return result[0] if result else None
 
+    # Thêm vào class Database trong file database.py
+    def register_user(self, name, email, password):
+        try:
+            self.cursor.execute(
+                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+                (name, email, password)
+            )
+            self.conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            # Email đã tồn tại
+            return False
+        except Exception as e:
+            print("❌ Register Error:", e)
+            return None
+
     # ================= COURSES =================
     def get_courses(self, user_id):
         return self.execute(

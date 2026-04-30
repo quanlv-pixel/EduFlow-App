@@ -1,8 +1,9 @@
 import sys
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 # UI
 from src.ui.login import LoginDialog
+from src.ui.register import RegisterDialog
 from src.ui.dashboard import EduDashboard
 
 # SERVICES
@@ -36,19 +37,33 @@ class AppController:
         self.login_window = None
 
     def show_login(self):
-    # 👉 đóng dashboard nếu còn
-        if self.dashboard:
-            self.dashboard.hide()
-            self.dashboard.deleteLater()
-            self.dashboard = None
+            if self.dashboard:
+                self.dashboard.hide()
+                self.dashboard.deleteLater()
+                self.dashboard = None
 
-        self.login_window = LoginDialog(self.auth_controller)
+            self.login_window = LoginDialog(self.auth_controller)
 
-        if self.login_window.exec():
-            user = self.login_window.user_data
-            self.show_dashboard(user)
+            # Thực thi Dialog
+            result = self.login_window.exec()
+
+            if result == QDialog.Accepted:
+                user = self.login_window.user_data
+                self.show_dashboard(user)
+            elif self.login_window.is_register_mode:
+                self.show_register() 
+                sys.exit()
+    
+    def show_register(self):
+        # Tạo cửa sổ đăng ký
+        self.register_window = RegisterDialog(self.auth_controller) #[cite: 1]
+        
+        if self.register_window.exec():
+            QMessageBox.information(None, "Thành công", "Đăng ký thành công! Hãy đăng nhập.")
+            self.show_login()
         else:
-            sys.exit()
+           
+            self.show_login()
 
     def show_dashboard(self, user):
     # 👉 đóng login trước
