@@ -415,7 +415,7 @@ class LessonItem(QFrame):
             text = tr(key)
         else:
             # fallback: map từ title sang key
-            title = self.lesson.get("title", "").lower().strip()
+            text = self.lesson.get("title", "")
             mapping = {
                 "lesson intro": "lesson_intro",
                 "lesson basic": "lesson_basic",
@@ -435,12 +435,12 @@ class LessonItem(QFrame):
     # ── Dịch dòng meta: duration + type + source ────────────────────
     def _build_meta(self) -> str:
         # Hỗ trợ cả '_minutes' (từ lesson_mapper) và 'minutes' (từ DB)
-        minutes  = self.lesson.get("_minutes") or self.lesson.get("minutes")
-        duration = (
-            tr("lesson_duration", minutes=minutes)
-            if minutes is not None
-            else self.lesson.get("duration", "")
-        )
+        minutes = self.lesson.get("minutes")
+
+        if minutes is not None:
+            duration = tr("lesson_duration", minutes=minutes)
+        else:
+            duration = self.lesson.get("duration", "")
         type_lbl = self.lesson.get("type", "Online")
         source   = self.lesson.get("source", "")
         meta     = f"{duration}  •  {type_lbl}"

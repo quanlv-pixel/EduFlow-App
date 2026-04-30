@@ -23,17 +23,13 @@ class LessonMapper:
         lessons = []
         for i, key in enumerate(keys):
             lessons.append({
-                # Fallback title nếu DB cũ chưa có topic_key
-                "title":        f"{tr(key)} — {title}",
-                # ── Keys để LessonItem dịch lại khi đổi ngôn ngữ ──
-                "topic_key":    key,
+                "title": title,  # raw
+                "topic_key": key,
                 "course_title": title,
-                # ── Duration: lưu số phút gốc để dịch lại ──────────
-                "minutes":      10 + i * 5,          # tên khớp với cột DB
-                "duration":     tr("lesson_duration", minutes=(10 + i * 5)),
-                "type":         type_,
-                "url":          link,
-                "source":       source,
+                "minutes": 10 + i * 5,
+                "type": type_,
+                "url": link,
+                "source": source,
                 "has_exercise": (i % 3 == 2),
             })
 

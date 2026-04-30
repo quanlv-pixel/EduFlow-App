@@ -99,7 +99,10 @@ class CourseController:
                     l["duration"],
                     l["type"],
                     l["has_exercise"],
-                    completed=False
+                    completed=False,
+                    topic_key=l.get("topic_key"),
+                    course_title=l.get("course_title"),
+                    minutes=l.get("minutes")
                 )
 
             return lessons
