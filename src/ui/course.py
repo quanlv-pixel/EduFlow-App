@@ -185,7 +185,6 @@ class CourseSelectDialog(QDialog):
         self.main_layout.addSpacing(4)
 
         if not results:
-            # Không tìm thấy gì → vẫn cho phép tạo course trống
             info = QLabel("⚠️ Không tìm thấy khóa học nào. Sẽ tạo môn học trống.")
             info.setStyleSheet("""
                 background: #FFF7ED;
@@ -198,7 +197,6 @@ class CourseSelectDialog(QDialog):
             self.main_layout.addWidget(info)
             self._selected = None
         else:
-            # Scroll area chứa danh sách radio button
             scroll = QScrollArea()
             scroll.setWidgetResizable(True)
             scroll.setFrameShape(QFrame.NoFrame)
@@ -212,7 +210,7 @@ class CourseSelectDialog(QDialog):
             list_layout.setSpacing(8)
 
             self._btn_group = QButtonGroup(self)
-            self._radio_map = {}   # radio → result dict
+            self._radio_map = {}   
 
             for i, r in enumerate(results):
                 frame, rb = self._make_result_radio(r, i)
@@ -220,7 +218,6 @@ class CourseSelectDialog(QDialog):
                 list_layout.addWidget(frame)
                 self._radio_map[rb] = r
 
-            # Mặc định chọn cái đầu tiên
             first = self._btn_group.button(0)
             if first:
                 first.setChecked(True)
@@ -276,7 +273,7 @@ class CourseSelectDialog(QDialog):
         self.adjustSize()
 
     def _make_result_radio(self, result: dict, index: int) -> QWidget:
-        """Tạo 1 radio item cho 1 kết quả search."""
+
         frame = QFrame()
         frame.setStyleSheet("""
             QFrame {
@@ -317,10 +314,8 @@ class CourseSelectDialog(QDialog):
         h.addWidget(rb)
         h.addLayout(v, stretch=1)
 
-        # Click vào frame cũng chọn radio
         frame.mousePressEvent = lambda _: rb.setChecked(True) or setattr(self, "_selected", result)
 
-        # Thay radio button gốc bằng wrapper
         rb._result = result
         rb._frame = frame
         return frame, rb
@@ -338,7 +333,6 @@ class CourseSelectDialog(QDialog):
             if item.widget():
                 item.widget().deleteLater()
             elif item.layout():
-                # xóa nested layout
                 while item.layout().count():
                     child = item.layout().takeAt(0)
                     if child.widget():
@@ -397,7 +391,7 @@ class CourseCard(QFrame):
             font-weight: 600;
         """)
 
-        # Nút xóa — chỉ hiện khi hover, không trigger on_click của card
+        
         btn_del = QPushButton("✕")
         btn_del.setFixedSize(26, 26)
         btn_del.setCursor(Qt.PointingHandCursor)
@@ -416,7 +410,7 @@ class CourseCard(QFrame):
                 color: #EF4444;
             }
         """)
-        # stopPropagation: dùng lambda tắt event để card không mở detail
+        
         btn_del.clicked.connect(self._on_delete_clicked)
 
         top.addWidget(icon)
@@ -459,7 +453,7 @@ class CourseCard(QFrame):
         bar.setValue(progress)
         bar.setTextVisible(False)
         bar.setFixedHeight(6)
-        # FIX: Progress bar xanh lá khi 100%
+        
         chunk_color = "#10B981" if progress == 100 else "#2D60FF"
         bar.setStyleSheet(f"""
             QProgressBar {{
@@ -659,12 +653,7 @@ class CoursesWidget(QWidget):
 
     # ================= ADD (2 bước) =================
     def add_course(self):
-        """
-        FIX: Thay vì dùng QInputDialog nhiều lần,
-        mở CourseSelectDialog để:
-        1. Nhập thông tin → search
-        2. Chọn course từ kết quả → tạo lessons
-        """
+
         dlg = CourseSelectDialog(self.controller, self)
         if dlg.exec() != QDialog.Accepted:
             return
@@ -672,7 +661,7 @@ class CoursesWidget(QWidget):
         name = dlg.get_name()
         code = dlg.get_code()
         prof = dlg.get_prof()
-        selected = dlg.get_selected()   # dict course user đã chọn, hoặc None
+        selected = dlg.get_selected()   
 
         if not name:
             return

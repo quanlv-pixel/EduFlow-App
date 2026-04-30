@@ -19,18 +19,15 @@ class AppController:
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
 
-        # load style
         try:
             with open("assets/style.qss", "r", encoding="utf-8") as f:
                 self.app.setStyleSheet(f.read())
         except:
             pass
 
-        # 👉 INIT CORE
         self.db = Database()
         self.ai = AIEngine()
 
-        # 👉 CONTROLLER
         self.auth_controller = AuthController(self.db)
 
         self.dashboard = None 
@@ -44,7 +41,6 @@ class AppController:
 
             self.login_window = LoginDialog(self.auth_controller)
 
-            # Thực thi Dialog
             result = self.login_window.exec()
 
             if result == QDialog.Accepted:
@@ -55,9 +51,8 @@ class AppController:
                 sys.exit()
     
     def show_register(self):
-        # Tạo cửa sổ đăng ký
-        self.register_window = RegisterDialog(self.auth_controller) #[cite: 1]
-        
+        self.register_window = RegisterDialog(self.auth_controller)
+
         if self.register_window.exec():
             QMessageBox.information(None, "Thành công", "Đăng ký thành công! Hãy đăng nhập.")
             self.show_login()
@@ -66,7 +61,6 @@ class AppController:
             self.show_login()
 
     def show_dashboard(self, user):
-    # 👉 đóng login trước
         if self.login_window:
             self.login_window.hide()
             self.login_window.deleteLater()
