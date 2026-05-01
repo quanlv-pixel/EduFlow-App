@@ -572,7 +572,7 @@ class GradeWidget(QWidget):
     def _update_banner_hs(self, subjects):
         if not subjects:
             self.banner.lbl_main.setText("–")
-            self.banner.lbl_sub.setText("Chưa có môn học nào")
+            self.banner.lbl_sub.setText(tr("no_subject"))
             self.banner.lbl_rank.setText("–")
             return
 
@@ -593,7 +593,7 @@ class GradeWidget(QWidget):
     def _update_banner_sv(self, subjects):
         if not subjects:
             self.banner.lbl_main.setText("–")
-            self.banner.lbl_sub.setText("Chưa có môn học nào")
+            self.banner.lbl_sub.setText(tr("no_subject"))
             self.banner.lbl_rank.setText("–")
             return
 
@@ -625,3 +625,7 @@ class GradeWidget(QWidget):
 
         # table headers reload luôn theo mode
         self._refresh()
+
+        subjects = self.ctrl.get_subjects(self.user_id, self.mode)
+        if not subjects:
+            self.banner.lbl_sub.setText(tr("no_subject"))

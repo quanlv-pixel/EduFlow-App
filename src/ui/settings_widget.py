@@ -235,6 +235,7 @@ TRANSLATIONS = {
         "save": "Lưu",
         "cancel": "Hủy",
         "credits": "Tín chỉ",
+        "no_subject": "Chưa có môn học nào",
 
         # Flashcard extra
         "flash_click_answer":      "👆 Click để xem đáp án",
@@ -492,6 +493,8 @@ TRANSLATIONS = {
         "save": "Save",
         "cancel": "Cancel",
         "credits": "Credits",
+
+        "no_subject" : "No subjects available",
 
         # Flashcard extra
         "flash_click_answer":      "👆 Click to see the answer",
@@ -752,6 +755,7 @@ TRANSLATIONS = {
         "save": "保存",
         "cancel": "取消",
         "credits": "学分",
+        "no_subject": "暂无课程",
 
         # Flashcard extra
         "flash_click_answer":      "👆 点击查看答案",

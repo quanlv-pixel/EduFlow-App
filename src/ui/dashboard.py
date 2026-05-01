@@ -321,7 +321,12 @@ class EduDashboard(QMainWindow):
 
         if not today_schedules:
             v.addStretch()
-            v.addWidget(QLabel(tr("no_schedule"), alignment=Qt.AlignCenter))
+            self.no_schedule_label = QLabel()
+            self.no_schedule_label.setAlignment(Qt.AlignCenter)
+            self.no_schedule_label.setText(tr("no_schedule"))
+
+            v.addWidget(self.no_schedule_label)
+
             v.addStretch()
         else:
             v.addSpacing(4)
@@ -446,6 +451,9 @@ class EduDashboard(QMainWindow):
 
         if hasattr(self, "lbl_progress"):
             self.lbl_progress.setText(f"<b>{tr('study_progress')}</b>")
+
+        if hasattr(self, "no_schedule_label"):
+            self.no_schedule_label.setText(tr("no_schedule"))
 
     # ================= LOGOUT =================
     def handle_logout(self):

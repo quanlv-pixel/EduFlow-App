@@ -42,7 +42,7 @@ class RegisterDialog(QDialog):
         self.name_input = QLineEdit()
         self.name_input.setObjectName("LoginInput")
         self.name_input.setPlaceholderText("Nguyễn Văn A")
-        self.name_input.setFixedHeight(42)
+        self.name_input.setFixedHeight(48)
         layout.addWidget(self.name_input)
 
         # ── TÊN TÀI KHOẢN ──
@@ -50,7 +50,7 @@ class RegisterDialog(QDialog):
         self.username_input = QLineEdit()
         self.username_input.setObjectName("LoginInput")
         self.username_input.setPlaceholderText("nguyenvana123  (không dấu, không khoảng trắng)")
-        self.username_input.setFixedHeight(42)
+        self.username_input.setFixedHeight(48)
         layout.addWidget(self.username_input)
 
         # ── EMAIL ──
@@ -58,7 +58,7 @@ class RegisterDialog(QDialog):
         self.email_input = QLineEdit()
         self.email_input.setObjectName("LoginInput")
         self.email_input.setPlaceholderText("example@email.com")
-        self.email_input.setFixedHeight(42)
+        self.email_input.setFixedHeight(48)
         layout.addWidget(self.email_input)
 
         # ── MẬT KHẨU ──
@@ -67,7 +67,7 @@ class RegisterDialog(QDialog):
         self.pass_input.setObjectName("LoginInput")
         self.pass_input.setEchoMode(QLineEdit.Password)
         self.pass_input.setPlaceholderText("••••••••  (ít nhất 6 ký tự)")
-        self.pass_input.setFixedHeight(42)
+        self.pass_input.setFixedHeight(48)
         layout.addWidget(self.pass_input)
 
         # ── XÁC NHẬN MẬT KHẨU ──
@@ -76,7 +76,7 @@ class RegisterDialog(QDialog):
         self.confirm_pass_input.setObjectName("LoginInput")
         self.confirm_pass_input.setEchoMode(QLineEdit.Password)
         self.confirm_pass_input.setPlaceholderText("••••••••")
-        self.confirm_pass_input.setFixedHeight(42)
+        self.confirm_pass_input.setFixedHeight(48)
         layout.addWidget(self.confirm_pass_input)
 
         layout.addSpacing(4)
@@ -85,7 +85,7 @@ class RegisterDialog(QDialog):
         self.btn_register = QPushButton("Đăng ký ngay")
         self.btn_register.setObjectName("BtnLogin")
         self.btn_register.setCursor(Qt.PointingHandCursor)
-        self.btn_register.setFixedHeight(42)
+        self.btn_register.setFixedHeight(48)
         layout.addWidget(self.btn_register)
 
         # ── BACK TO LOGIN ──

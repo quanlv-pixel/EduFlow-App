@@ -59,11 +59,11 @@ class CourseSelectDialog(QDialog):
     def _build_step1(self):
         self._clear_layout()
 
-        title = QLabel("📚 Thêm khóa học mới")
+        title = QLabel(tr("course_add"))
         title.setStyleSheet("font-size: 20px; font-weight: bold; color: #1E2328;")
         self.main_layout.addWidget(title)
 
-        subtitle = QLabel("Nhập thông tin môn học. Hệ thống sẽ tự tìm tài liệu phù hợp.")
+        subtitle = QLabel(tr("course_subtitle"))
         subtitle.setStyleSheet("font-size: 13px; color: #6F767E;")
         subtitle.setWordWrap(True)
         self.main_layout.addWidget(subtitle)
@@ -71,12 +71,21 @@ class CourseSelectDialog(QDialog):
         self.main_layout.addSpacing(4)
 
         # Inputs
-        self.inp_name = self._make_input("Tên môn học *", "Ví dụ: Machine Learning, Python...")
-        self.inp_code = self._make_input("Mã môn (tuỳ chọn)", "Ví dụ: CS101")
-        self.inp_prof = self._make_input("Giảng viên (tuỳ chọn)", "Ví dụ: Nguyễn Văn A")
+        self.inp_name = self._make_input(
+            tr("input_course_label"),
+            tr("input_course_placeholder")  # nếu bạn có placeholder riêng
+        )
+        self.inp_code = self._make_input(
+            tr("input_code_label"),
+            tr("input_code_placeholder")
+        )
+        self.inp_prof = self._make_input(
+            tr("input_prof_label"),
+            tr("input_prof_placeholder")
+        )
 
         # Nút tìm kiếm
-        self.btn_search = QPushButton("🔍  Tìm khóa học")
+        self.btn_search = QPushButton(tr("course_add"))
         self.btn_search.setCursor(Qt.PointingHandCursor)
         self.btn_search.setFixedHeight(44)
         self.btn_search.setStyleSheet("""
@@ -95,7 +104,7 @@ class CourseSelectDialog(QDialog):
         self.main_layout.addWidget(self.btn_search)
 
         # Nút huỷ
-        btn_cancel = QPushButton("Huỷ")
+        btn_cancel = QPushButton(tr("cancel"))
         btn_cancel.setCursor(Qt.PointingHandCursor)
         btn_cancel.setFixedHeight(40)
         btn_cancel.setStyleSheet("""
