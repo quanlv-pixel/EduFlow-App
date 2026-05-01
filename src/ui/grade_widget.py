@@ -468,7 +468,7 @@ class GradeWidget(QWidget):
                     item.setFont(font)
                 if col == 5:
                     item.setForeground(QColor(color))
-                    item.setFont(QFont("", -1, QFont.Bold))
+                    item.setFont(QFont("Segoe UI", 10, QFont.Bold))
                 self.table.setItem(row, col, item)
 
             self._add_action_buttons(
@@ -532,7 +532,7 @@ class GradeWidget(QWidget):
                     item.setFont(font)
                 if col == 7:
                     item.setForeground(QColor(l_color))
-                    item.setFont(QFont("", -1, QFont.Bold))
+                    item.setFont(QFont("Segoe UI", 10, QFont.Bold))
                 if col == 8:
                     item.setForeground(QColor("#1E2328"))
                 self.table.setItem(row, col, item)

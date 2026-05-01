@@ -1,6 +1,6 @@
 /* Tổng thể app */
 QMainWindow { background-color: #F0F2F5; }
-QLabel { color: #1E2328; font-family: "SF Pro Display", "Segoe UI", sans-serif; }
+QLabel { color: #1E2328; font-family:  "Segoe UI", "Roboto", "Noto Sans", sans-serif;}
 
 /* ===== SIDEBAR ===== */
 QFrame#Sidebar {

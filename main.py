@@ -12,11 +12,12 @@ from src.services.ai_engine import AIEngine
 
 # CONTROLLERS
 from src.controllers.auth_controller import AuthController
-
+from PySide6.QtGui import QFont
 
 class AppController:
     def __init__(self):
         self.app = QApplication(sys.argv)
+        self.app.setFont(QFont("Segoe UI", 10))
         self.app.setStyle("Fusion")
 
         try:
