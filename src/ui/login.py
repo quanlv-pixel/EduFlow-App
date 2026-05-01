@@ -42,12 +42,12 @@ class LoginDialog(QDialog):
         layout.addWidget(title)
         layout.addWidget(subtitle)
 
-        # ================= EMAIL =================
-        layout.addWidget(QLabel("Email:"))
+        # ================= EMAIL / USERNAME =================
+        layout.addWidget(QLabel("Email hoặc tên tài khoản:"))
 
         self.user_input = QLineEdit()
         self.user_input.setObjectName("LoginInput")
-        self.user_input.setPlaceholderText("example@email.com")
+        self.user_input.setPlaceholderText("example@email.com  hoặc  nguyenvana123")
         layout.addWidget(self.user_input)
 
         # ================= PASSWORD =================
@@ -124,5 +124,4 @@ class LoginDialog(QDialog):
     
     def handle_goto_register(self):
         self.is_register_mode = True  
-        self.reject()                 
-    
+        self.reject()

@@ -8,12 +8,7 @@ from PySide6.QtCore import Qt, QSize, Signal, QUrl
 from PySide6.QtGui import QFont, QCursor, QDesktopServices
 from src.ui.settings_widget import LanguageManager, tr
 
-try:
-    from PySide6.QtWebEngineWidgets import QWebEngineView
-    from PySide6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
-    HAS_WEBENGINE = True
-except ImportError:
-    HAS_WEBENGINE = False
+
 
 
 # ================= BADGE DIALOG (hiện khi đạt 100%) =================
@@ -93,146 +88,6 @@ class BadgeDialog(QDialog):
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close)
 
-
-# ================= YOUTUBE PLAYER DIALOG =================
-class YouTubePlayerDialog(QDialog):
-    """
-    Dialog nhúng video YouTube trực tiếp trong app (dùng QWebEngineView).
-    Fallback mở browser nếu PySide6-WebEngine chưa cài.
-    """
-    def __init__(self, video_id: str, lesson_title: str,
-                 chapter_label: str = "", parent=None):
-        super().__init__(parent)
-        self.video_id = video_id
-        self.setWindowTitle(f"▶  {lesson_title}")
-        self.setMinimumSize(860, 560)
-        self.setStyleSheet("background: #0F0F0F;")
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        if HAS_WEBENGINE and video_id:
-            # ── Load trang watch thật (tránh lỗi 153 của embed) ──
-            self.view = QWebEngineView()
-
-            # Set User-Agent thành Chrome — YouTube nhận diện là browser thật
-            profile = self.view.page().profile()
-            profile.setHttpUserAgent(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            )
-
-            # Bật các settings cần thiết để YouTube chạy được
-            settings = self.view.settings()
-            settings.setAttribute(QWebEngineSettings.WebAttribute.JavascriptEnabled, True)
-            settings.setAttribute(QWebEngineSettings.WebAttribute.PluginsEnabled, True)
-            settings.setAttribute(
-                QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, True
-            )
-
-            # Dùng /watch?v= thay vì /embed/ → không bị chặn origin
-            watch_url = f"https://www.youtube.com/watch?v={video_id}&autoplay=1"
-            self.view.setUrl(QUrl(watch_url))
-            layout.addWidget(self.view, stretch=1)
-
-            # ── Info bar phía dưới ──────────────────────────────
-            bar = QWidget()
-            bar.setFixedHeight(48)
-            bar.setStyleSheet("background: #1A1A1A;")
-            bar_layout = QHBoxLayout(bar)
-            bar_layout.setContentsMargins(20, 0, 20, 0)
-
-            lbl_title = QLabel(lesson_title)
-            lbl_title.setStyleSheet(
-                "color: #FFFFFF; font-size: 13px; "
-                "font-weight: 600; background: transparent;"
-            )
-
-            lbl_chapter = QLabel(chapter_label)
-            lbl_chapter.setStyleSheet(
-                "color: #9BA3AF; font-size: 12px; background: transparent;"
-            )
-
-            btn_yt = QPushButton("🔗 Mở YouTube")
-            btn_yt.setCursor(Qt.PointingHandCursor)
-            btn_yt.setFixedHeight(30)
-            btn_yt.setStyleSheet("""
-                QPushButton {
-                    background: #FF0000; color: white; border-radius: 6px;
-                    font-size: 12px; font-weight: 600; border: none; padding: 0 12px;
-                }
-                QPushButton:hover { background: #CC0000; }
-            """)
-            btn_yt.clicked.connect(
-                lambda: QDesktopServices.openUrl(
-                    QUrl(f"https://www.youtube.com/watch?v={video_id}")
-                )
-            )
-
-            btn_close = QPushButton("✕ Đóng")
-            btn_close.setCursor(Qt.PointingHandCursor)
-            btn_close.setFixedHeight(30)
-            btn_close.setStyleSheet("""
-                QPushButton {
-                    background: #374151; color: #D1D5DB; border-radius: 6px;
-                    font-size: 12px; border: none; padding: 0 12px;
-                }
-                QPushButton:hover { background: #4B5563; }
-            """)
-            btn_close.clicked.connect(self.accept)
-
-            bar_layout.addWidget(lbl_title)
-            bar_layout.addSpacing(12)
-            bar_layout.addWidget(lbl_chapter)
-            bar_layout.addStretch()
-            bar_layout.addWidget(btn_yt)
-            bar_layout.addSpacing(8)
-            bar_layout.addWidget(btn_close)
-            layout.addWidget(bar)
-
-        else:
-            # ── Fallback: không có WebEngine ────────────────────
-            self.setMinimumSize(460, 220)
-            self.setStyleSheet("background: #FFFFFF;")
-
-            inner = QVBoxLayout()
-            inner.setContentsMargins(36, 32, 36, 32)
-            inner.setSpacing(14)
-            inner.setAlignment(Qt.AlignCenter)
-
-            if not HAS_WEBENGINE:
-                warn = QLabel(
-                    "⚠️  PySide6-WebEngine chưa được cài đặt.\n\n"
-                    "Cài bằng lệnh:  pip install PySide6-WebEngine\n"
-                    "Sau đó khởi động lại ứng dụng."
-                )
-                warn.setAlignment(Qt.AlignCenter)
-                warn.setWordWrap(True)
-                warn.setStyleSheet("""
-                    background: #FFF7ED; color: #D97706;
-                    border-radius: 10px; padding: 14px 20px; font-size: 13px;
-                """)
-                inner.addWidget(warn)
-
-            btn_open = QPushButton("▶  Mở trên YouTube")
-            btn_open.setCursor(Qt.PointingHandCursor)
-            btn_open.setFixedHeight(42)
-            btn_open.setStyleSheet("""
-                QPushButton {
-                    background: #FF0000; color: white; border-radius: 10px;
-                    font-size: 14px; font-weight: bold; border: none;
-                }
-                QPushButton:hover { background: #CC0000; }
-            """)
-            btn_open.clicked.connect(
-                lambda: QDesktopServices.openUrl(
-                    QUrl(f"https://www.youtube.com/watch?v={video_id or ''}")
-                )
-            )
-            inner.addWidget(btn_open)
-            layout.addLayout(inner)
 
 
 # ================= LESSON ITEM =================
@@ -316,8 +171,8 @@ class LessonItem(QFrame):
 
         # ── Nút hành động chính ──────────────────────────────────
         if self._is_youtube:
-            # YouTube → nút mở video embed trong app
-            btn_play = QPushButton("▶  Xem video")
+            # YouTube → mở trình duyệt
+            btn_play = QPushButton("▶  Xem trên YouTube")
             btn_play.setCursor(Qt.PointingHandCursor)
             btn_play.setFixedHeight(32)
             btn_play.setStyleSheet("""
@@ -332,7 +187,9 @@ class LessonItem(QFrame):
                 }
                 QPushButton:hover { background: #CC0000; }
             """)
-            btn_play.clicked.connect(self._open_youtube)
+            btn_play.clicked.connect(
+                lambda: QDesktopServices.openUrl(QUrl(self._url))
+            )
             layout.addWidget(btn_play)
 
         elif self._url:
@@ -376,26 +233,6 @@ class LessonItem(QFrame):
         """)
         btn_flash.clicked.connect(lambda: on_flashcard(self.lesson))
         layout.addWidget(btn_flash)
-
-    # ── Mở YouTube trong app ─────────────────────────────────────
-    def _open_youtube(self):
-        video_id = self._video_id
-
-        # Fallback: trích video_id từ URL nếu chưa có
-        if not video_id and self._url:
-            import re
-            m = re.search(r"(?:v=|youtu\.be/|embed/)([0-9A-Za-z_-]{11})", self._url)
-            video_id = m.group(1) if m else None
-
-        chapter_label = self.lesson.get("web_chapter", "")
-        dlg = YouTubePlayerDialog(
-            video_id    = video_id or "",
-            lesson_title= self.lesson.get("title", ""),
-            chapter_label = f"Chương {self.lesson.get('lesson_index','')}/"
-                            f"{self.lesson.get('total_lessons','')}",
-            parent      = self.window()
-        )
-        dlg.exec()
 
     # ── Toggle done / undone ─────────────────────────────────────
     def _toggle_done(self):

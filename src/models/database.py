@@ -26,6 +26,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
+                username TEXT UNIQUE,
                 email TEXT UNIQUE,
                 password TEXT
             )
@@ -208,7 +209,29 @@ class Database:
             )
             self.conn.commit()
 
-    # ================= DEFAULT USER =================
+        # Migration 4: thêm cột username vào bảng users
+        mid4 = "users_add_username"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid4,)
+        ).fetchone()
+        if not row:
+            existing_cols = [
+                r[1] for r in
+                self.cursor.execute("PRAGMA table_info(users)").fetchall()
+            ]
+            if "username" not in existing_cols:
+                self.cursor.execute(
+                    "ALTER TABLE users ADD COLUMN username TEXT"
+                )
+                # Tạo unique index riêng (ALTER TABLE không hỗ trợ UNIQUE trực tiếp)
+                self.cursor.execute(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username "
+                    "ON users(username) WHERE username IS NOT NULL"
+                )
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)", (mid4,)
+            )
+            self.conn.commit()
     def create_default_user(self):
         self.cursor.execute(
             "SELECT * FROM users WHERE email=?",
@@ -238,29 +261,45 @@ class Database:
             return None
 
     # ================= AUTH =================
-    def get_user(self, email, password):
+    def get_user(self, identifier: str, password: str):
+        """Đăng nhập bằng email hoặc username."""
         result = self.execute(
-            "SELECT id, name, email FROM users WHERE email=? AND password=?",
-            (email, password),
+            "SELECT id, name, email, username FROM users "
+            "WHERE (email=? OR username=?) AND password=?",
+            (identifier, identifier, password),
             fetch=True
         )
         return result[0] if result else None
 
-    # Thêm vào class Database trong file database.py
-    def register_user(self, name, email, password):
+    def register_user(self, name, username, email, password):
+        """
+        Đăng ký user mới.
+        Trả về: True = thành công, "email" = email trùng, "username" = username trùng, False = lỗi khác
+        """
+        # Kiểm tra email trùng
+        existing_email = self.execute(
+            "SELECT id FROM users WHERE email=?", (email,), fetch=True
+        )
+        if existing_email:
+            return "email"
+
+        # Kiểm tra username trùng
+        existing_username = self.execute(
+            "SELECT id FROM users WHERE username=?", (username,), fetch=True
+        )
+        if existing_username:
+            return "username"
+
         try:
             self.cursor.execute(
-                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-                (name, email, password)
+                "INSERT INTO users (name, username, email, password) VALUES (?, ?, ?, ?)",
+                (name, username, email, password)
             )
             self.conn.commit()
             return True
-        except sqlite3.IntegrityError:
-            # Email đã tồn tại
-            return False
         except Exception as e:
             print("❌ Register Error:", e)
-            return None
+            return False
 
     # ================= COURSES =================
     def get_courses(self, user_id):

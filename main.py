@@ -34,21 +34,19 @@ class AppController:
         self.login_window = None
 
     def show_login(self):
-            if self.dashboard:
-                self.dashboard.hide()
-                self.dashboard.deleteLater()
-                self.dashboard = None
+        if self.dashboard:
+            self.dashboard.hide()
+            self.dashboard.deleteLater()
+            self.dashboard = None
 
-            self.login_window = LoginDialog(self.auth_controller)
+        self.login_window = LoginDialog(self.auth_controller)
+        result = self.login_window.exec()
 
-            result = self.login_window.exec()
-
-            if result == QDialog.Accepted:
-                user = self.login_window.user_data
-                self.show_dashboard(user)
-            elif self.login_window.is_register_mode:
-                self.show_register() 
-                sys.exit()
+        if result == QDialog.Accepted:
+            user = self.login_window.user_data
+            self.show_dashboard(user)
+        elif self.login_window.is_register_mode:
+            self.show_register()  # show_register tự gọi show_login() lại sau khi xong
     
     def show_register(self):
         self.register_window = RegisterDialog(self.auth_controller)
