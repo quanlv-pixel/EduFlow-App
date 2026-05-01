@@ -187,7 +187,8 @@ TRANSLATIONS = {
         "lesson_best_practice":      "Best Practices",
         "lesson_summary":            "Tổng kết & Ôn tập",
         "lesson_duration":           "{minutes} phút",
-
+        "lesson_watch_youtube":      "Xem trên YouTube",
+        "lesson_learn_on":           "Học trên {source}" ,
         # Grades
         "grade_title":          "📊 Bảng điểm",
         "grade_add_subject":    "＋ Thêm môn",
@@ -439,6 +440,9 @@ TRANSLATIONS = {
         "lesson_best_practice":     "Best Practices",
         "lesson_summary":           "Summary & Review",
         "lesson_duration":          "{minutes} min",
+        "lesson_watch_youtube":      "Watch on YouTube",
+        "lesson_learn_on":           "Learn on {source}" ,
+        
 
         # Grades
         "grade_title":         "Grade Management",
@@ -700,6 +704,8 @@ TRANSLATIONS = {
         "lesson_summary": "总结与复习",
         "lesson_duration": "{minutes} 分钟",
 
+        "lesson_watch_youtube":      "在 Youtube 上觀看",
+        "lesson_learn_on":           "在 {source} 上了解更多信息" ,
         # Grades
         "grade_title":          "成绩管理",
         "hs_mode":              "🎒 高中",

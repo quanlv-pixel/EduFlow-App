@@ -172,10 +172,10 @@ class LessonItem(QFrame):
         # ── Nút hành động chính ──────────────────────────────────
         if self._is_youtube:
             # YouTube → mở trình duyệt
-            btn_play = QPushButton("▶  Xem trên YouTube")
-            btn_play.setCursor(Qt.PointingHandCursor)
-            btn_play.setFixedHeight(32)
-            btn_play.setStyleSheet("""
+            self.btn_play = QPushButton(f"▶  {tr('lesson_watch_youtube')}")
+            self.btn_play.setCursor(Qt.PointingHandCursor)
+            self.btn_play.setFixedHeight(32)
+            self.btn_play.setStyleSheet("""
                 QPushButton {
                     background: #FF0000;
                     color: white;
@@ -187,18 +187,20 @@ class LessonItem(QFrame):
                 }
                 QPushButton:hover { background: #CC0000; }
             """)
-            btn_play.clicked.connect(
+            self.btn_play.clicked.connect(
                 lambda: QDesktopServices.openUrl(QUrl(self._url))
             )
-            layout.addWidget(btn_play)
+            layout.addWidget(self.btn_play)
 
         elif self._url:
             # Web source → nút mở browser
             source_short = self._source or "Web"
-            btn_open = QPushButton(f"🔗  Học trên {source_short}")
-            btn_open.setCursor(Qt.PointingHandCursor)
-            btn_open.setFixedHeight(32)
-            btn_open.setStyleSheet("""
+            self.btn_open = QPushButton(
+                f"🔗  {tr('lesson_learn_on', source=source_short)}"
+            )
+            self.btn_open.setCursor(Qt.PointingHandCursor)
+            self.btn_open.setFixedHeight(32)
+            self.btn_open.setStyleSheet("""
                 QPushButton {
                     background: #F3F4F6;
                     color: #374151;
@@ -210,10 +212,10 @@ class LessonItem(QFrame):
                 }
                 QPushButton:hover { background: #E5E7EB; }
             """)
-            btn_open.clicked.connect(
+            self.btn_open.clicked.connect(
                 lambda: QDesktopServices.openUrl(QUrl(self._url))
             )
-            layout.addWidget(btn_open)
+            layout.addWidget(self.btn_open)
 
         # ── Nút Flashcard ────────────────────────────────────────
         btn_flash = QPushButton(tr("lesson_flash_btn"))
@@ -304,6 +306,21 @@ class LessonItem(QFrame):
         # update title
         self.lbl_title.setText(self._build_title())
         self.lbl_meta.setText(self._build_meta())
+
+         # update title + meta
+        self.lbl_title.setText(self._build_title())
+        self.lbl_meta.setText(self._build_meta())
+
+        # update nút YouTube
+        if hasattr(self, "btn_play"):
+            self.btn_play.setText(f"▶  {tr('lesson_watch_youtube')}")
+
+        # update nút web source
+        if hasattr(self, "btn_open"):
+            source_short = self._source or "Web"
+            self.btn_open.setText(
+                f"🔗  {tr('lesson_learn_on', source=source_short)}"
+            )
 
 
 # ================= RESOURCE LINK ITEM =================
