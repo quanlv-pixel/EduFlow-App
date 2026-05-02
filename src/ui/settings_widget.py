@@ -952,6 +952,8 @@ class LangButton(QPushButton):
 #  SETTINGS WIDGET
 # ─────────────────────────────────────────────
 class SettingsWidget(QWidget):
+    ai_limit_changed = Signal(int)   # phát ra giới hạn mới mỗi khi người dùng lưu
+
     def __init__(self, dashboard):
         super().__init__()
         self.dashboard = dashboard
@@ -1234,6 +1236,9 @@ class SettingsWidget(QWidget):
                 QMessageBox.warning(self, tr("invalid_input"), tr("invalid_input_msg"))
                 return
             self.settings["ai_limit"] = int(raw)
+
+        # Phát signal để FlashcardWidget (và bất kỳ widget nào khác) nhận giới hạn mới
+        self.ai_limit_changed.emit(self.settings["ai_limit"])
 
         dark_str = tr("dark_on") if self.settings["dark_mode"] else tr("dark_off")
         QMessageBox.information(

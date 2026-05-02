@@ -248,7 +248,8 @@ class EduDashboard(QMainWindow):
             return CoursesWidget(self.course_controller, self.user_info["id"])
 
         elif key == "flash":
-            return FlashcardWidget(self.flash_controller, self.user_info["id"])
+            self.flash_widget = FlashcardWidget(self.flash_controller, self.user_info["id"])
+            return self.flash_widget
 
         elif key == "summary":
             return SummaryWidget(self.summary_controller, self.user_info["id"])
@@ -260,7 +261,11 @@ class EduDashboard(QMainWindow):
             return GradeWidget(self.grade_controller, self.user_info["id"])
 
         elif key == "settings":
-            return SettingsWidget(self)
+            self.settings_widget = SettingsWidget(self)
+            # Kết nối signal giới hạn flashcard → FlashcardWidget
+            if hasattr(self, "flash_widget"):
+                self.settings_widget.ai_limit_changed.connect(self.flash_widget.set_ai_limit)
+            return self.settings_widget
 
     # ================= OVERVIEW =================
     def create_overview_page(self):

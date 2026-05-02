@@ -14,11 +14,12 @@ class AIWorker(QThread):
     finished = Signal(list)
     error    = Signal(str)
 
-    def __init__(self, controller, mode: str, payload: str):
+    def __init__(self, controller, mode: str, payload: str, ai_limit: int = 15):
         super().__init__()
         self.controller = controller
         self.mode = mode      # "file" hoặc "topic"
         self.payload = payload
+        self.ai_limit = ai_limit   # giới hạn số card từ settings
 
     def run(self):
         try:
@@ -30,7 +31,8 @@ class AIWorker(QThread):
             if not cards:
                 self.error.emit(tr("flash_ai_error_empty"))
             else:
-                self.finished.emit(cards)
+                # Cắt theo giới hạn đã cài trong Settings
+                self.finished.emit(cards[:self.ai_limit])
         except Exception as e:
             self.error.emit(str(e))
 
@@ -368,6 +370,7 @@ class FlashcardWidget(QWidget):
         self.controller = controller
         self.user_id = user_id
         self._worker = None
+        self._ai_limit = 15   # mặc định, sẽ được cập nhật từ SettingsWidget
 
         self.stack = QStackedWidget(self)
 
@@ -384,6 +387,13 @@ class FlashcardWidget(QWidget):
         self._setup_home()
         self._setup_study()
         self._retranslate()
+
+    # ----------------------------------------------------------------
+    # PUBLIC SLOT — kết nối với SettingsWidget.ai_limit_changed
+    # ----------------------------------------------------------------
+    def set_ai_limit(self, limit: int):
+        """Nhận giới hạn mới từ Settings và áp dụng cho lần tạo tiếp theo."""
+        self._ai_limit = max(1, limit)
 
     # ================================================================
     # HOME PAGE
@@ -571,14 +581,14 @@ class FlashcardWidget(QWidget):
         self.stack.setCurrentIndex(1)
         self._show_loading()
 
-        self._worker = AIWorker(self.controller, mode, payload)
+        self._worker = AIWorker(self.controller, mode, payload, self._ai_limit)
         self._worker.finished.connect(self._on_ai_done)
         self._worker.error.connect(self._on_ai_error)
         self._worker.start()
 
     def _on_ai_done(self, cards: list):
         saved = 0
-        for c in cards[:15]:
+        for c in cards:   # cards đã được cắt đúng giới hạn từ AIWorker
             q = c.get("q", "").strip()
             a = c.get("a", "").strip()
             if q and a:
