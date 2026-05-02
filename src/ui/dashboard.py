@@ -123,15 +123,34 @@ class EduDashboard(QMainWindow):
         # USER INFO
         user_frame  = QFrame()
         user_layout = QHBoxLayout(user_frame)
+        user_layout.setContentsMargins(0, 0, 0, 0)
+        user_layout.setSpacing(10)
 
-        avatar = QLabel(self.user_info["name"][0])
+        # Avatar — lấy chữ cái đầu của tên
+        name_str = self.user_info.get("name") or "?"
+        avatar = QLabel(name_str[0].upper())
         avatar.setFixedSize(40, 40)
         avatar.setAlignment(Qt.AlignCenter)
-        avatar.setStyleSheet("background:#555;color:white;border-radius:20px;")
+        avatar.setStyleSheet(
+            "background:#2D60FF;color:white;border-radius:20px;"
+            "font-size:16px;font-weight:bold;"
+        )
 
         info = QVBoxLayout()
-        info.addWidget(QLabel(self.user_info["name"]))
-        info.addWidget(QLabel(self.user_info["email"]))
+        info.setSpacing(1)
+
+        lbl_name = QLabel(self.user_info.get("name", ""))
+        lbl_name.setStyleSheet("font-weight:600;font-size:13px;")
+
+        # Hiện username nếu có, fallback sang email
+        username = self.user_info.get("username")
+        sub_text = f"@{username}" if username else self.user_info.get("email", "")
+        lbl_sub = QLabel(sub_text)
+        lbl_sub.setStyleSheet("color:#6F767E;font-size:11px;")
+        lbl_sub.setToolTip(self.user_info.get("email", ""))  # hover để xem email
+
+        info.addWidget(lbl_name)
+        info.addWidget(lbl_sub)
 
         user_layout.addWidget(avatar)
         user_layout.addLayout(info)
@@ -274,7 +293,7 @@ class EduDashboard(QMainWindow):
         num.setStyleSheet("font-size:40px;font-weight:bold;")
         v1.addWidget(num)
 
-        # WHITE CARD
+        # WHITE CARD — % hoàn thành trung bình thực tế
         white = QFrame()
         white.setObjectName("CardWhite")
         v2 = QVBoxLayout(white)
@@ -283,17 +302,23 @@ class EduDashboard(QMainWindow):
         top2.addWidget(QLabel("✅"))
         top2.addStretch()
 
-        percent = QLabel("+12%")
-        percent.setStyleSheet("color:#10B981;font-weight:bold;")
-        top2.addWidget(percent)
-
         v2.addLayout(top2)
         self.lbl_avg = QLabel()
         v2.addWidget(self.lbl_avg)
 
-        avg = QLabel("78%")
-        avg.setStyleSheet("font-size:40px;font-weight:bold;color:#2D60FF;")
-        v2.addWidget(avg)
+        # Tính % trung bình từ DB
+        courses_for_avg = self.db.get_courses(self.user_info["id"]) or []
+        if courses_for_avg:
+            progresses = [
+                self.db.get_course_progress(c["id"]) for c in courses_for_avg
+            ]
+            avg_val = int(sum(progresses) / len(progresses))
+        else:
+            avg_val = 0
+
+        self.lbl_avg_num = QLabel(f"{avg_val}%")
+        self.lbl_avg_num.setStyleSheet("font-size:40px;font-weight:bold;color:#2D60FF;")
+        v2.addWidget(self.lbl_avg_num)
 
         cards.addWidget(blue, 2)
         cards.addWidget(white, 1)
@@ -324,9 +349,7 @@ class EduDashboard(QMainWindow):
             self.no_schedule_label = QLabel()
             self.no_schedule_label.setAlignment(Qt.AlignCenter)
             self.no_schedule_label.setText(tr("no_schedule"))
-
             v.addWidget(self.no_schedule_label)
-
             v.addStretch()
         else:
             v.addSpacing(4)
@@ -361,30 +384,78 @@ class EduDashboard(QMainWindow):
 
             v.addStretch()
 
-        # progress
+        # ── PROGRESS CARD — hiển thị từ DB thực tế ──
         prog = QFrame()
         prog.setObjectName("CardWhite")
         prog.setFixedWidth(300)
 
         vp = QVBoxLayout(prog)
+        vp.setSpacing(10)
+
         self.lbl_progress = QLabel()
         vp.addWidget(self.lbl_progress)
 
-        subjects = [("Cơ sở dữ liệu", 40), ("Python", 65), ("AI", 85)]
+        # Lấy courses + progress thực tế từ DB
+        courses_list = self.db.get_courses(self.user_info["id"]) or []
 
-        for name, val in subjects:
-            row = QHBoxLayout()
-            row.addWidget(QLabel(name))
-            row.addStretch()
-            row.addWidget(QLabel(f"{val}%"))
+        if not courses_list:
+            empty = QLabel("Chưa có khóa học nào.")
+            empty.setAlignment(Qt.AlignCenter)
+            empty.setStyleSheet("color:#9BA3AF;font-size:13px;")
+            vp.addStretch()
+            vp.addWidget(empty)
+            vp.addStretch()
+        else:
+            # Hiện tối đa 5 khóa học gần nhất
+            for c in courses_list[:5]:
+                course_progress = self.db.get_course_progress(c["id"])
+                course_name = c.get("name", "")
+                # Tên khóa học dài thì rút gọn
+                display_name = (course_name[:22] + "…") if len(course_name) > 24 else course_name
 
-            bar = QProgressBar()
-            bar.setValue(val)
-            bar.setTextVisible(False)
-            bar.setFixedHeight(6)
+                row = QHBoxLayout()
+                row.setSpacing(6)
 
-            vp.addLayout(row)
-            vp.addWidget(bar)
+                lbl_name = QLabel(display_name)
+                lbl_name.setStyleSheet("font-size:12px;color:#1E2328;")
+
+                lbl_pct = QLabel(f"{course_progress}%")
+                lbl_pct.setStyleSheet(
+                    "font-size:12px;font-weight:bold;"
+                    + ("color:#10B981;" if course_progress == 100 else "color:#2D60FF;")
+                )
+
+                row.addWidget(lbl_name)
+                row.addStretch()
+                row.addWidget(lbl_pct)
+
+                bar_widget = QProgressBar()
+                bar_widget.setValue(course_progress)
+                bar_widget.setTextVisible(False)
+                bar_widget.setFixedHeight(6)
+                chunk_color = "#10B981" if course_progress == 100 else "#2D60FF"
+                bar_widget.setStyleSheet(f"""
+                    QProgressBar {{
+                        border:none;
+                        background:#EEF0F4;
+                        border-radius:3px;
+                    }}
+                    QProgressBar::chunk {{
+                        background:{chunk_color};
+                        border-radius:3px;
+                    }}
+                """)
+
+                vp.addLayout(row)
+                vp.addWidget(bar_widget)
+
+            if len(courses_list) > 5:
+                lbl_more = QLabel(f"+ {len(courses_list) - 5} khóa học khác")
+                lbl_more.setStyleSheet("color:#6F767E;font-size:11px;")
+                lbl_more.setAlignment(Qt.AlignCenter)
+                vp.addWidget(lbl_more)
+
+            vp.addStretch()
 
         row2.addWidget(sch, 2)
         row2.addWidget(prog, 1)
