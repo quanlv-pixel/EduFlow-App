@@ -153,22 +153,19 @@ class CourseController:
 
     # ================= FLASHCARD (tùy chọn, nếu có AI) =================
     def generate_flashcard_for_lesson(self, lesson: dict) -> list:
-        """
-        Tạo flashcard từ lesson bằng AI.
-        Trả về list {"question": ..., "answer": ...}
-        """
         if not self.ai:
             return []
-
         try:
-            prompt = (
-                f"Tạo 5 flashcard học tập cho bài: '{lesson['title']}'. "
-                "Trả về JSON array với format: "
-                '[{"question": "...", "answer": "..."}, ...]'
-            )
-            import json
-            raw = self.ai.generate(prompt)
-            cards = json.loads(raw)
+            topic = lesson.get("title", "")
+            course_title = lesson.get("course_title", "")
+
+            # Tạo prompt kết hợp tên bài + tên khóa học
+            prompt = f"Tạo flashcard về bài: {topic}"
+            if course_title:
+                prompt += f" (thuộc khóa học: {course_title})"
+
+            # Dùng đúng method có trong AIEngine
+            cards = self.ai.generate_flashcards_from_topic(prompt)
             return cards
         except Exception as e:
             print("❌ Lỗi tạo flashcard:", e)

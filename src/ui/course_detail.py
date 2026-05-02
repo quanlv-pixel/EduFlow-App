@@ -360,13 +360,14 @@ class ResourceItem(QWidget):
 
 # ================= COURSE DETAIL =================
 class CourseDetailWidget(QWidget):
-    def __init__(self, controller):
+    def __init__(self, controller, user_id=None):
         super().__init__()
 
         self._lm = LanguageManager.instance()
         self._lm.language_changed.connect(self._retranslate)
 
         self.controller = controller
+        self.user_id = user_id   # cần để lưu flashcard vào DB
         self.course_id = None
         self.course_data = None
 
@@ -786,20 +787,62 @@ class CourseDetailWidget(QWidget):
             dlg.exec()
 
     def handle_flashcard(self, lesson: dict):
+        if not self.user_id:
+            QMessageBox.warning(self, "Lỗi", "Không xác định được người dùng.")
+            return
+
+        lesson_title = lesson.get("title", "bài này")
+
+        # ── Kiểm tra đã tạo flashcard cho bài này chưa ──────────
+        existing = self.controller.db.execute(
+            "SELECT COUNT(*) as cnt FROM flashcards "
+            "WHERE user_id=? AND question LIKE ?",
+            (self.user_id, f"%{lesson_title[:30]}%"),
+            fetch=True
+        )
+        already_exists = existing and existing[0].get("cnt", 0) > 0
+
+        if already_exists:
+            reply = QMessageBox.question(
+                self, "Flashcard đã tồn tại",
+                f"Bạn đã tạo flashcard cho bài\n\"{lesson_title}\" rồi.\n\n"
+                "Tạo thêm bộ mới hay bỏ qua?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply != QMessageBox.Yes:
+                return
+
+        # ── Tạo flashcard bằng AI ────────────────────────────────
         try:
             cards = self.controller.generate_flashcard_for_lesson(lesson)
-            if cards:
+
+            if not cards:
                 QMessageBox.information(
-                    self, tr("lesson_flash_btn"),
-                    tr("course_detail_flash_created", count=len(cards))
+                    self, "Flashcard",
+                    "Không tạo được flashcard. Vui lòng thử lại."
                 )
-            else:
-                QMessageBox.information(
-                    self, tr("lesson_flash_btn"),
-                    tr("course_detail_no_ai")
-                )
+                return
+
+            # ── Lưu vào DB ──────────────────────────────────────
+            saved = 0
+            for c in cards:
+                q = c.get("q") or c.get("question", "")
+                a = c.get("a") or c.get("answer", "")
+                if q and a:
+                    self.controller.db.add_flashcard(self.user_id, q, a)
+                    saved += 1
+
+            # ── Thông báo thành công + gợi ý chuyển trang ────────
+            reply = QMessageBox.information(
+                self, "✅ Đã tạo Flashcard",
+                f"Đã tạo và lưu {saved} flashcard cho bài\n\"{lesson_title}\".\n\n"
+                "Vào mục Flashcard để ôn tập nhé!",
+                QMessageBox.Ok
+            )
+
         except Exception as e:
-            QMessageBox.warning(self, tr("flash_error"), str(e))
+            QMessageBox.warning(self, "Lỗi", str(e))
 
     # Legacy compat
     def set_course(self, name, code, professor, progress=0):

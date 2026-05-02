@@ -17,10 +17,9 @@ class AIEngine:
             raise ValueError("❌ Thiếu GOOGLE_API_KEY trong .env")
 
         self.client = genai.Client(api_key=api_key)
-
         self.models = [
-            "gemini-1.5-flash",
-            "gemini-2.5-flash"
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
         ]
 
     # ================= FILE =================
@@ -75,13 +74,10 @@ class AIEngine:
         return f"❌ AI lỗi: {last_error}"
 
     def _parse_flashcard_json(self, raw: str) -> list:
-        """Parse JSON từ response AI, hỗ trợ nhiều format."""
-        # Thử tìm array JSON trong response
         match = re.search(r"\[.*\]", raw, re.DOTALL)
         if match:
             try:
                 cards = json.loads(match.group())
-                # Chuẩn hoá key: hỗ trợ cả {"q":, "a":} và {"question":, "answer":}
                 result = []
                 for c in cards:
                     q = c.get("q") or c.get("question", "")
@@ -116,7 +112,6 @@ NỘI DUNG:
 
     # ================= FLASHCARD TỪ TÀI LIỆU =================
     def generate_flashcards(self, text: str) -> list:
-        """Tạo flashcard từ nội dung tài liệu (PDF/DOCX)."""
         if not text or len(text.strip()) < 50:
             return []
 
@@ -150,10 +145,6 @@ TÀI LIỆU:
 
     # ================= FLASHCARD TỪ TOPIC (MỚI) =================
     def generate_flashcards_from_topic(self, user_prompt: str) -> list:
-        """
-        Tạo flashcard từ prompt của người dùng.
-        Ví dụ: "tạo flashcard về Python", "ôn tập Giải tích"
-        """
         if not user_prompt or not user_prompt.strip():
             return []
 
