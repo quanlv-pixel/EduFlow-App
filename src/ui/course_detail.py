@@ -792,17 +792,16 @@ class CourseDetailWidget(QWidget):
             return
 
         lesson_title = lesson.get("title", "bài này")
+        course_name  = (self.course_data or {}).get("name", "")
+        deck_title   = f"{lesson_title}" + (f" — {course_name}" if course_name else "")
 
-        # ── Kiểm tra đã tạo flashcard cho bài này chưa ──────────
-        existing = self.controller.db.execute(
-            "SELECT COUNT(*) as cnt FROM flashcards "
-            "WHERE user_id=? AND question LIKE ?",
-            (self.user_id, f"%{lesson_title[:30]}%"),
+        # ── Kiểm tra đã có deck cho bài này chưa ──────────────
+        existing_decks = self.controller.db.execute(
+            "SELECT id FROM flashcard_decks WHERE user_id=? AND title=? AND source='course'",
+            (self.user_id, deck_title),
             fetch=True
         )
-        already_exists = existing and existing[0].get("cnt", 0) > 0
-
-        if already_exists:
+        if existing_decks:
             reply = QMessageBox.question(
                 self, "Flashcard đã tồn tại",
                 f"Bạn đã tạo flashcard cho bài\n\"{lesson_title}\" rồi.\n\n"
@@ -813,7 +812,7 @@ class CourseDetailWidget(QWidget):
             if reply != QMessageBox.Yes:
                 return
 
-        # ── Tạo flashcard bằng AI ────────────────────────────────
+        # ── Tạo flashcard bằng AI ─────────────────────────────
         try:
             cards = self.controller.generate_flashcard_for_lesson(lesson)
 
@@ -824,21 +823,25 @@ class CourseDetailWidget(QWidget):
                 )
                 return
 
-            # ── Lưu vào DB ──────────────────────────────────────
+            # ── Tạo deck riêng với source="course" + lesson_id ──
+            lesson_id = lesson.get("id")
+            deck_id = self.controller.db.create_deck(
+                self.user_id, deck_title, source="course", lesson_id=lesson_id
+            )
+
             saved = 0
             for c in cards:
                 q = c.get("q") or c.get("question", "")
                 a = c.get("a") or c.get("answer", "")
                 if q and a:
-                    self.controller.db.add_flashcard(self.user_id, q, a)
+                    self.controller.db.add_flashcard(self.user_id, q, a, deck_id)
                     saved += 1
 
-            # ── Thông báo thành công + gợi ý chuyển trang ────────
-            reply = QMessageBox.information(
+            QMessageBox.information(
                 self, "✅ Đã tạo Flashcard",
-                f"Đã tạo và lưu {saved} flashcard cho bài\n\"{lesson_title}\".\n\n"
-                "Vào mục Flashcard để ôn tập nhé!",
-                QMessageBox.Ok
+                f"Đã tạo {saved} flashcard cho bài\n\"{lesson_title}\".\n\n"
+                "Vào mục Khóa học → bài học này để ôn tập,\n"
+                "hoặc vào mục Flashcard → 'Từ khóa học' để xem tất cả."
             )
 
         except Exception as e:

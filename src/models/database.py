@@ -90,8 +90,21 @@ class Database:
             CREATE TABLE IF NOT EXISTS flashcards (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
+                deck_id INTEGER,
                 question TEXT,
                 answer TEXT
+            )
+            """,
+
+            # FLASHCARD DECKS — mỗi bộ flashcard có tiêu đề riêng
+            """
+            CREATE TABLE IF NOT EXISTS flashcard_decks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                title TEXT,
+                source TEXT,
+                lesson_id INTEGER DEFAULT NULL,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
             )
             """,
 
@@ -230,6 +243,44 @@ class Database:
                 )
             self.cursor.execute(
                 "INSERT INTO migrations (id) VALUES (?)", (mid4,)
+            )
+            self.conn.commit()
+
+        # Migration 5: thêm deck_id vào flashcards
+        mid5 = "flashcards_add_deck_id"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid5,)
+        ).fetchone()
+        if not row:
+            existing_cols = [
+                r[1] for r in
+                self.cursor.execute("PRAGMA table_info(flashcards)").fetchall()
+            ]
+            if "deck_id" not in existing_cols:
+                self.cursor.execute(
+                    "ALTER TABLE flashcards ADD COLUMN deck_id INTEGER DEFAULT NULL"
+                )
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)", (mid5,)
+            )
+            self.conn.commit()
+
+        # Migration 6: thêm lesson_id vào flashcard_decks
+        mid6 = "flashcard_decks_add_lesson_id"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid6,)
+        ).fetchone()
+        if not row:
+            existing_cols = [
+                r[1] for r in
+                self.cursor.execute("PRAGMA table_info(flashcard_decks)").fetchall()
+            ]
+            if "lesson_id" not in existing_cols:
+                self.cursor.execute(
+                    "ALTER TABLE flashcard_decks ADD COLUMN lesson_id INTEGER DEFAULT NULL"
+                )
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)", (mid6,)
             )
             self.conn.commit()
     def create_default_user(self):
@@ -413,19 +464,61 @@ class Database:
             (schedule_id,)
         )
 
-    # ================= FLASHCARDS =================
-    def get_flashcards(self, user_id):
+    # ================= FLASHCARD DECKS =================
+    def create_deck(self, user_id: int, title: str, source: str = "",
+                    lesson_id: int = None) -> int:
+        """Tạo bộ flashcard mới, trả về deck_id."""
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO flashcard_decks (user_id, title, source, lesson_id) VALUES (?, ?, ?, ?)",
+            (user_id, title, source, lesson_id)
+        )
+        self.conn.commit()
+        return cur.lastrowid
+
+    def get_decks(self, user_id: int) -> list:
+        """Lấy tất cả bộ flashcard của user, kèm số lượng card."""
         return self.execute(
-            "SELECT * FROM flashcards WHERE user_id=?",
+            """
+            SELECT d.*, COUNT(f.id) as card_count
+            FROM flashcard_decks d
+            LEFT JOIN flashcards f ON f.deck_id = d.id
+            WHERE d.user_id = ?
+            GROUP BY d.id
+            ORDER BY d.created_at DESC
+            """,
             (user_id,),
-            True
+            fetch=True
+        ) or []
+
+    def delete_deck(self, deck_id: int):
+        """Xóa bộ flashcard và toàn bộ card trong đó."""
+        self.execute("DELETE FROM flashcards WHERE deck_id=?", (deck_id,))
+        return self.execute("DELETE FROM flashcard_decks WHERE id=?", (deck_id,))
+
+    # ================= FLASHCARDS =================
+    def get_flashcards(self, user_id: int, deck_id: int = None) -> list:
+        """Lấy flashcards — theo deck nếu có deck_id, không thì lấy tất cả."""
+        if deck_id is not None:
+            return self.execute(
+                "SELECT * FROM flashcards WHERE user_id=? AND deck_id=? ORDER BY id ASC",
+                (user_id, deck_id),
+                fetch=True
+            ) or []
+        return self.execute(
+            "SELECT * FROM flashcards WHERE user_id=? ORDER BY id ASC",
+            (user_id,),
+            fetch=True
+        ) or []
+
+    def add_flashcard(self, user_id: int, q: str, a: str, deck_id: int = None):
+        return self.execute(
+            "INSERT INTO flashcards (user_id, deck_id, question, answer) VALUES (?, ?, ?, ?)",
+            (user_id, deck_id, q, a)
         )
 
-    def add_flashcard(self, user_id, q, a):
-        return self.execute(
-            "INSERT INTO flashcards (user_id, question, answer) VALUES (?, ?, ?)",
-            (user_id, q, a)
-        )
+    def delete_flashcard(self, card_id: int):
+        return self.execute("DELETE FROM flashcards WHERE id=?", (card_id,))
 
     # ================= SUMMARY =================
     def save_document_and_summary(self, user_id, filename, content, summary):
