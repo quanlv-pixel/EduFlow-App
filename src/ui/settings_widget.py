@@ -263,6 +263,37 @@ TRANSLATIONS = {
         "flash_prompt_examples":   "💡  \"Tạo flashcard về Python cơ bản\"  •  \"Ôn tập Giải tích\"  •  \"Lý thuyết đồ thị\"",
         "flash_prompt_placeholder": "Nhập yêu cầu của bạn ở đây...",
         "flash_prompt_generate":   "✨  Tạo ngay",
+        "flash_prompt_deck_title": "Tiêu đề bộ flashcard:",
+        "flash_prompt_deck_title_ph": "Ví dụ: Python cơ bản",
+        "flash_prompt_req": "Yêu cầu cho AI:",
+
+
+        # AI language instruction (used in prompts)
+        "ai_language":             "Tiếng Việt",
+
+        # (Tìm đến phần "flash_prompt_generate" và thêm vào bên dưới)
+        "flash_prompt_generate":   "✨  Tạo ngay",
+        # THÊM NHỮNG KEY NÀY
+        "flash_tab_mine":          "📚  Bộ đề của tôi",
+        "flash_tab_course":        "🎓  Từ khóa học",
+        "flash_btn_start":         "Bắt đầu →",
+        "flash_btn_next":          "Câu tiếp theo →",
+        "flash_btn_finish":        "Xem kết quả 🏁",
+        "flash_feedback_correct":  "🎉 Chính xác!",
+        "flash_feedback_wrong":    "❌ Sai!  Đáp án: {correct}",
+        "flash_progress":          "Câu {current} / {total}",
+        "flash_score":             "✅ {score} đúng",
+        "flash_loading_overlay":   "⏳  AI đang tạo flashcard...",
+        "flash_back_list":         "← Danh sách",
+        "flash_result_title":      "Kết quả ôn tập",
+        "flash_result_retry":      "🔄  Làm lại",
+        "flash_result_back":       "← Quay lại",
+        "flash_empty_mine":        "Chưa có bộ flashcard nào.\nHãy tạo mới bằng 2 nút bên trên!",
+        "flash_empty_course":      "Chưa có flashcard nào từ khóa học.\nVào Khóa học → Bài học → ⚡ Flashcard để tạo.",
+        "flash_delete_confirm":    "Xác nhận xóa",
+        "flash_delete_msg":        "Xóa bộ flashcard\n\"{title}\"?\n({count} câu hỏi sẽ bị xóa)",
+        "flash_quiz_empty":        "Bộ flashcard này chưa có câu hỏi nào.",
+        "flash_quiz_few":          "Cần ít nhất 2 câu hỏi để tạo bài quiz với 4 đáp án.",
     },
     "en": {
         # Settings page
@@ -525,6 +556,37 @@ TRANSLATIONS = {
         "flash_prompt_examples":   "💡  \"Basic Python flashcards\"  •  \"Calculus review\"  •  \"Graph theory\"",
         "flash_prompt_placeholder": "Enter your prompt here...",
         "flash_prompt_generate":   "✨  Generate",
+        "flash_prompt_deck_title": "Deck Title:",
+        "flash_prompt_deck_title_ph": "Example: Basic Python",
+        "flash_prompt_req": "Prompt for AI:",
+
+
+        # AI language instruction (used in prompts)
+        "ai_language":             "English",
+
+        # (Tìm đến phần "flash_prompt_generate" và thêm vào bên dưới)
+        "flash_prompt_generate":   "✨  Generate",
+        # THÊM NHỮNG KEY NÀY
+        "flash_tab_mine":          "📚  My Decks",
+        "flash_tab_course":        "🎓  From Courses",
+        "flash_btn_start":         "Start →",
+        "flash_btn_next":          "Next Question →",
+        "flash_btn_finish":        "View Results 🏁",
+        "flash_feedback_correct":  "🎉 Correct!",
+        "flash_feedback_wrong":    "❌ Wrong! Answer: {correct}",
+        "flash_progress":          "Question {current} / {total}",
+        "flash_score":             "✅ {score} correct",
+        "flash_loading_overlay":   "⏳  AI is generating flashcards...",
+        "flash_back_list":         "← Back to List",
+        "flash_result_title":      "Review Results",
+        "flash_result_retry":      "🔄  Retry",
+        "flash_result_back":       "← Back",
+        "flash_empty_mine":        "No flashcard decks yet.\nCreate one using the buttons above!",
+        "flash_empty_course":      "No flashcards from courses yet.\nGo to Courses → Lessons → ⚡ Flashcard to create.",
+        "flash_delete_confirm":    "Confirm Deletion",
+        "flash_delete_msg":        "Delete the deck\n\"{title}\"?\n({count} questions will be deleted)",
+        "flash_quiz_empty":        "This deck has no questions.",
+        "flash_quiz_few":          "At least 2 questions are required to create a quiz with 4 options.",
     },
     "cn": {
         # Settings page
@@ -788,6 +850,37 @@ TRANSLATIONS = {
         "flash_prompt_examples":   "💡  \"Python 基础闪卡\"  •  \"微积分复习\"  •  \"图论\"",
         "flash_prompt_placeholder": "在此输入您的提示词...",
         "flash_prompt_generate":   "✨  立即生成",
+        "flash_prompt_deck_title": "闪卡套牌标题：",
+        "flash_prompt_deck_title_ph": "例如：Python 基础",
+        "flash_prompt_req": "AI 提示词：",
+
+        
+        # AI language instruction (used in prompts)
+        "ai_language":             "中文（简体）",
+
+        # (Tìm đến phần "flash_prompt_generate" và thêm vào bên dưới)
+        "flash_prompt_generate":   "✨  立即生成",
+        # THÊM NHỮNG KEY NÀY
+        "flash_tab_mine":          "📚  我的套牌",
+        "flash_tab_course":        "🎓  来自课程",
+        "flash_btn_start":         "开始 →",
+        "flash_btn_next":          "下一题 →",
+        "flash_btn_finish":        "查看结果 🏁",
+        "flash_feedback_correct":  "🎉 正确！",
+        "flash_feedback_wrong":    "❌ 错误！答案：{correct}",
+        "flash_progress":          "第 {current} / {total} 题",
+        "flash_score":             "✅ 答对 {score} 题",
+        "flash_loading_overlay":   "⏳  AI 正在生成闪卡...",
+        "flash_back_list":         "← 返回列表",
+        "flash_result_title":      "复习结果",
+        "flash_result_retry":      "🔄  重试",
+        "flash_result_back":       "← 返回",
+        "flash_empty_mine":        "还没有闪卡套牌。\n使用上方的按钮创建一个吧！",
+        "flash_empty_course":      "还没有来自课程的闪卡。\n前往 课程 → 课时 → ⚡ 闪卡 创建。",
+        "flash_delete_confirm":    "确认删除",
+        "flash_delete_msg":        "要删除套牌\n\"{title}\" 吗？\n（将删除 {count} 个问题）",
+        "flash_quiz_empty":        "此套牌没有问题。",
+        "flash_quiz_few":          "至少需要2个问题才能创建包含4个选项的测验。",
     },
 }
 

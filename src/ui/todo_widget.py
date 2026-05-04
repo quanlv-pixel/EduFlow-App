@@ -44,7 +44,7 @@ class TodoItemWidget(QFrame):
     def __init__(self, task_id: str, text: str, done: bool, on_toggle, on_delete):
         super().__init__()
         self._lm = LanguageManager.instance()
-        self._lm.language_changed.connect(self._retranslate)
+        
         self.task_id   = task_id
         self.on_toggle = on_toggle
         self.on_delete = on_delete

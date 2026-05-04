@@ -111,29 +111,37 @@ NỘI DUNG:
         return self._call_ai(prompt)
 
     # ================= FLASHCARD TỪ TÀI LIỆU =================
-    def generate_flashcards(self, text: str) -> list:
+    def generate_flashcards(self, text: str, lang: str = "vi") -> list:
         if not text or len(text.strip()) < 50:
             return []
 
+        lang_map = {
+            "vi": "Tiếng Việt",
+            "en": "English",
+            "cn": "中文（简体）",
+        }
+        output_lang = lang_map.get(lang, "Tiếng Việt")
+
         safe_text = text[:20000]
         prompt = f"""
-Bạn là trợ lý học tập thông minh.
+You are a smart study assistant.
 
-Hãy đọc nội dung tài liệu bên dưới và tạo ra 10-15 flashcard ôn tập hiệu quả.
+Read the document content below and create 10-15 effective study flashcards.
 
-Yêu cầu:
-- Mỗi câu hỏi phải rõ ràng, ngắn gọn
-- Câu trả lời chính xác, không quá dài (1-3 câu)
-- Bao phủ các khái niệm quan trọng nhất trong tài liệu
-- Viết bằng Tiếng Việt
+Requirements:
+- Each question must be clear and concise
+- Answers must be accurate, not too long (1-3 sentences)
+- Cover the most important concepts in the document
+- Write ALL questions and answers in {output_lang}
+- Keep technical/specialized terms as-is if they have no natural translation
 
-Chỉ trả về JSON array, không thêm text nào khác:
+Return ONLY a JSON array, no extra text:
 [
-  {{"q": "Câu hỏi ôn tập?", "a": "Câu trả lời ngắn gọn"}},
+  {{"q": "Question?", "a": "Short answer"}},
   ...
 ]
 
-TÀI LIỆU:
+DOCUMENT:
 {safe_text}
 """
         raw = self._call_ai(prompt)
@@ -144,26 +152,34 @@ TÀI LIỆU:
         return cards
 
     # ================= FLASHCARD TỪ TOPIC (MỚI) =================
-    def generate_flashcards_from_topic(self, user_prompt: str) -> list:
+    def generate_flashcards_from_topic(self, user_prompt: str, lang: str = "vi") -> list:
         if not user_prompt or not user_prompt.strip():
             return []
 
+        lang_map = {
+            "vi": "Tiếng Việt",
+            "en": "English",
+            "cn": "中文（简体）",
+        }
+        output_lang = lang_map.get(lang, "Tiếng Việt")
+
         prompt = f"""
-Bạn là trợ lý học tập thông minh.
+You are a smart study assistant.
 
-Người dùng yêu cầu: "{user_prompt.strip()}"
+User request: "{user_prompt.strip()}"
 
-Hãy tạo ra 10-12 flashcard ôn tập chất lượng cao về chủ đề đó.
+Create 10-12 high-quality study flashcards on that topic.
 
-Yêu cầu:
-- Câu hỏi đa dạng: định nghĩa, ví dụ, so sánh, ứng dụng
-- Câu trả lời súc tích, dễ nhớ (1-3 câu)
-- Bắt đầu từ cơ bản đến nâng cao
-- Viết bằng Tiếng Việt (trừ thuật ngữ chuyên ngành thì giữ nguyên)
+Requirements:
+- Diverse questions: definitions, examples, comparisons, applications
+- Concise, memorable answers (1-3 sentences)
+- Progress from basic to advanced
+- Write ALL questions and answers in {output_lang}
+- Keep technical/specialized terms as-is if they have no natural translation
 
-Chỉ trả về JSON array, không thêm text nào khác:
+Return ONLY a JSON array, no extra text:
 [
-  {{"q": "Câu hỏi?", "a": "Câu trả lời"}},
+  {{"q": "Question?", "a": "Answer"}},
   ...
 ]
 """

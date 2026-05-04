@@ -87,18 +87,19 @@ class AIWorker(QThread):
     finished = Signal(list)
     error    = Signal(str)
 
-    def __init__(self, controller, mode: str, payload: str):
+    def __init__(self, controller, mode: str, payload: str, lang: str = "vi"):
         super().__init__()
         self.controller = controller
         self.mode    = mode     # "file" | "topic"
         self.payload = payload
+        self.lang    = lang     # ngôn ngữ AI tạo flashcard
 
     def run(self):
         try:
             if self.mode == "file":
-                cards = self.controller.generate_ai_from_text(self.payload)
+                cards = self.controller.generate_ai_from_text(self.payload, lang=self.lang)
             else:
-                cards = self.controller.generate_ai_from_topic(self.payload)
+                cards = self.controller.generate_ai_from_topic(self.payload, lang=self.lang)
 
             if not cards:
                 self.error.emit("AI không tạo được flashcard.\nThử lại hoặc viết yêu cầu cụ thể hơn.")
@@ -114,7 +115,8 @@ class AIWorker(QThread):
 class PromptDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Tạo Flashcard bằng AI")
+        # Sử dụng tr() cho tiêu đề cửa sổ
+        self.setWindowTitle(tr("flash_prompt_title"))
         self.setFixedSize(500, 340)
         self.setStyleSheet("background: #FFFFFF;")
 
@@ -122,41 +124,45 @@ class PromptDialog(QDialog):
         layout.setContentsMargins(32, 28, 32, 28)
         layout.setSpacing(12)
 
-        layout.addWidget(self._lbl("🤖 Nhập yêu cầu cho AI", 18, bold=True, color="#1E2328"))
-        layout.addWidget(self._lbl("Mô tả chủ đề bạn muốn ôn tập.", 13, color="#6F767E"))
+        # Sử dụng tr() cho các văn bản
+        layout.addWidget(self._lbl(tr("flash_prompt_label"), 18, bold=True, color="#1E2328"))
+        layout.addWidget(self._lbl(tr("flash_prompt_subtitle"), 13, color="#6F767E"))
 
-        ex = QLabel('💡  "Tạo flashcard về Python"  •  "Ôn tập Giải tích"  •  "Lý thuyết đồ thị"')
+        ex = QLabel(tr("flash_prompt_examples"))
         ex.setWordWrap(True)
         ex.setStyleSheet(
             "background:#F0F4FF;color:#2D60FF;border-radius:8px;padding:8px 12px;font-size:12px;"
         )
         layout.addWidget(ex)
 
-        lbl_title = QLabel("Tiêu đề bộ flashcard:")
+        lbl_title = QLabel(tr("flash_prompt_deck_title"))
         lbl_title.setStyleSheet("font-size:12px;font-weight:600;color:#374151;")
         layout.addWidget(lbl_title)
 
         self.title_input = QLineEdit()
-        self.title_input.setPlaceholderText("Ví dụ: Python cơ bản")
+        self.title_input.setPlaceholderText(tr("flash_prompt_deck_title_ph"))
         self.title_input.setFixedHeight(38)
         self.title_input.setStyleSheet(self._input_style())
         layout.addWidget(self.title_input)
 
-        lbl_prompt = QLabel("Yêu cầu cho AI:")
+        lbl_prompt = QLabel(tr("flash_prompt_req"))
         lbl_prompt.setStyleSheet("font-size:12px;font-weight:600;color:#374151;")
         layout.addWidget(lbl_prompt)
 
         self.text_input = QTextEdit()
-        self.text_input.setPlaceholderText("Nhập yêu cầu của bạn ở đây...")
+        self.text_input.setPlaceholderText(tr("flash_prompt_placeholder"))
         self.text_input.setFixedHeight(70)
         self.text_input.setStyleSheet(self._input_style())
         layout.addWidget(self.text_input)
 
         btn_row = QHBoxLayout()
-        btn_cancel = self._btn("Huỷ", "#F3F4F6", "#374151")
+        # Nút Hủy và Nút Tạo ngay
+        btn_cancel = self._btn(tr("cancel"), "#F3F4F6", "#374151")
         btn_cancel.clicked.connect(self.reject)
-        self.btn_ok = self._btn("✨  Tạo ngay", "#2D60FF", "white")
+        
+        self.btn_ok = self._btn(tr("flash_prompt_generate"), "#2D60FF", "white")
         self.btn_ok.clicked.connect(self._on_ok)
+        
         btn_row.addWidget(btn_cancel)
         btn_row.addWidget(self.btn_ok)
         layout.addLayout(btn_row)
@@ -502,6 +508,7 @@ class ResultWidget(QWidget):
         emoji = "🏆" if pct == 100 else "🎉" if pct >= 70 else "📚"
         lbl_e = QLabel(emoji)
         lbl_e.setAlignment(Qt.AlignCenter)
+        lbl_e.setFixedSize(120, 120)
         lbl_e.setStyleSheet("font-size:60px;background:transparent;")
 
         lbl_title = QLabel("Kết quả ôn tập")
@@ -623,13 +630,13 @@ class FlashcardWidget(QWidget):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(14)
         self.btn_file = self._action_btn(
-            "📄", "Tải lên tài liệu",
-            "Upload PDF/DOCX — AI tự tạo flashcard",
+            "📄", "flash_card_file_title",
+            "flash_card_file_desc",
             self._on_upload_file
         )
         self.btn_topic = self._action_btn(
-            "🤖", "Nhập yêu cầu",
-            "Gõ chủ đề, AI tạo flashcard ngay",
+            "🤖", "flash_card_topic_title",
+            "flash_card_topic_desc",
             self._on_enter_prompt
         )
         btn_row.addWidget(self.btn_file)
@@ -641,8 +648,8 @@ class FlashcardWidget(QWidget):
         tab_row = QHBoxLayout()
         tab_row.setSpacing(8)
 
-        self.btn_tab_mine = QPushButton("📚  Bộ đề của tôi")
-        self.btn_tab_course = QPushButton("🎓  Từ khóa học")
+        self.btn_tab_mine = QPushButton(tr("flash_tab_mine"))
+        self.btn_tab_course = QPushButton(tr("flash_tab_course"))
         self.btn_refresh = QPushButton("🔄")
 
         for btn in [self.btn_tab_mine, self.btn_tab_course]:
@@ -720,7 +727,7 @@ class FlashcardWidget(QWidget):
         self.btn_tab_course.setStyleSheet(self._tab_style(tab == "course"))
         self._load_decks()   # reload khi đổi tab
 
-    def _action_btn(self, icon, title, desc, callback) -> QFrame:
+    def _action_btn(self, icon, title_key, desc_key, callback) -> QFrame:
         frame = QFrame()
         frame.setObjectName("ActionCard")
         frame.setStyleSheet("""
@@ -735,31 +742,35 @@ class FlashcardWidget(QWidget):
 
         lbl_icon = QLabel(icon)
         lbl_icon.setStyleSheet("font-size:28px;background:transparent;")
-        lbl_title = QLabel(title)
-        lbl_title.setStyleSheet(
-            "font-size:14px;font-weight:bold;color:#1E2328;background:transparent;"
-        )
-        lbl_desc = QLabel(desc)
-        lbl_desc.setStyleSheet("font-size:12px;color:#6F767E;background:transparent;")
-        lbl_desc.setWordWrap(True)
+        
+        # Lưu key và label vào frame để _retranslate cập nhật lại
+        frame.title_key = title_key
+        frame.desc_key = desc_key
+        
+        frame.lbl_title = QLabel(tr(title_key))
+        frame.lbl_title.setStyleSheet("font-size:14px;font-weight:bold;color:#1E2328;background:transparent;")
+        
+        frame.lbl_desc = QLabel(tr(desc_key))
+        frame.lbl_desc.setStyleSheet("font-size:12px;color:#6F767E;background:transparent;")
+        frame.lbl_desc.setWordWrap(True)
 
-        btn = QPushButton("Bắt đầu →")
-        btn.setCursor(Qt.PointingHandCursor)
-        btn.setFixedHeight(36)
-        btn.setStyleSheet("""
+        frame.btn_start = QPushButton(tr("flash_btn_start"))
+        frame.btn_start.setCursor(Qt.PointingHandCursor)
+        frame.btn_start.setFixedHeight(36)
+        frame.btn_start.setStyleSheet("""
             QPushButton {
                 background:#2D60FF;color:white;border-radius:8px;
                 font-size:12px;font-weight:bold;border:none;
             }
             QPushButton:hover { background:#1A4FE0; }
         """)
-        btn.clicked.connect(callback)
+        frame.btn_start.clicked.connect(callback)
 
         v.addWidget(lbl_icon)
-        v.addWidget(lbl_title)
-        v.addWidget(lbl_desc)
+        v.addWidget(frame.lbl_title)
+        v.addWidget(frame.lbl_desc)
         v.addStretch()
-        v.addWidget(btn)
+        v.addWidget(frame.btn_start)
         return frame
 
     # ── Load danh sách decks ──
@@ -776,13 +787,10 @@ class FlashcardWidget(QWidget):
         tab = getattr(self, "_current_tab", "mine")
         if tab == "mine":
             decks = [d for d in all_decks if d.get("source", "") != "course"]
-            empty_msg = "Chưa có bộ flashcard nào.\nHãy tạo mới bằng 2 nút bên trên!"
+            empty_msg = tr("flash_empty_mine")
         else:
             decks = [d for d in all_decks if d.get("source", "") == "course"]
-            empty_msg = (
-                "Chưa có flashcard nào từ khóa học.\n"
-                "Vào Khóa học → Bài học → ⚡ Flashcard để tạo."
-            )
+            empty_msg = tr("flash_empty_course")
 
         if not decks:
             empty = QLabel(empty_msg)
@@ -858,7 +866,8 @@ class FlashcardWidget(QWidget):
 
     def _run_ai(self, mode: str, payload: str):
         self._show_loading()
-        self._worker = AIWorker(self.controller, mode, payload)
+        lang = self._lm.lang  # lấy ngôn ngữ hiện tại từ LanguageManager
+        self._worker = AIWorker(self.controller, mode, payload, lang=lang)
         self._worker.finished.connect(self._on_ai_done)
         self._worker.error.connect(self._on_ai_error)
         self._worker.start()
@@ -980,19 +989,9 @@ class FlashcardWidget(QWidget):
                     course_id  = rows[0]["course_id"]
                     new_progress = self.controller.db.get_course_progress(course_id)
 
-        # Xóa result cũ
-        old = self.page_result.layout()
-        if old:
-            while old.count():
-                item = old.takeAt(0)
-                if item.widget():
-                    item.widget().setParent(None)
-                    w = item.widget()
-                    if w is not None:
-                        w.setParent(None)
-                        w.deleteLater()
-
+        # Xóa result cũ bằng hàm clear_layout đã có sẵn
         layout = self.page_result.layout()
+        self.clear_layout(layout)
         layout.setContentsMargins(0, 0, 0, 0)
 
         result = ResultWidget(
@@ -1012,6 +1011,26 @@ class FlashcardWidget(QWidget):
     def _retranslate(self):
         self.lbl_title.setText(tr("flash_title"))
         self.lbl_sub.setText(tr("flash_subtitle"))
+
+        # Cập nhật Tab Buttons
+        if hasattr(self, "btn_tab_mine"):
+            self.btn_tab_mine.setText(tr("flash_tab_mine"))
+            self.btn_tab_course.setText(tr("flash_tab_course"))
+
+        # Cập nhật các nút Action
+        if hasattr(self, "btn_file"):
+            self.btn_file.lbl_title.setText(tr(self.btn_file.title_key))
+            self.btn_file.lbl_desc.setText(tr(self.btn_file.desc_key))
+            self.btn_file.btn_start.setText(tr("flash_btn_start"))
+            
+        if hasattr(self, "btn_topic"):
+            self.btn_topic.lbl_title.setText(tr(self.btn_topic.title_key))
+            self.btn_topic.lbl_desc.setText(tr(self.btn_topic.desc_key))
+            self.btn_topic.btn_start.setText(tr("flash_btn_start"))
+
+        # Load lại danh sách để thông báo "Chưa có..." đổi ngôn ngữ
+        if hasattr(self, "_deck_layout"):
+            self._load_decks()
 
     def set_ai_limit(self, *args, **kwargs):
         """Stub — giữ tương thích với dashboard.py."""
