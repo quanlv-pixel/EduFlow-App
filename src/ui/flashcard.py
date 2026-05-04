@@ -11,6 +11,76 @@ from src.ui.settings_widget import tr, LanguageManager
 
 
 # ================================================================
+# WRAP OPTION BUTTON — QPushButton thay thế hỗ trợ word-wrap
+# ================================================================
+class WrapOptionButton(QFrame):
+    """QFrame-based button that wraps long text instead of expanding horizontally."""
+    clicked = Signal(int)   # emit index
+
+    _STYLES = {
+        "default": (
+            "background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:12px;",
+            "color:#1E2328;font-size:13px;font-weight:500;"
+        ),
+        "correct": (
+            "background:#ECFDF5;border:1.5px solid #6EE7B7;border-radius:12px;",
+            "color:#065F46;font-size:13px;font-weight:700;"
+        ),
+        "wrong": (
+            "background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:12px;",
+            "color:#991B1B;font-size:13px;font-weight:700;"
+        ),
+        "dim": (
+            "background:#F3F4F6;border:1.5px solid #E5E7EB;border-radius:12px;",
+            "color:#9BA3AF;font-size:13px;font-weight:500;"
+        ),
+    }
+
+    def __init__(self, index: int, parent=None):
+        super().__init__(parent)
+        self._index   = index
+        self._enabled = True
+        self.setCursor(Qt.PointingHandCursor)
+        self.setMinimumHeight(52)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        inner = QVBoxLayout(self)
+        inner.setContentsMargins(16, 10, 16, 10)
+        inner.setSpacing(0)
+
+        self._lbl = QLabel()
+        self._lbl.setWordWrap(True)
+        self._lbl.setAlignment(Qt.AlignCenter)
+        self._lbl.setStyleSheet("background:transparent;border:none;")
+        inner.addWidget(self._lbl)
+
+        self.apply_style("default")
+
+    # ── Public API (compat với code cũ dùng QPushButton) ──
+    def setText(self, text: str):
+        self._lbl.setText(text)
+
+    def text(self) -> str:
+        return self._lbl.text()
+
+    def setEnabled(self, v: bool):
+        self._enabled = v
+        super().setEnabled(v)
+        self.setCursor(Qt.PointingHandCursor if v else Qt.ArrowCursor)
+
+    # ── Styling ──
+    def apply_style(self, state: str):
+        frame_css, lbl_css = self._STYLES.get(state, self._STYLES["default"])
+        self.setStyleSheet(frame_css)
+        self._lbl.setStyleSheet(f"background:transparent;border:none;{lbl_css}")
+
+    # ── Click ──
+    def mousePressEvent(self, e):
+        if e.button() == Qt.LeftButton and self._enabled:
+            self.clicked.emit(self._index)
+
+
+# ================================================================
 # AI WORKER
 # ================================================================
 class AIWorker(QThread):
@@ -308,11 +378,8 @@ class QuizWidget(QWidget):
         self.options_layout.setSpacing(10)
 
         for i in range(4):
-            btn = QPushButton()
-            btn.setMinimumHeight(52)
-            btn.setCursor(Qt.PointingHandCursor)
-            btn.setStyleSheet(self._option_style("default"))
-            btn.clicked.connect(lambda _, idx=i: self._on_answer(idx))
+            btn = WrapOptionButton(i)
+            btn.clicked.connect(self._on_answer)
             self.option_btns.append(btn)
             self.options_layout.addWidget(btn)
 
@@ -361,7 +428,7 @@ class QuizWidget(QWidget):
 
         for i, opt in enumerate(card["options"]):
             self.option_btns[i].setText(opt)
-            self.option_btns[i].setStyleSheet(self._option_style("default"))
+            self.option_btns[i].apply_style("default")
             self.option_btns[i].setEnabled(True)
 
     def _on_answer(self, idx: int):
@@ -390,11 +457,11 @@ class QuizWidget(QWidget):
         for i, btn in enumerate(self.option_btns):
             btn.setEnabled(False)
             if btn.text() == correct:
-                btn.setStyleSheet(self._option_style("correct"))
+                btn.apply_style("correct")
             elif i == idx and not is_right:
-                btn.setStyleSheet(self._option_style("wrong"))
+                btn.apply_style("wrong")
             else:
-                btn.setStyleSheet(self._option_style("dim"))
+                btn.apply_style("dim")
 
         self.lbl_score.setText(f"✅ {self.score} đúng")
 
@@ -520,6 +587,9 @@ class FlashcardWidget(QWidget):
         self.page_home   = QWidget()
         self.page_quiz   = QWidget()
         self.page_result = QWidget()
+
+        self.page_quiz.setLayout(QVBoxLayout())
+        self.page_result.setLayout(QVBoxLayout())
 
         self.stack.addWidget(self.page_home)
         self.stack.addWidget(self.page_quiz)
@@ -841,11 +911,13 @@ class FlashcardWidget(QWidget):
         if old:
             while old.count():
                 item = old.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-            QWidget().setLayout(old)
+                w = item.widget()
+                if w is not None:
+                    w.setParent(None)
+                    w.deleteLater()
 
-        layout = QVBoxLayout(self.page_quiz)
+        layout = self.page_quiz.layout()
+        self.clear_layout(layout)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
@@ -877,6 +949,16 @@ class FlashcardWidget(QWidget):
 
         self.stack.setCurrentIndex(1)
 
+    def clear_layout(self, layout):
+        if not layout:
+            return
+        while layout.count():
+            item = layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.setParent(None)
+                w.deleteLater()
+
     def _on_quiz_finished(self, score: int, total: int):
         # Nếu là deck từ khóa học → đánh dấu lesson done + tính progress
         lesson_id   = None
@@ -904,15 +986,17 @@ class FlashcardWidget(QWidget):
             while old.count():
                 item = old.takeAt(0)
                 if item.widget():
-                    item.widget().deleteLater()
-            QWidget().setLayout(old)
+                    item.widget().setParent(None)
+                    w = item.widget()
+                    if w is not None:
+                        w.setParent(None)
+                        w.deleteLater()
 
-        layout = QVBoxLayout(self.page_result)
+        layout = self.page_result.layout()
         layout.setContentsMargins(0, 0, 0, 0)
 
         result = ResultWidget(
             score, total,
-            course_progress = new_progress,   # None nếu không phải deck course
             on_retry = lambda: self._start_quiz(
                 self._current_cards,
                 self._current_deck.get("title", "Ôn tập") if self._current_deck else "Ôn tập"
