@@ -612,6 +612,10 @@ class CoursesWidget(QWidget):
 
     # ================= LOAD =================
     def load_courses(self):
+        # Xóa reference trước khi deleteLater để _retranslate không crash
+        if hasattr(self, "empty_label"):
+            del self.empty_label
+
         for i in reversed(range(self.grid.count())):
             item = self.grid.itemAt(i)
             if item and item.widget():
@@ -713,6 +717,9 @@ class CoursesWidget(QWidget):
         self.btn_add.setText(tr("course_add"))
 
         if hasattr(self, "empty_label"):
-            self.empty_label.setText(tr("course_empty"))
+            try:
+                self.empty_label.setText(tr("course_empty"))
+            except RuntimeError:
+                del self.empty_label
 
         self.load_courses()

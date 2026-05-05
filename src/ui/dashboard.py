@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLabel, QFrame, QLineEdit,
     QProgressBar, QStackedWidget, QApplication
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 from datetime import datetime
 
 from src.ui.schedule import ScheduleWidget
@@ -73,6 +73,12 @@ class EduDashboard(QMainWindow):
         LanguageManager.instance().language_changed.connect(
             lambda _: self.retranslate_ui()
         )
+
+        # Auto-refresh overview mỗi 30 giây khi đang ở tab tổng quan
+        self._refresh_timer = QTimer(self)
+        self._refresh_timer.setInterval(30000)  # 30s
+        self._refresh_timer.timeout.connect(self._auto_refresh)
+        self._refresh_timer.start()
 
     # ================= SIDEBAR =================
     def setup_sidebar(self):
@@ -236,6 +242,10 @@ class EduDashboard(QMainWindow):
 
         self.pages.setCurrentWidget(self.page_map[key])
 
+        # Refresh overview mỗi khi user click vào tab Tổng quan
+        if key == "overview":
+            self.refresh_overview()
+
     # ================= CREATE PAGE =================
     def create_page(self, key):
         if key == "overview":
@@ -276,7 +286,7 @@ class EduDashboard(QMainWindow):
         # ===== CARDS =====
         cards = QHBoxLayout()
 
-        # BLUE CARD
+        # BLUE CARD — số khóa học
         blue = QFrame()
         blue.setObjectName("CardBlue")
         v1 = QVBoxLayout(blue)
@@ -284,80 +294,140 @@ class EduDashboard(QMainWindow):
         top = QHBoxLayout()
         top.addWidget(QLabel("📘"))
         top.addStretch()
-
         badge = QLabel(tr("semester"))
         badge.setStyleSheet("background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:10px;")
         top.addWidget(badge)
-
         v1.addLayout(top)
+
         self.lbl_courses = QLabel()
         v1.addWidget(self.lbl_courses)
 
-        total = len(self.db.get_courses(self.user_info["id"]))
-        num = QLabel(str(total))
-        num.setStyleSheet("font-size:40px;font-weight:bold;")
-        v1.addWidget(num)
+        # Lưu lại để refresh được
+        self.lbl_total_courses = QLabel("0")
+        self.lbl_total_courses.setStyleSheet("font-size:40px;font-weight:bold;")
+        v1.addWidget(self.lbl_total_courses)
 
-        # WHITE CARD — % hoàn thành trung bình thực tế
+        # WHITE CARD — % trung bình
         white = QFrame()
         white.setObjectName("CardWhite")
         v2 = QVBoxLayout(white)
-
         top2 = QHBoxLayout()
         top2.addWidget(QLabel("✅"))
         top2.addStretch()
-
         v2.addLayout(top2)
+
         self.lbl_avg = QLabel()
         v2.addWidget(self.lbl_avg)
 
-        # Tính % trung bình từ DB
-        courses_for_avg = self.db.get_courses(self.user_info["id"]) or []
-        if courses_for_avg:
-            progresses = [
-                self.db.get_course_progress(c["id"]) for c in courses_for_avg
-            ]
-            avg_val = int(sum(progresses) / len(progresses))
-        else:
-            avg_val = 0
-
-        self.lbl_avg_num = QLabel(f"{avg_val}%")
+        self.lbl_avg_num = QLabel("0%")
         self.lbl_avg_num.setStyleSheet("font-size:40px;font-weight:bold;color:#2D60FF;")
         v2.addWidget(self.lbl_avg_num)
 
         cards.addWidget(blue, 2)
         cards.addWidget(white, 1)
-
         layout.addLayout(cards)
 
         # ===== ROW 2 =====
         row2 = QHBoxLayout()
 
-        # schedule
+        # Schedule card
         sch = QFrame()
         sch.setObjectName("CardWhite")
-        v = QVBoxLayout(sch)
-        v.setSpacing(8)
+        self._sch_layout = QVBoxLayout(sch)
+        self._sch_layout.setSpacing(8)
 
         self.lbl_today = QLabel()
-        v.addWidget(self.lbl_today)
+        self._sch_layout.addWidget(self.lbl_today)
+        # Nội dung schedule sẽ được fill bởi refresh_overview()
 
-        today_col      = datetime.now().weekday()
-        all_schedules  = self.db.get_schedule(self.user_info["id"]) or []
+        # Progress card
+        prog = QFrame()
+        prog.setObjectName("CardWhite")
+        prog.setFixedWidth(300)
+
+        self._prog_layout = QVBoxLayout(prog)
+        self._prog_layout.setSpacing(10)
+
+        self.lbl_progress = QLabel()
+        self._prog_layout.addWidget(self.lbl_progress)
+        # Nội dung progress sẽ được fill bởi refresh_overview()
+
+        row2.addWidget(sch, 2)
+        row2.addWidget(prog, 1)
+        layout.addLayout(row2)
+
+        # Fill data lần đầu
+        self.refresh_overview()
+
+        return page
+
+    def refresh_overview(self):
+        """Cập nhật toàn bộ số liệu trên trang Tổng quan từ DB."""
+        user_id = self.user_info["id"]
+
+        # ── Card số khóa học ──────────────────────────────────
+        if hasattr(self, "lbl_total_courses"):
+            try:
+                total = len(self.db.get_courses(user_id) or [])
+                self.lbl_total_courses.setText(str(total))
+            except RuntimeError:
+                pass
+
+        # ── Card % trung bình ─────────────────────────────────
+        if hasattr(self, "lbl_avg_num"):
+            try:
+                courses = self.db.get_courses(user_id) or []
+                if courses:
+                    avg_val = int(
+                        sum(self.db.get_course_progress(c["id"]) for c in courses)
+                        / len(courses)
+                    )
+                else:
+                    avg_val = 0
+                self.lbl_avg_num.setText(f"{avg_val}%")
+            except RuntimeError:
+                pass
+
+        # ── Schedule hôm nay ──────────────────────────────────
+        if hasattr(self, "_sch_layout"):
+            try:
+                self._refresh_schedule()
+            except RuntimeError:
+                pass
+
+        # ── Progress từng khóa ────────────────────────────────
+        if hasattr(self, "_prog_layout"):
+            try:
+                self._refresh_progress()
+            except RuntimeError:
+                pass
+
+    def _refresh_schedule(self):
+        """Xóa và vẽ lại danh sách lịch hôm nay."""
+        layout = self._sch_layout
+        # Xóa hết widget cũ trừ lbl_today (index 0)
+        while layout.count() > 1:
+            item = layout.takeAt(1)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.spacerItem():
+                layout.removeItem(item)
+
+        today_col = datetime.now().weekday()
+        all_schedules = self.db.get_schedule(self.user_info["id"]) or []
         today_schedules = sorted(
             [s for s in all_schedules if s.get("day") == today_col],
             key=lambda s: s.get("start_time", 0)
         )
 
         if not today_schedules:
-            v.addStretch()
-            self.no_schedule_label = QLabel()
-            self.no_schedule_label.setAlignment(Qt.AlignCenter)
-            self.no_schedule_label.setText(tr("no_schedule"))
-            v.addWidget(self.no_schedule_label)
-            v.addStretch()
+            layout.addStretch()
+            lbl = QLabel(tr("no_schedule"))
+            lbl.setAlignment(Qt.AlignCenter)
+            layout.addWidget(lbl)
+            layout.addStretch()
         else:
-            v.addSpacing(4)
+            layout.addSpacing(4)
             for s in today_schedules:
                 item = QFrame()
                 item.setObjectName("ScheduleItem")
@@ -382,92 +452,85 @@ class EduDashboard(QMainWindow):
                 lbl_detail.setObjectName("ScheduleItemDetail")
                 info_v.addWidget(lbl_course)
                 info_v.addWidget(lbl_detail)
-
                 h.addLayout(info_v)
                 h.addStretch()
-                v.addWidget(item)
+                layout.addWidget(item)
+            layout.addStretch()
 
-            v.addStretch()
+    def _refresh_progress(self):
+        """Xóa và vẽ lại danh sách tiến độ khóa học."""
+        layout = self._prog_layout
+        # Xóa hết widget cũ trừ lbl_progress (index 0)
+        while layout.count() > 1:
+            item = layout.takeAt(1)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.spacerItem():
+                layout.removeItem(item)
 
-        # ── PROGRESS CARD — hiển thị từ DB thực tế ──
-        prog = QFrame()
-        prog.setObjectName("CardWhite")
-        prog.setFixedWidth(300)
-
-        vp = QVBoxLayout(prog)
-        vp.setSpacing(10)
-
-        self.lbl_progress = QLabel()
-        vp.addWidget(self.lbl_progress)
-
-        # Lấy courses + progress thực tế từ DB
         courses_list = self.db.get_courses(self.user_info["id"]) or []
 
         if not courses_list:
-            empty = QLabel("Chưa có khóa học nào.")
-            empty.setAlignment(Qt.AlignCenter)
-            empty.setStyleSheet("color:#9BA3AF;font-size:13px;")
-            vp.addStretch()
-            vp.addWidget(empty)
-            vp.addStretch()
-        else:
-            # Hiện tối đa 5 khóa học gần nhất
-            for c in courses_list[:5]:
-                course_progress = self.db.get_course_progress(c["id"])
-                course_name = c.get("name", "")
-                # Tên khóa học dài thì rút gọn
-                display_name = (course_name[:22] + "…") if len(course_name) > 24 else course_name
+            lbl = QLabel("Chưa có khóa học nào.")
+            lbl.setAlignment(Qt.AlignCenter)
+            lbl.setStyleSheet("color:#9BA3AF;font-size:13px;")
+            layout.addStretch()
+            layout.addWidget(lbl)
+            layout.addStretch()
+            return
 
-                row = QHBoxLayout()
-                row.setSpacing(6)
+        for c in courses_list[:5]:
+            course_progress = self.db.get_course_progress(c["id"])
+            course_name = c.get("name", "")
+            display_name = (course_name[:22] + "…") if len(course_name) > 24 else course_name
 
-                lbl_name = QLabel(display_name)
-                lbl_name.setStyleSheet("font-size:12px;color:#1E2328;")
+            row = QHBoxLayout()
+            row.setSpacing(6)
 
-                lbl_pct = QLabel(f"{course_progress}%")
-                lbl_pct.setStyleSheet(
-                    "font-size:12px;font-weight:bold;"
-                    + ("color:#10B981;" if course_progress == 100 else "color:#2D60FF;")
-                )
+            lbl_name = QLabel(display_name)
+            lbl_name.setStyleSheet("font-size:12px;color:#1E2328;")
 
-                row.addWidget(lbl_name)
-                row.addStretch()
-                row.addWidget(lbl_pct)
+            lbl_pct = QLabel(f"{course_progress}%")
+            lbl_pct.setStyleSheet(
+                "font-size:12px;font-weight:bold;"
+                + ("color:#10B981;" if course_progress == 100 else "color:#2D60FF;")
+            )
 
-                bar_widget = QProgressBar()
-                bar_widget.setValue(course_progress)
-                bar_widget.setTextVisible(False)
-                bar_widget.setFixedHeight(6)
-                chunk_color = "#10B981" if course_progress == 100 else "#2D60FF"
-                bar_widget.setStyleSheet(f"""
-                    QProgressBar {{
-                        border:none;
-                        background:#EEF0F4;
-                        border-radius:3px;
-                    }}
-                    QProgressBar::chunk {{
-                        background:{chunk_color};
-                        border-radius:3px;
-                    }}
-                """)
+            row.addWidget(lbl_name)
+            row.addStretch()
+            row.addWidget(lbl_pct)
 
-                vp.addLayout(row)
-                vp.addWidget(bar_widget)
+            bar_widget = QProgressBar()
+            bar_widget.setValue(course_progress)
+            bar_widget.setTextVisible(False)
+            bar_widget.setFixedHeight(6)
+            chunk_color = "#10B981" if course_progress == 100 else "#2D60FF"
+            bar_widget.setStyleSheet(f"""
+                QProgressBar {{
+                    border:none; background:#EEF0F4; border-radius:3px;
+                }}
+                QProgressBar::chunk {{
+                    background:{chunk_color}; border-radius:3px;
+                }}
+            """)
 
-            if len(courses_list) > 5:
-                lbl_more = QLabel(f"+ {len(courses_list) - 5} khóa học khác")
-                lbl_more.setStyleSheet("color:#6F767E;font-size:11px;")
-                lbl_more.setAlignment(Qt.AlignCenter)
-                vp.addWidget(lbl_more)
+            layout.addLayout(row)
+            layout.addWidget(bar_widget)
 
-            vp.addStretch()
+        if len(courses_list) > 5:
+            lbl_more = QLabel(f"+ {len(courses_list) - 5} khóa học khác")
+            lbl_more.setStyleSheet("color:#6F767E;font-size:11px;")
+            lbl_more.setAlignment(Qt.AlignCenter)
+            layout.addWidget(lbl_more)
 
-        row2.addWidget(sch, 2)
-        row2.addWidget(prog, 1)
+        layout.addStretch()
 
-        layout.addLayout(row2)
-
-        return page
+    def _auto_refresh(self):
+        """Chỉ refresh khi đang ở tab overview — tránh load DB không cần thiết."""
+        current = self.pages.currentWidget()
+        overview = self.page_map.get("overview")
+        if current is overview:
+            self.refresh_overview()
 
     # ================= THEME =================
     def load_qss(self, path):
