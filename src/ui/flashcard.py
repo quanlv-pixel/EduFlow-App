@@ -1,3 +1,4 @@
+
 import random
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -115,7 +116,6 @@ class AIWorker(QThread):
 class PromptDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Sử dụng tr() cho tiêu đề cửa sổ
         self.setWindowTitle(tr("flash_prompt_title"))
         self.setFixedSize(500, 340)
         self.setStyleSheet("background: #FFFFFF;")
@@ -124,7 +124,6 @@ class PromptDialog(QDialog):
         layout.setContentsMargins(32, 28, 32, 28)
         layout.setSpacing(12)
 
-        # Sử dụng tr() cho các văn bản
         layout.addWidget(self._lbl(tr("flash_prompt_label"), 18, bold=True, color="#1E2328"))
         layout.addWidget(self._lbl(tr("flash_prompt_subtitle"), 13, color="#6F767E"))
 
@@ -156,7 +155,6 @@ class PromptDialog(QDialog):
         layout.addWidget(self.text_input)
 
         btn_row = QHBoxLayout()
-        # Nút Hủy và Nút Tạo ngay
         btn_cancel = self._btn(tr("cancel"), "#F3F4F6", "#374151")
         btn_cancel.clicked.connect(self.reject)
         
@@ -482,16 +480,6 @@ class QuizWidget(QWidget):
         self.index += 1
         self._show_question()
 
-    def _option_style(self, state: str) -> str:
-        base = "border-radius:12px;font-size:13px;font-weight:500;border:1.5px solid;"
-        styles = {
-            "default": f"{base}background:#F9FAFB;color:#1E2328;border-color:#E5E7EB;",
-            "correct": f"{base}background:#ECFDF5;color:#065F46;border-color:#6EE7B7;font-weight:700;",
-            "wrong":   f"{base}background:#FEF2F2;color:#991B1B;border-color:#FCA5A5;font-weight:700;",
-            "dim":     f"{base}background:#F3F4F6;color:#9BA3AF;border-color:#E5E7EB;",
-        }
-        return styles.get(state, styles["default"])
-
 
 # ================================================================
 # RESULT WIDGET — hiển thị sau khi làm xong quiz
@@ -499,9 +487,11 @@ class QuizWidget(QWidget):
 class ResultWidget(QWidget):
     def __init__(self, score: int, total: int, on_retry, on_back):
         super().__init__()
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(32, 32, 32, 32)
         layout.setSpacing(16)
+        layout.addStretch()
 
         pct = int(score / total * 100) if total else 0
 
@@ -557,15 +547,18 @@ class ResultWidget(QWidget):
         btn_back.clicked.connect(on_back)
 
         btn_row = QHBoxLayout()
+        btn_row.setAlignment(Qt.AlignCenter)
+        btn_row.setSpacing(12)
         btn_row.addWidget(btn_retry)
         btn_row.addWidget(btn_back)
 
-        layout.addWidget(lbl_e)
+        layout.addWidget(lbl_e, alignment=Qt.AlignCenter)
         layout.addWidget(lbl_title)
         layout.addWidget(lbl_score)
         layout.addWidget(lbl_msg)
         layout.addSpacing(16)
         layout.addLayout(btn_row)
+        layout.addStretch()
 
 
 # ================================================================
@@ -1002,6 +995,9 @@ class FlashcardWidget(QWidget):
             ),
             on_back = lambda: self.stack.setCurrentIndex(0)
         )
+        
+        # FIX: Bỏ cờ alignment=Qt.AlignHCenter | Qt.AlignVCenter để tránh lỗi layout engine của Qt
+        # khiến toàn bộ app bị giãn to ra khi widget có chứa stretch.
         layout.addWidget(result)
         self.stack.setCurrentIndex(2)
 
