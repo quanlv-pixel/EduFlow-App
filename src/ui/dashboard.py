@@ -52,6 +52,8 @@ class EduDashboard(QMainWindow):
 
         self.setWindowTitle("EduFlow - Dashboard")
         self.resize(1300, 850)
+        self.setMinimumSize(1000, 700)
+        self.setMaximumWidth(1920)
 
         central = QWidget()
         self.setCentralWidget(central)
@@ -343,7 +345,8 @@ class EduDashboard(QMainWindow):
         # Progress card
         prog = QFrame()
         prog.setObjectName("CardWhite")
-        prog.setFixedWidth(300)
+        prog.setMinimumWidth(260)
+        prog.setMaximumWidth(320)
 
         self._prog_layout = QVBoxLayout(prog)
         self._prog_layout.setSpacing(10)

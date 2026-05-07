@@ -43,6 +43,7 @@ class WrapOptionButton(QFrame):
         self._enabled = True
         self.setCursor(Qt.PointingHandCursor)
         self.setMinimumHeight(52)
+        self.setMinimumWidth(0)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         inner = QVBoxLayout(self)
@@ -312,6 +313,7 @@ class QuizWidget(QWidget):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
+        layout.setSizeConstraint(QVBoxLayout.SetDefaultConstraint)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(24)
 
@@ -487,78 +489,158 @@ class QuizWidget(QWidget):
 class ResultWidget(QWidget):
     def __init__(self, score: int, total: int, on_retry, on_back):
         super().__init__()
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
+        # ================= FIX GEOMETRY =================
+        self.setMinimumWidth(0)
+        self.setMaximumWidth(16777215)
+
+        self.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Preferred
+        )
+
+        # =================================================
         layout = QVBoxLayout(self)
         layout.setContentsMargins(32, 32, 32, 32)
         layout.setSpacing(16)
-        layout.addStretch()
 
         pct = int(score / total * 100) if total else 0
 
-        emoji = "🏆" if pct == 100 else "🎉" if pct >= 70 else "📚"
+        if pct == 100:
+            emoji = "🏆"
+            msg = "Xuất sắc! Bạn trả lời đúng tất cả! 🌟"
+        elif pct >= 70:
+            emoji = "🎉"
+            msg = "Tốt lắm! Tiếp tục cố gắng nhé! 💪"
+        else:
+            emoji = "📚"
+            msg = "Hãy ôn tập thêm nhé! 📖"
+
+        # ================= EMOJI =================
         lbl_e = QLabel(emoji)
         lbl_e.setAlignment(Qt.AlignCenter)
         lbl_e.setFixedSize(120, 120)
-        lbl_e.setStyleSheet("font-size:60px;background:transparent;")
+        lbl_e.setStyleSheet("""
+            font-size:60px;
+            background:transparent;
+        """)
 
+        # ================= TITLE =================
         lbl_title = QLabel("Kết quả ôn tập")
         lbl_title.setAlignment(Qt.AlignCenter)
-        lbl_title.setStyleSheet(
-            "font-size:22px;font-weight:bold;color:#1E2328;background:transparent;"
-        )
+        lbl_title.setWordWrap(True)
 
+        lbl_title.setStyleSheet("""
+            font-size:22px;
+            font-weight:bold;
+            color:#1E2328;
+            background:transparent;
+        """)
+
+        # ================= SCORE =================
         lbl_score = QLabel(f"{score} / {total}  ({pct}%)")
         lbl_score.setAlignment(Qt.AlignCenter)
-        lbl_score.setStyleSheet(
-            "font-size:36px;font-weight:bold;color:#2D60FF;background:transparent;"
-        )
+        lbl_score.setWordWrap(True)
 
-        msg = ("Xuất sắc! Bạn trả lời đúng tất cả! 🌟" if pct == 100
-               else "Tốt lắm! Tiếp tục cố gắng nhé! 💪" if pct >= 70
-               else "Hãy ôn tập thêm nhé! 📖")
+        lbl_score.setStyleSheet("""
+            font-size:36px;
+            font-weight:bold;
+            color:#2D60FF;
+            background:transparent;
+        """)
+
+        # ================= MESSAGE =================
         lbl_msg = QLabel(msg)
         lbl_msg.setAlignment(Qt.AlignCenter)
-        lbl_msg.setStyleSheet("font-size:14px;color:#6F767E;background:transparent;")
+        lbl_msg.setWordWrap(True)
 
+        lbl_msg.setStyleSheet("""
+            font-size:14px;
+            color:#6F767E;
+            background:transparent;
+        """)
+
+        # ================= RETRY BUTTON =================
         btn_retry = QPushButton("🔄  Làm lại")
         btn_retry.setCursor(Qt.PointingHandCursor)
-        btn_retry.setFixedHeight(44)
-        btn_retry.setFixedWidth(160)
+
+        btn_retry.setMinimumHeight(44)
+        btn_retry.setMaximumWidth(220)
+
+        btn_retry.setSizePolicy(
+            QSizePolicy.Preferred,
+            QSizePolicy.Fixed
+        )
+
         btn_retry.setStyleSheet("""
             QPushButton {
-                background:#EEF2FF;color:#2D60FF;border-radius:10px;
-                font-size:14px;font-weight:bold;border:none;
+                background:#EEF2FF;
+                color:#2D60FF;
+                border-radius:10px;
+                font-size:14px;
+                font-weight:bold;
+                border:none;
+                padding:0 20px;
             }
-            QPushButton:hover { background:#E0E7FF; }
+
+            QPushButton:hover {
+                background:#E0E7FF;
+            }
         """)
+
         btn_retry.clicked.connect(on_retry)
 
+        # ================= BACK BUTTON =================
         btn_back = QPushButton("← Quay lại")
         btn_back.setCursor(Qt.PointingHandCursor)
-        btn_back.setFixedHeight(44)
-        btn_back.setFixedWidth(160)
+
+        btn_back.setMinimumHeight(44)
+        btn_back.setMaximumWidth(220)
+
+        btn_back.setSizePolicy(
+            QSizePolicy.Preferred,
+            QSizePolicy.Fixed
+        )
+
         btn_back.setStyleSheet("""
             QPushButton {
-                background:#2D60FF;color:white;border-radius:10px;
-                font-size:14px;font-weight:bold;border:none;
+                background:#2D60FF;
+                color:white;
+                border-radius:10px;
+                font-size:14px;
+                font-weight:bold;
+                border:none;
+                padding:0 20px;
             }
-            QPushButton:hover { background:#1A4FE0; }
+
+            QPushButton:hover {
+                background:#1A4FE0;
+            }
         """)
+
         btn_back.clicked.connect(on_back)
 
+        # ================= BUTTON ROW =================
         btn_row = QHBoxLayout()
-        btn_row.setAlignment(Qt.AlignCenter)
         btn_row.setSpacing(12)
+        btn_row.setAlignment(Qt.AlignCenter)
+
         btn_row.addWidget(btn_retry)
         btn_row.addWidget(btn_back)
+
+        # ================= BUILD =================
+        layout.addStretch(1)
 
         layout.addWidget(lbl_e, alignment=Qt.AlignCenter)
         layout.addWidget(lbl_title)
         layout.addWidget(lbl_score)
         layout.addWidget(lbl_msg)
-        layout.addSpacing(16)
+
+        layout.addSpacing(18)
+
         layout.addLayout(btn_row)
-        layout.addStretch()
+
+        layout.addStretch(1)
 
 
 # ================================================================
@@ -588,8 +670,19 @@ class FlashcardWidget(QWidget):
         self.page_quiz   = QWidget()
         self.page_result = QWidget()
 
-        self.page_quiz.setLayout(QVBoxLayout())
-        self.page_result.setLayout(QVBoxLayout())
+        quiz_layout = QVBoxLayout()
+        quiz_layout.setContentsMargins(0, 0, 0, 0)
+        quiz_layout.setSpacing(0)
+        quiz_layout.setAlignment(Qt.AlignTop)
+        self.page_quiz.setLayout(quiz_layout)
+
+        result_layout = QVBoxLayout()
+        result_layout.setContentsMargins(0, 0, 0, 0)
+        result_layout.setSpacing(0)
+        result_layout.setAlignment(Qt.AlignTop)
+
+        self.page_result.setLayout(result_layout)
+
 
         self.stack.addWidget(self.page_home)
         self.stack.addWidget(self.page_quiz)
@@ -998,7 +1091,7 @@ class FlashcardWidget(QWidget):
         
         # FIX: Bỏ cờ alignment=Qt.AlignHCenter | Qt.AlignVCenter để tránh lỗi layout engine của Qt
         # khiến toàn bộ app bị giãn to ra khi widget có chứa stretch.
-        layout.addWidget(result)
+        layout.addWidget(result, alignment=Qt.AlignTop)
         self.stack.setCurrentIndex(2)
 
     # ============================================================
