@@ -56,11 +56,11 @@ class FlashcardController:
         return deck_id, saved
 
     # Compat cũ
-    def generate_ai(self, text: str) -> list:
-        return self.ai.generate_flashcards(text)
+    def generate_ai(self, text: str, lang: str = "vi") -> list:
+        return self.ai.generate_flashcards(text, lang=lang)
 
-    def generate_ai_from_text(self, text: str) -> list:
-        return self.ai.generate_flashcards(text)
+    def generate_ai_from_text(self, text: str, lang: str = "vi") -> list:
+        return self.ai.generate_flashcards(text, lang=lang)
 
-    def generate_ai_from_topic(self, prompt: str) -> list:
-        return self.ai.generate_flashcards_from_topic(prompt)
+    def generate_ai_from_topic(self, prompt: str, lang: str = "vi") -> list:
+        return self.ai.generate_flashcards_from_topic(prompt, lang=lang)
