@@ -539,6 +539,39 @@ class Database:
             print("❌ SAVE ERROR:", e)
             return False
 
+    # ================= USER PROFILE =================
+    def update_user_info(self, user_id: int, name: str, username: str, password: str = ""):
+        """
+        Cập nhật thông tin profile user.
+        Nếu password trống thì không update cột password.
+        Trả về: True = OK | "username" = username trùng | False = lỗi
+        """
+        # Kiểm tra username trùng với user khác
+        existing = self.execute(
+            "SELECT id FROM users WHERE username=? AND id!=?",
+            (username, user_id),
+            fetch=True
+        )
+        if existing:
+            return "username"
+
+        try:
+            if password:
+                self.cursor.execute(
+                    "UPDATE users SET name=?, username=?, password=? WHERE id=?",
+                    (name, username, password, user_id)
+                )
+            else:
+                self.cursor.execute(
+                    "UPDATE users SET name=?, username=? WHERE id=?",
+                    (name, username, user_id)
+                )
+            self.conn.commit()
+            return True
+        except Exception as e:
+            print("❌ Update Profile Error:", e)
+            return False
+
     # ================= CLOSE =================
     def close(self):
         self.conn.close()

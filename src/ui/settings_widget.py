@@ -107,7 +107,7 @@ TRANSLATIONS = {
         "courses_studying":     "Khóa học đang học",
         "semester":             "Học kỳ 2",
         "avg_progress":         "Tiến độ trung bình",
-
+        "search": "Tìm kiếm ",
         # Schedule
         "schedule_title":       "📅 Thời khóa biểu",
         "schedule_subtitle":    "Quản lý lịch học của bạn",
@@ -294,6 +294,27 @@ TRANSLATIONS = {
         "flash_delete_msg":        "Xóa bộ flashcard\n\"{title}\"?\n({count} câu hỏi sẽ bị xóa)",
         "flash_quiz_empty":        "Bộ flashcard này chưa có câu hỏi nào.",
         "flash_quiz_few":          "Cần ít nhất 2 câu hỏi để tạo bài quiz với 4 đáp án.",
+
+        # Profile Dialog
+        "profile_title": "Thiết lập tài khoản",
+        "profile_desc": "Quản lý thông tin cá nhân và cách thức hiển thị của bạn trên hệ thống.",
+        "profile_status_title": "TRẠNG THÁI TÀI KHOẢN",
+        "profile_status_active": "Đang hoạt động",
+        "profile_avatar_desc": "Ảnh đại diện được tạo tự động từ tên của bạn.",
+        "profile_name": "HỌ VÀ TÊN",
+        "profile_username": "TÊN NGƯỜI DÙNG",
+        "profile_email": "ĐỊA CHỈ EMAIL",
+        "profile_password": "MẬT KHẨU MỚI",
+        "profile_password_ph": "Bỏ trống nếu không đổi",
+        "profile_cancel": "Hủy bỏ",
+        "profile_save": "Lưu thay đổi",
+        "profile_err_empty_name": "Tên hiển thị không được để trống.",
+        "profile_err_empty_username": "Username không được để trống.",
+        "profile_err_exists_username": "Username đã tồn tại, vui lòng chọn username khác.",
+        "profile_err_fail": "Cập nhật thất bại, vui lòng thử lại.",
+        "profile_success_title": "Thành công",
+        "profile_success_msg": "Cập nhật profile thành công!",
+        "profile_tooltip": "Nhấn để chỉnh sửa profile",
     },
     "en": {
         # Settings page
@@ -391,6 +412,7 @@ TRANSLATIONS = {
         "courses_studying":     "Current Courses",
         "semester":             "Semester 2",
         "avg_progress":         "Average Progress",
+        "search": "Search ",
 
         # Schedule
         "schedule_title":       "📅 Schedule",
@@ -587,6 +609,27 @@ TRANSLATIONS = {
         "flash_delete_msg":        "Delete the deck\n\"{title}\"?\n({count} questions will be deleted)",
         "flash_quiz_empty":        "This deck has no questions.",
         "flash_quiz_few":          "At least 2 questions are required to create a quiz with 4 options.",
+
+        # Profile Dialog
+        "profile_title": "Account Settings",
+        "profile_desc": "Manage your personal information and how it is displayed.",
+        "profile_status_title": "ACCOUNT STATUS",
+        "profile_status_active": "Active",
+        "profile_avatar_desc": "Avatar is automatically generated from your name.",
+        "profile_name": "FULL NAME",
+        "profile_username": "USERNAME",
+        "profile_email": "EMAIL ADDRESS",
+        "profile_password": "NEW PASSWORD",
+        "profile_password_ph": "Leave blank to keep current",
+        "profile_cancel": "Cancel",
+        "profile_save": "Save Changes",
+        "profile_err_empty_name": "Display name cannot be empty.",
+        "profile_err_empty_username": "Username cannot be empty.",
+        "profile_err_exists_username": "Username already exists, please choose another.",
+        "profile_err_fail": "Update failed, please try again.",
+        "profile_success_title": "Success",
+        "profile_success_msg": "Profile updated successfully!",
+        "profile_tooltip": "Click to edit profile",
     },
     "cn": {
         # Settings page
@@ -684,6 +727,7 @@ TRANSLATIONS = {
         "courses_studying":     "正在学习的课程",
         "semester":             "第二学期",
         "avg_progress":         "平均进度",
+        "search": "搜索 ",
 
         # Schedule
         "schedule_title":       "📅 课程表",
@@ -881,6 +925,27 @@ TRANSLATIONS = {
         "flash_delete_msg":        "要删除套牌\n\"{title}\" 吗？\n（将删除 {count} 个问题）",
         "flash_quiz_empty":        "此套牌没有问题。",
         "flash_quiz_few":          "至少需要2个问题才能创建包含4个选项的测验。",
+
+        # Profile Dialog
+        "profile_title": "账户设置",
+        "profile_desc": "管理您的个人信息及其显示方式。",
+        "profile_status_title": "账户状态",
+        "profile_status_active": "活跃",
+        "profile_avatar_desc": "头像是根据您的名字自动生成的。",
+        "profile_name": "全名",
+        "profile_username": "用户名",
+        "profile_email": "电子邮件地址",
+        "profile_password": "新密码",
+        "profile_password_ph": "留空则不修改",
+        "profile_cancel": "取消",
+        "profile_save": "保存更改",
+        "profile_err_empty_name": "显示名称不能为空。",
+        "profile_err_empty_username": "用户名不能为空。",
+        "profile_err_exists_username": "用户名已存在，请重新选择。",
+        "profile_err_fail": "更新失败，请重试。",
+        "profile_success_title": "成功",
+        "profile_success_msg": "个人资料更新成功！",
+        "profile_tooltip": "点击编辑个人资料",
     },
 }
 
