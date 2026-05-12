@@ -41,29 +41,43 @@ class ClickableFrame(QFrame):
 
 # ================= PROFILE DIALOG =================
 class ProfileDialog(QDialog):
-    def __init__(self, user_info: dict, db, parent=None):
+    def __init__(self, user_info: dict, db, parent=None, current_theme="light"):
         super().__init__(parent)
         self.user_info = user_info
         self.db = db
+        self.current_theme = current_theme
+
+        # ===== THEME COLORS =====
+        is_dark = (self.current_theme == "dark")
+        bg_main        = "#1E1E2E" if is_dark else "#FFFFFF"
+        text_main      = "#CDD6F4" if is_dark else "#111827"
+        text_sub       = "#A6ADC8" if is_dark else "#6B7280"
+        input_bg       = "#313244" if is_dark else "#F9FAFB"
+        input_focus_bg = "#1E1E2E" if is_dark else "#FFFFFF"
+        input_border   = "#45475A" if is_dark else "#E5E7EB"
+        input_readonly = "#181825" if is_dark else "#F3F4F6"
+        btn_can_bg     = "#313244" if is_dark else "#F3F4F6"
+        btn_can_txt    = "#CDD6F4" if is_dark else "#4B5563"
+        btn_can_hvr    = "#45475A" if is_dark else "#E5E7EB"
 
         self.setWindowTitle(tr("profile_title"))
         self.setFixedSize(650, 480)
         self.setModal(True)
-        self.setStyleSheet("QDialog { background-color: #FFFFFF; }")
+        self.setStyleSheet(f"QDialog {{ background-color: {bg_main}; }}")
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(30, 30, 30, 30)
         main_layout.setSpacing(25)
 
-        # 1. HEADER (Tiêu đề)
+        # 1. HEADER
         header_layout = QVBoxLayout()
         header_layout.setSpacing(5)
         
         lbl_title = QLabel(tr("profile_title"))
-        lbl_title.setStyleSheet("font-size: 24px; font-weight: bold; color: #111827;")
+        lbl_title.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {text_main};")
         
         lbl_desc = QLabel(tr("profile_desc"))
-        lbl_desc.setStyleSheet("font-size: 13px; color: #6B7280;")
+        lbl_desc.setStyleSheet(f"font-size: 13px; color: {text_sub};")
         
         header_layout.addWidget(lbl_title)
         header_layout.addWidget(lbl_desc)
@@ -92,7 +106,7 @@ class ProfileDialog(QDialog):
         status_layout.setAlignment(Qt.AlignVCenter)
 
         lbl_status_title = QLabel(tr("profile_status_title"))
-        lbl_status_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #9CA3AF; letter-spacing: 1px;")
+        lbl_status_title.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {text_sub}; letter-spacing: 1px;")
         
         indicator_layout = QHBoxLayout()
         indicator_layout.setSpacing(8)
@@ -102,14 +116,14 @@ class ProfileDialog(QDialog):
         dot.setStyleSheet("background-color: #10B981; border-radius: 5px;") 
         
         lbl_status_text = QLabel(tr("profile_status_active"))
-        lbl_status_text.setStyleSheet("font-size: 14px; font-weight: bold; color: #111827;")
+        lbl_status_text.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {text_main};")
         
         indicator_layout.addWidget(dot)
         indicator_layout.addWidget(lbl_status_text)
         indicator_layout.addStretch()
 
         lbl_status_desc = QLabel(tr("profile_avatar_desc"))
-        lbl_status_desc.setStyleSheet("font-size: 12px; color: #6B7280;")
+        lbl_status_desc.setStyleSheet(f"font-size: 12px; color: {text_sub};")
 
         status_layout.addWidget(lbl_status_title)
         status_layout.addLayout(indicator_layout)
@@ -124,21 +138,21 @@ class ProfileDialog(QDialog):
         grid_layout = QGridLayout()
         grid_layout.setSpacing(20)
 
-        input_style = """
-            QLineEdit {
-                border: 1px solid #E5E7EB; border-radius: 8px;
+        input_style = f"""
+            QLineEdit {{
+                border: 1px solid {input_border}; border-radius: 8px;
                 padding: 8px 12px; font-size: 14px;
-                color: #111827; background-color: #F9FAFB;
-            }
-            QLineEdit:focus { border: 1px solid #2D60FF; background-color: #FFFFFF; }
-            QLineEdit:read-only { color: #9CA3AF; background-color: #F3F4F6; }
+                color: {text_main}; background-color: {input_bg};
+            }}
+            QLineEdit:focus {{ border: 1px solid #2D60FF; background-color: {input_focus_bg}; }}
+            QLineEdit:read-only {{ color: {text_sub}; background-color: {input_readonly}; }}
         """
 
         def create_field(label_text, widget):
             layout = QVBoxLayout()
             layout.setSpacing(6)
             lbl = QLabel(label_text)
-            lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #9CA3AF; letter-spacing: 1px;")
+            lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {text_sub}; letter-spacing: 1px;")
             widget.setStyleSheet(input_style)
             widget.setFixedHeight(40)
             layout.addWidget(lbl)
@@ -171,9 +185,9 @@ class ProfileDialog(QDialog):
         btn_cancel = QPushButton(tr("profile_cancel"))
         btn_cancel.setCursor(Qt.PointingHandCursor)
         btn_cancel.setFixedSize(100, 40)
-        btn_cancel.setStyleSheet("""
-            QPushButton { background-color: #F3F4F6; color: #4B5563; font-weight: bold; border: none; border-radius: 8px; }
-            QPushButton:hover { background-color: #E5E7EB; }
+        btn_cancel.setStyleSheet(f"""
+            QPushButton {{ background-color: {btn_can_bg}; color: {btn_can_txt}; font-weight: bold; border: none; border-radius: 8px; }}
+            QPushButton:hover {{ background-color: {btn_can_hvr}; }}
         """)
         btn_cancel.clicked.connect(self.reject)
 
@@ -801,7 +815,9 @@ class EduDashboard(QMainWindow):
 
     # ================= PROFILE =================
     def _open_profile_dialog(self):
-        dialog = ProfileDialog(self.user_info, self.db, self)
+        # Truyền thêm self.current_theme vào
+        dialog = ProfileDialog(self.user_info, self.db, self, self.current_theme)
+        
         if dialog.exec() == QDialog.Accepted:
             # user_info đã được cập nhật bên trong dialog, chỉ cần refresh UI
             name     = self.user_info.get("name", "")
@@ -817,19 +833,23 @@ class EduDashboard(QMainWindow):
             sub_text = f"@{username}" if username else self.user_info.get("email", "")
             self.lbl_sub.setText(sub_text)
 
+            # Xử lý màu sắc cho Popup Thông báo Thành công
+            is_dark = (self.current_theme == "dark")
+            msg_bg = "#313244" if is_dark else "#FFFFFF"
+            msg_txt = "#CDD6F4" if is_dark else "#111827"
+
             msg = QMessageBox(self)
             msg.setWindowTitle(tr("profile_success_title"))
             msg.setText(tr("profile_success_msg"))
             msg.setIcon(QMessageBox.Information)
             
-            msg.setStyleSheet("""
-                QMessageBox { background-color: #333333; }
-                QLabel { color: white; font-size: 14px; font-weight: bold; }
-                QPushButton { background-color: #2D60FF; color: white; border: none; font-weight: bold; border-radius: 5px; padding: 6px 15px; min-width: 60px; }
-                QPushButton:hover { background-color: #1A4BDB; }
+            msg.setStyleSheet(f"""
+                QMessageBox {{ background-color: {msg_bg}; }}
+                QLabel {{ color: {msg_txt}; font-size: 14px; font-weight: bold; }}
+                QPushButton {{ background-color: #2D60FF; color: white; border: none; font-weight: bold; border-radius: 5px; padding: 6px 15px; min-width: 60px; }}
+                QPushButton:hover {{ background-color: #1A4BDB; }}
             """)
             msg.exec()
-
     # ================= LOGOUT =================
     def handle_logout(self):
         self.logout_signal.emit()
