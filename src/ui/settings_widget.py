@@ -1091,9 +1091,7 @@ class SettingsWidget(QWidget):
         self._section_ai = self._section("", ai_content)
         root.addWidget(self._section_ai)
 
-        # ── (4) Data ─────────────────────────────────────────────
-        self._section_data = self._section("", self._data_content())
-        root.addWidget(self._section_data)
+        
 
         root.addStretch()
 
@@ -1220,33 +1218,6 @@ class SettingsWidget(QWidget):
 
         return w, inp
 
-    # ──────────────────────────────────────────
-    #  Data section
-    # ──────────────────────────────────────────
-    def _data_content(self) -> QWidget:
-        w = QWidget()
-        layout = QHBoxLayout(w)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
-
-        self._data_desc = QLabel()
-        self._data_desc.setStyleSheet("color:#6F767E; font-size:13px;")
-
-        self.export_btn = QPushButton()
-        self.export_btn.setCursor(Qt.PointingHandCursor)
-        self.export_btn.setFixedHeight(38)
-        self.export_btn.setStyleSheet(self._ghost_btn_style())
-
-        self.import_btn = QPushButton()
-        self.import_btn.setCursor(Qt.PointingHandCursor)
-        self.import_btn.setFixedHeight(38)
-        self.import_btn.setStyleSheet(self._ghost_btn_style())
-
-        layout.addWidget(self._data_desc)
-        layout.addStretch()
-        layout.addWidget(self.export_btn)
-        layout.addWidget(self.import_btn)
-        return w
 
     @staticmethod
     def _ghost_btn_style() -> str:
@@ -1268,8 +1239,7 @@ class SettingsWidget(QWidget):
     # ══════════════════════════════════════════
     def connect_signals(self):
         self.dark_mode_btn.clicked.connect(self.toggle_dark_mode)
-        self.export_btn.clicked.connect(self.export_flashcards)
-        self.import_btn.clicked.connect(self.import_flashcards)
+        
         self.save_btn.clicked.connect(self.save_settings)
 
     # ══════════════════════════════════════════
@@ -1285,21 +1255,20 @@ class SettingsWidget(QWidget):
         self._get_section_heading(self._section_language).setText(t("language_title"))
         self._get_section_heading(self._section_appear).setText(t("appearance_title"))
         self._get_section_heading(self._section_ai).setText(t("ai_title"))
-        self._get_section_heading(self._section_data).setText(t("data_title"))
+        
 
         # Descriptions
         self._lang_desc.setText(t("language_desc"))
         self._appear_desc.setText(t("appearance_desc"))
         self._ai_desc.setText(t("ai_desc"))
-        self._data_desc.setText(t("data_desc"))
+        
 
         # Buttons & inputs
         dark_key = "dark_mode_off" if self.settings["dark_mode"] else "dark_mode_on"
         self.dark_mode_btn.setText(t(dark_key))
         self._ai_limit_lbl.setText(t("ai_limit_lbl"))
         self.ai_limit_input.setPlaceholderText(t("ai_limit_placeholder"))
-        self.export_btn.setText(t("export_btn"))
-        self.import_btn.setText(t("import_btn"))
+        
         self.save_btn.setText(t("save_btn"))
 
         # Mark active language button
@@ -1340,12 +1309,7 @@ class SettingsWidget(QWidget):
             tr("saved_msg", limit=self.settings["ai_limit"], dark=dark_str),
         )
 
-    def export_flashcards(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, tr("export_btn"), "flashcards_export.json", "JSON Files (*.json)"
-        )
-        if not path:
-            return
+    
 
         dummy_data = {
             "exported_at": "2025-01-01T00:00:00",
@@ -1361,18 +1325,4 @@ class SettingsWidget(QWidget):
         except Exception as e:
             QMessageBox.critical(self, tr("export_fail"), str(e))
 
-    def import_flashcards(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, tr("import_btn"), "", "JSON Files (*.json)"
-        )
-        if not path:
-            return
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            count = len(data.get("flashcards", []))
-            QMessageBox.information(
-                self, tr("import_ok"), tr("import_ok_msg", count=count, path=path)
-            )
-        except Exception as e:
-            QMessageBox.critical(self, tr("import_fail"), str(e))
+    

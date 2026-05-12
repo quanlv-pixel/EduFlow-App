@@ -83,8 +83,7 @@ class LoginDialog(QDialog):
 
         layout.addStretch()
 
-        # ================= EVENTS =================
-        self.btn_login.clicked.connect(self.handle_login)
+        
 
         # 👉 ENTER để login
         self.pass_input.returnPressed.connect(self.handle_login)
@@ -112,7 +111,13 @@ class LoginDialog(QDialog):
                 self.user_data = user
                 self.accept()
             else:
-                QMessageBox.warning(self, "Lỗi", "Sai email hoặc mật khẩu!")
+                msgBox = QMessageBox(self)
+                msgBox.setIcon(QMessageBox.Warning)
+                msgBox.setWindowTitle("Lỗi")
+                msgBox.setText("Sai email hoặc mật khẩu!")
+                # Ép màu chữ thành trắng để nổi bật trên nền tối
+                msgBox.setStyleSheet("QLabel { color: white; text-align: center; font-weight: bold;}") 
+                msgBox.exec()
 
         except Exception as e:
             QMessageBox.critical(self, "Lỗi hệ thống", str(e))

@@ -48,6 +48,8 @@ class AppController:
             self.show_dashboard(user)
         elif self.login_window.is_register_mode:
             self.show_register()  # show_register tự gọi show_login() lại sau khi xong
+        else :
+            sys.exit(0)
     
     def show_register(self):
         self.register_window = RegisterDialog(self.auth_controller)
