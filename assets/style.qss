@@ -324,10 +324,12 @@ QCheckBox#TodoCheck::indicator {
     border: 2px solid #B0C1FF;
     background: white;
 }
+
 QCheckBox#TodoCheck::indicator:checked {
     background-color: #2D60FF;
     border: 2px solid #2D60FF;
-    image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyNCAyNCc+PHBvbHlsaW5lIHBvaW50cz0nMjAgNiA5IDE3IDQgMTInIGZpbGw9J25vbmUnIHN0cm9rZT0nd2hpdGUnIHN0cm9rZS13aWR0aD0nMy41JyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnLz48L3N2Zz4=");
+    /* Dùng trực tiếp mã SVG thay vì Base64 để Qt dễ đọc hơn */
+    image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
 }
 QCheckBox#TodoCheck::indicator:hover {
     border: 2px solid #2D60FF;
