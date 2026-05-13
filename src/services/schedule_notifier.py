@@ -55,7 +55,7 @@ class ScheduleNotifier:
         # 📧 email (có try để tránh crash)
         try:
             send_email(
-                to_email="quanle19112007@gmail.com",
+                to_email="quocthangbon@gmail.com",
                 subject="Nhắc lịch học",
                 body=message
             )
