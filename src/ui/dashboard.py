@@ -23,6 +23,19 @@ from src.controllers.summary_controller import SummaryController
 from src.controllers.schedule_controller import ScheduleController
 from src.controllers.grade_controller import GradeController     # ← NEW
 
+def parse_time_to_minutes(value):
+    try:
+        if isinstance(value, str):
+            parts = value.split(":")
+            h = int(parts[0])
+            m = int(parts[1])
+
+            return h * 60 + m
+
+        return int(value)
+
+    except Exception:
+        return 0
 
 # ================= CLICKABLE FRAME =================
 class ClickableFrame(QFrame):
@@ -256,7 +269,7 @@ class EduDashboard(QMainWindow):
         self.summary_controller  = SummaryController(self.ai, self.db)
         self.schedule_controller = ScheduleController(self.db)
         self.grade_controller    = GradeController(self.db)      # ← NEW
-        self.notifier = ScheduleNotifier(self.schedule_controller, self.user_info["id"])
+        self.notifier = ScheduleNotifier(self.schedule_controller, self.user_info["id"], self.user_info.get("email"))
 
         self.setWindowTitle("EduFlow - Dashboard")
         self.resize(1300, 850)
@@ -619,59 +632,111 @@ class EduDashboard(QMainWindow):
                 pass
 
     def _refresh_schedule(self):
-        """Xóa và vẽ lại danh sách lịch hôm nay."""
+
         layout = self._sch_layout
-        # Xóa hết widget cũ trừ lbl_today (index 0)
+
+        # Xóa widget cũ
         while layout.count() > 1:
             item = layout.takeAt(1)
+
             if item.widget():
                 item.widget().deleteLater()
+
             elif item.spacerItem():
-                layout.removeItem(item)
+                spacer = item.spacerItem()
+                layout.removeItem(spacer)
 
         today_col = datetime.now().weekday()
-        all_schedules = self.db.get_schedule(self.user_info["id"]) or []
-        today_schedules = sorted(
-            [s for s in all_schedules if s.get("day") == today_col],
-            key=lambda s: s.get("start_time", 0)
+
+        all_schedules = self.db.get_schedule(
+            self.user_info["id"]
+        ) or []
+
+        today_schedules = []
+
+        for s in all_schedules:
+
+            try:
+                lesson_day = int(s.get("day"))
+            except:
+                continue
+
+            if lesson_day == today_col:
+                today_schedules.append(s)
+
+        # sort theo giờ
+        today_schedules.sort(
+            key=lambda s: parse_time_to_minutes(
+                s.get("start_time", 0)
+            )
         )
 
         if not today_schedules:
+
             layout.addStretch()
+
             lbl = QLabel(tr("no_schedule"))
             lbl.setAlignment(Qt.AlignCenter)
+
             layout.addWidget(lbl)
-            layout.addStretch()
-        else:
-            layout.addSpacing(4)
-            for s in today_schedules:
-                item = QFrame()
-                item.setObjectName("ScheduleItem")
-                h = QHBoxLayout(item)
-                h.setContentsMargins(10, 6, 10, 6)
 
-                bar = QFrame()
-                bar.setObjectName("ScheduleAccentBar")
-                bar.setFixedWidth(4)
-                h.addWidget(bar)
-                h.addSpacing(8)
-
-                info_v = QVBoxLayout()
-                lbl_course = QLabel(f"<b>{s.get('course', '')}</b>")
-                lbl_course.setObjectName("ScheduleItemTitle")
-                sh, sm = s["start_time"] // 60, s["start_time"] % 60
-                eh, em = s["end_time"]   // 60, s["end_time"]   % 60
-                time_room = f"{sh:02d}:{sm:02d} – {eh:02d}:{em:02d}"
-                if s.get("room"):
-                    time_room += f"  •  {s['room']}"
-                lbl_detail = QLabel(time_room)
-                lbl_detail.setObjectName("ScheduleItemDetail")
-                info_v.addWidget(lbl_course)
-                info_v.addWidget(lbl_detail)
-                h.addLayout(info_v)
-                h.addStretch()
-                layout.addWidget(item)
             layout.addStretch()
+
+            return
+
+        layout.addSpacing(4)
+
+        for s in today_schedules:
+
+            item = QFrame()
+            item.setObjectName("ScheduleItem")
+
+            h = QHBoxLayout(item)
+            h.setContentsMargins(10, 6, 10, 6)
+
+            bar = QFrame()
+            bar.setObjectName("ScheduleAccentBar")
+            bar.setFixedWidth(4)
+
+            h.addWidget(bar)
+            h.addSpacing(8)
+
+            info_v = QVBoxLayout()
+
+            course_name = s.get("course", "")
+
+            lbl_course = QLabel(f"<b>{course_name}</b>")
+            lbl_course.setObjectName("ScheduleItemTitle")
+
+            # FIX parse time
+            start_min = parse_time_to_minutes(
+                s.get("start_time", 0)
+            )
+
+            end_min = parse_time_to_minutes(
+                s.get("end_time", 0)
+            )
+
+            sh, sm = start_min // 60, start_min % 60
+            eh, em = end_min // 60, end_min % 60
+
+            time_room = f"{sh:02d}:{sm:02d} – {eh:02d}:{em:02d}"
+
+            if s.get("room"):
+                time_room += f"  •  {s['room']}"
+
+            lbl_detail = QLabel(time_room)
+            lbl_detail.setObjectName("ScheduleItemDetail")
+
+            info_v.addWidget(lbl_course)
+            info_v.addWidget(lbl_detail)
+
+            h.addLayout(info_v)
+            h.addStretch()
+
+            layout.addWidget(item)
+
+        layout.addStretch()
 
     def _refresh_progress(self):
         """Xóa và vẽ lại danh sách tiến độ khóa học."""
@@ -682,7 +747,8 @@ class EduDashboard(QMainWindow):
             if item.widget():
                 item.widget().deleteLater()
             elif item.spacerItem():
-                layout.removeItem(item)
+                spacer = item.spacerItem()
+                layout.removeItem(spacer)
 
         courses_list = self.db.get_courses(self.user_info["id"]) or []
 
@@ -852,5 +918,20 @@ class EduDashboard(QMainWindow):
             msg.exec()
     # ================= LOGOUT =================
     def handle_logout(self):
+
+        # stop notifier timer
+        try:
+            if hasattr(self, "notifier"):
+                self.notifier.timer.stop()
+        except:
+            pass
+
+        # stop refresh timer
+        try:
+            if hasattr(self, "_refresh_timer"):
+                self._refresh_timer.stop()
+        except:
+            pass
+
         self.logout_signal.emit()
         self.deleteLater()
