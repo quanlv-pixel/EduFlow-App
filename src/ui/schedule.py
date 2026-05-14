@@ -17,7 +17,7 @@ TIME_W      = 64                         # chiều rộng cột giờ bên trái
 EVENT_PAD   = 3                          # khoảng cách giữa event và viền cột
 CORNER_R    = 6                          # bo góc event
 
-MINUTE_OPTIONS = ["00", "15", "30", "45"]
+MINUTE_OPTIONS = [f"{i:02d}" for i in range(60)]
 
 # ─── Màu sắc ─────────────────────────────────────────────────────
 C_EVENT_BG  = QColor("#2D60FF")
@@ -400,12 +400,12 @@ class ScheduleWidget(QWidget):
         if not ok:
             return
 
-        start_m_str, ok = QInputDialog.getItem(
-            self, "Phút bắt đầu", "Phút bắt đầu:", MINUTE_OPTIONS, 0, False
+        start_m, ok = QInputDialog.getInt(
+            self, "Phút bắt đầu", "Phút bắt đầu (0 - 59):", 0, 0, 59
         )
         if not ok:
             return
-        start_m = int(start_m_str)
+        
 
         end_h, ok = QInputDialog.getInt(
             self, "Giờ kết thúc", "Giờ kết thúc (0 – 24):", start_h + 1, 0, 24
@@ -413,12 +413,13 @@ class ScheduleWidget(QWidget):
         if not ok:
             return
 
-        end_m_str, ok = QInputDialog.getItem(
-            self, "Phút kết thúc", "Phút kết thúc:", MINUTE_OPTIONS, 0, False
+        end_m, ok = QInputDialog.getInt(
+            self, "Phút kết thúc", "Phút kết thúc (0 - 59):", 0, 0, 59
         )
         if not ok:
             return
-        end_m = int(end_m_str)
+        
+
 
         start_total = start_h * 60 + start_m
         end_total   = end_h   * 60 + end_m
