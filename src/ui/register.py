@@ -86,6 +86,7 @@ class RegisterDialog(QDialog):
         self.btn_register.setObjectName("BtnLogin")
         self.btn_register.setCursor(Qt.PointingHandCursor)
         self.btn_register.setFixedHeight(48)
+        self.btn_register.setAutoDefault(False)
         layout.addWidget(self.btn_register)
 
         # ── BACK TO LOGIN ──
@@ -94,6 +95,7 @@ class RegisterDialog(QDialog):
             "color:#2D60FF; border:none; background:none; font-size:13px;"
         )
         self.btn_back.setCursor(Qt.PointingHandCursor)
+        self.btn_back.setAutoDefault(False)
         layout.addWidget(self.btn_back)
 
         layout.addStretch()

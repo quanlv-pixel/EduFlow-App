@@ -55,10 +55,10 @@ class AppController:
         self.register_window = RegisterDialog(self.auth_controller)
 
         if self.register_window.exec():
-            QMessageBox.information(None, "Thành công", "Đăng ký thành công! Hãy đăng nhập.")
+            # XÓA HOẶC COMMENT DÒNG DƯỚI ĐÂY LẠI
+            # QMessageBox.information(None, "Thành công", "Đăng ký thành công! Hãy đăng nhập.")
             self.show_login()
         else:
-           
             self.show_login()
 
     def show_dashboard(self, user):
