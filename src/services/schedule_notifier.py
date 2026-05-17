@@ -24,6 +24,7 @@ class ScheduleNotifier:
         self.timer.start(30000)
 
         print("✅ ScheduleNotifier started")
+        print("Email:", self.user_email)
 
     def check_schedule(self):
 
@@ -122,6 +123,34 @@ class ScheduleNotifier:
 
         print(f"🔔 Notify: {message}")
 
-        # popup
+        # =========================
+        # POPUP
+        # =========================
         show_notification(title, message)
+
+        # =========================
+        # EMAIL
+        # =========================
+        if self.user_email:
+
+            email_subject = f"EduFlow Reminder - {course}"
+
+            email_body = f"""
+    Bạn có lịch học sắp diễn ra.
+
+    Môn học: {course}
+    Phòng: {room}
+
+    Thời gian: {lesson.get("start_time")} - {lesson.get("end_time")}
+
+    EduFlow
+    """
+
+            result = send_email(
+                self.user_email,
+                email_subject,
+                email_body
+            )
+
+            print("📧 Email sent:", result)
 
