@@ -1,8 +1,199 @@
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel,
-    QLineEdit, QPushButton, QMessageBox
+    QLineEdit, QPushButton, QMessageBox,
+    QStackedWidget, QWidget, QHBoxLayout
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal
+
+
+class EmailWorker(QThread):
+    finished = Signal(bool, str)
+
+    def __init__(self, controller, email, otp):
+        super().__init__()
+        self.controller = controller
+        self.email = email
+        self.otp = otp
+
+    def run(self):
+        try:
+            self.controller.send_otp_email(self.email, self.otp)
+            self.finished.emit(True, "Mã OTP đã được gửi đến email của bạn!")
+        except Exception as e:
+            self.finished.emit(False, str(e))
+
+
+class ForgotPasswordDialog(QDialog):
+    def __init__(self, controller):
+        super().__init__()
+        self.controller = controller
+        self.target_email = None
+
+        self.setWindowTitle("Quên mật khẩu")
+        self.setFixedSize(380, 420)
+        self.setStyleSheet("background-color: white;")
+
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(30, 30, 30, 30)
+        self.layout.setSpacing(15)
+
+        # Title
+        self.title = QLabel("Khôi phục mật khẩu")
+        self.title.setAlignment(Qt.AlignCenter)
+        self.title.setStyleSheet("font-size: 20px; font-weight: bold; color: #2D60FF;")
+        self.layout.addWidget(self.title)
+
+        # Stacked Widget for Steps
+        self.stack = QStackedWidget()
+        self.layout.addWidget(self.stack)
+
+        self.init_step1()
+        self.init_step2()
+        self.init_step3()
+
+    def init_step1(self):
+        # Step 1: Nhập Email/Username
+        self.step1_widget = QWidget()
+        layout = QVBoxLayout(self.step1_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(15)
+
+        desc = QLabel("Nhập email hoặc tên đăng nhập để nhận mã OTP.")
+        desc.setWordWrap(True)
+        desc.setStyleSheet("color: #6F767E; font-size: 13px;")
+        layout.addWidget(desc)
+
+        self.id_input = QLineEdit()
+        self.id_input.setPlaceholderText("Email hoặc Username")
+        self.id_input.setObjectName("LoginInput")
+        layout.addWidget(self.id_input)
+
+        self.btn_send_otp = QPushButton("Gửi mã OTP")
+        self.btn_send_otp.setObjectName("BtnLogin")
+        self.btn_send_otp.setCursor(Qt.PointingHandCursor)
+        self.btn_send_otp.clicked.connect(self.handle_send_otp)
+        layout.addWidget(self.btn_send_otp)
+
+        layout.addStretch()
+        self.stack.addWidget(self.step1_widget)
+
+    def init_step2(self):
+        # Step 2: Nhập OTP
+        self.step2_widget = QWidget()
+        layout = QVBoxLayout(self.step2_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(15)
+
+        self.otp_desc = QLabel("Vui lòng nhập mã 6 số đã gửi tới email của bạn.")
+        self.otp_desc.setWordWrap(True)
+        self.otp_desc.setStyleSheet("color: #6F767E; font-size: 13px;")
+        layout.addWidget(self.otp_desc)
+
+        self.otp_input = QLineEdit()
+        self.otp_input.setPlaceholderText("Mã OTP (6 chữ số)")
+        self.otp_input.setObjectName("LoginInput")
+        self.otp_input.setAlignment(Qt.AlignCenter)
+        self.otp_input.setMaxLength(6)
+        layout.addWidget(self.otp_input)
+
+        self.btn_verify_otp = QPushButton("Xác thực")
+        self.btn_verify_otp.setObjectName("BtnLogin")
+        self.btn_verify_otp.setCursor(Qt.PointingHandCursor)
+        self.btn_verify_otp.clicked.connect(self.handle_verify_otp)
+        layout.addWidget(self.btn_verify_otp)
+
+        layout.addStretch()
+        self.stack.addWidget(self.step2_widget)
+
+    def init_step3(self):
+        # Step 3: Đặt lại mật khẩu
+        self.step3_widget = QWidget()
+        layout = QVBoxLayout(self.step3_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(15)
+
+        desc = QLabel("Nhập mật khẩu mới cho tài khoản của bạn.")
+        desc.setStyleSheet("color: #6F767E; font-size: 13px;")
+        layout.addWidget(desc)
+
+        self.new_pass = QLineEdit()
+        self.new_pass.setPlaceholderText("Mật khẩu mới")
+        self.new_pass.setEchoMode(QLineEdit.Password)
+        self.new_pass.setObjectName("LoginInput")
+        layout.addWidget(self.new_pass)
+
+        self.confirm_pass = QLineEdit()
+        self.confirm_pass.setPlaceholderText("Xác nhận mật khẩu")
+        self.confirm_pass.setEchoMode(QLineEdit.Password)
+        self.confirm_pass.setObjectName("LoginInput")
+        layout.addWidget(self.confirm_pass)
+
+        self.btn_reset = QPushButton("Đặt lại mật khẩu")
+        self.btn_reset.setObjectName("BtnLogin")
+        self.btn_reset.setCursor(Qt.PointingHandCursor)
+        self.btn_reset.clicked.connect(self.handle_reset_password)
+        layout.addWidget(self.btn_reset)
+
+        layout.addStretch()
+        self.stack.addWidget(self.step3_widget)
+
+    def handle_send_otp(self):
+        identifier = self.id_input.text().strip()
+        if not identifier:
+            QMessageBox.warning(self, "Lỗi", "Vui lòng nhập Email hoặc Username!")
+            return
+
+        email = self.controller.get_user_email(identifier)
+        if not email:
+            QMessageBox.warning(self, "Lỗi", "Tài khoản không tồn tại trên hệ thống!")
+            return
+
+        self.target_email = email
+        otp = self.controller.generate_otp(email)
+
+        # UI Lock
+        self.btn_send_otp.setEnabled(False)
+        self.btn_send_otp.setText("Đang gửi...")
+
+        # Run Worker Thread
+        self.worker = EmailWorker(self.controller, email, otp)
+        self.worker.finished.connect(self.on_email_sent)
+        self.worker.start()
+
+    def on_email_sent(self, success, message):
+        self.btn_send_otp.setEnabled(True)
+        self.btn_send_otp.setText("Gửi mã OTP")
+
+        if success:
+            QMessageBox.information(self, "Thành công", message)
+            self.otp_desc.setText(f"Mã OTP đã được gửi đến:\n{self.target_email}")
+            self.stack.setCurrentIndex(1)
+        else:
+            QMessageBox.critical(self, "Lỗi", f"Không thể gửi email: {message}")
+
+    def handle_verify_otp(self):
+        code = self.otp_input.text().strip()
+        if self.controller.verify_otp(self.target_email, code):
+            self.stack.setCurrentIndex(2)
+        else:
+            QMessageBox.warning(self, "Lỗi", "Mã OTP không chính xác hoặc đã hết hạn!")
+
+    def handle_reset_password(self):
+        p1 = self.new_pass.text().strip()
+        p2 = self.confirm_pass.text().strip()
+
+        if not p1 or not p2:
+            QMessageBox.warning(self, "Lỗi", "Vui lòng nhập đầy đủ mật khẩu!")
+            return
+        if p1 != p2:
+            QMessageBox.warning(self, "Lỗi", "Mật khẩu xác nhận không khớp!")
+            return
+
+        if self.controller.reset_password(self.target_email, p1):
+            QMessageBox.information(self, "Thành công", "Mật khẩu của bạn đã được thay đổi!")
+            self.accept()
+        else:
+            QMessageBox.critical(self, "Lỗi", "Có lỗi xảy ra khi đặt lại mật khẩu.")
 
 
 class LoginDialog(QDialog):
@@ -16,7 +207,7 @@ class LoginDialog(QDialog):
         # ================= WINDOW =================
         self.setObjectName("LoginWindow")
         self.setWindowTitle("Đăng nhập EduFlow")
-        self.setFixedSize(360, 460)
+        self.setFixedSize(360, 520) # Tăng chiều cao để chứa thêm nút
         self.setWindowFlags(
             Qt.Window |
             Qt.WindowTitleHint |
@@ -59,6 +250,15 @@ class LoginDialog(QDialog):
         self.pass_input.setPlaceholderText("••••••••")
         layout.addWidget(self.pass_input)
 
+        # 👉 THÊM NÚT QUÊN MẬT KHẨU
+        forgot_layout = QHBoxLayout()
+        forgot_layout.addStretch()
+        self.btn_forgot = QPushButton("Quên mật khẩu?")
+        self.btn_forgot.setCursor(Qt.PointingHandCursor)
+        self.btn_forgot.setStyleSheet("color:#2D60FF; border:none; background:none; font-size:12px; font-weight:500;")
+        forgot_layout.addWidget(self.btn_forgot)
+        layout.addLayout(forgot_layout)
+
         # ================= BUTTON =================
         self.btn_login = QPushButton("Đăng nhập")
         self.btn_login.setObjectName("BtnLogin")
@@ -79,15 +279,19 @@ class LoginDialog(QDialog):
         # ================= EVENTS =================
         self.btn_login.clicked.connect(self.handle_login)
         self.btn_goto_register.clicked.connect(self.handle_goto_register)
+        self.btn_forgot.clicked.connect(self.handle_forgot_password)
         self.is_register_mode = False
 
         layout.addStretch()
 
-        
-
         # 👉 ENTER để login
         self.pass_input.returnPressed.connect(self.handle_login)
         self.user_input.returnPressed.connect(self.pass_input.setFocus)
+
+    # ================= FORGOT PASSWORD =================
+    def handle_forgot_password(self):
+        dialog = ForgotPasswordDialog(self.controller)
+        dialog.exec()
 
     # ================= LOGIN =================
     def handle_login(self):

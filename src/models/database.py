@@ -322,6 +322,22 @@ class Database:
         )
         return result[0] if result else None
 
+    def get_user_email_by_identifier(self, identifier):
+        """Lấy email của user dựa trên email hoặc username."""
+        result = self.execute(
+            "SELECT email FROM users WHERE email=? OR username=?",
+            (identifier, identifier),
+            fetch=True
+        )
+        return result[0]['email'] if result else None
+
+    def update_password(self, identifier, new_password):
+        """Cập nhật mật khẩu mới cho user."""
+        return self.execute(
+            "UPDATE users SET password=? WHERE email=? OR username=?",
+            (new_password, identifier, identifier)
+        )
+
     def register_user(self, name, username, email, password):
         """
         Đăng ký user mới.
