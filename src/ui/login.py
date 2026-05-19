@@ -138,27 +138,34 @@ class ForgotPasswordDialog(QDialog):
         self.stack.addWidget(self.step3_widget)
 
     def handle_send_otp(self):
-        identifier = self.id_input.text().strip()
-        if not identifier:
-            QMessageBox.warning(self, "Lỗi", "Vui lòng nhập Email hoặc Username!")
-            return
+            email = self.email_input.text().strip()
+            if not email or "@" not in email:
+                QMessageBox.warning(self, "Lỗi", "Vui lòng nhập định dạng Email hợp lệ!")
+                return
 
-        email = self.controller.get_user_email(identifier)
-        if not email:
-            QMessageBox.warning(self, "Lỗi", "Tài khoản không tồn tại trên hệ thống!")
-            return
+            self.target_email = email
+            
+            # FIX TẠI ĐÂY: Tự tạo chuỗi OTP 6 số ngẫu nhiên từ 100000 đến 999999
+            import secrets
+            otp = str(secrets.randbelow(900000) + 100000)
 
-        self.target_email = email
-        otp = self.controller.generate_otp(email)
+            self.btn_send_otp.setEnabled(False)
+            self.btn_send_otp.setText("Đang gửi...")
 
-        # UI Lock
-        self.btn_send_otp.setEnabled(False)
-        self.btn_send_otp.setText("Đang gửi...")
-
-        # Run Worker Thread
-        self.worker = EmailWorker(self.controller, email, otp)
-        self.worker.finished.connect(self.on_email_sent)
-        self.worker.start()
+            # Chạy Thread gửi mail ngầm
+            self.worker = EmailWorker(self.controller, self.target_email, otp)
+            self.worker.finished.connect(self.on_otp_sent)
+            self.worker.start()
+            
+    def on_otp_sent(self, success, message):
+        self.btn_send_otp.setEnabled(True)
+        self.btn_send_otp.setText("Gửi mã OTP")
+        if success:
+            QMessageBox.information(self, "Thành công", message)
+            # Dòng này sẽ kích hoạt QStackedWidget chuyển sang màn hình nhập mã OTP (Index 1)
+            self.stack.setCurrentIndex(1) 
+        else:
+            QMessageBox.critical(self, "Lỗi kết nối", f"Không thể gửi mail: {message}")
 
     def on_email_sent(self, success, message):
         self.btn_send_otp.setEnabled(True)
@@ -256,6 +263,7 @@ class LoginDialog(QDialog):
         self.btn_forgot = QPushButton("Quên mật khẩu?")
         self.btn_forgot.setCursor(Qt.PointingHandCursor)
         self.btn_forgot.setStyleSheet("color:#2D60FF; border:none; background:none; font-size:12px; font-weight:500;")
+        self.btn_forgot.clicked.connect(self.open_forgot_password_dialog)
         forgot_layout.addWidget(self.btn_forgot)
         layout.addLayout(forgot_layout)
 
@@ -290,6 +298,11 @@ class LoginDialog(QDialog):
 
     # ================= FORGOT PASSWORD =================
     def handle_forgot_password(self):
+        dialog = ForgotPasswordDialog(self.controller)
+        dialog.exec()
+
+    def open_forgot_password_dialog(self):
+        """Hàm xử lý hiển thị cửa sổ Quên mật khẩu"""
         dialog = ForgotPasswordDialog(self.controller)
         dialog.exec()
 
