@@ -26,8 +26,8 @@ def show_notification(title, message):
 
 def send_email(to_email, subject, body):
 
-    sender_email = os.getenv("EMAIL_SENDER")
-    app_password = os.getenv("APP_PASSWORD")
+    sender_email = os.getenv("EMAIL_SENDER").strip()
+    app_password = os.getenv("APP_PASSWORD").strip()
 
     if not sender_email or not app_password:
         print("❌ Thiếu EMAIL_SENDER hoặc APP_PASSWORD trong .env")

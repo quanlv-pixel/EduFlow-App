@@ -115,22 +115,11 @@ class ScheduleNotifier:
     def notify(self, lesson):
 
         title = "📚 Đến giờ học!"
-
         course = lesson.get("course", "Môn học")
         room = lesson.get("room", "Phòng học")
-
         message = f"{course} - {room}"
-
         print(f"🔔 Notify: {message}")
-
-        # =========================
-        # POPUP
-        # =========================
         show_notification(title, message)
-
-        # =========================
-        # EMAIL
-        # =========================
         if self.user_email:
 
             email_subject = f"EduFlow Reminder - {course}"
