@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
-
+from dotenv import load_dotenv
 # UI
 from src.ui.login import LoginDialog
 from src.ui.register import RegisterDialog
@@ -16,6 +16,8 @@ from PySide6.QtGui import QFont
 
 class AppController:
     def __init__(self):
+        load_dotenv()
+        
         self.app = QApplication(sys.argv)
         self.app.setFont(QFont("Segoe UI", 10))
         self.app.setStyle("Fusion")
