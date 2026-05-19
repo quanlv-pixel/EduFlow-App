@@ -479,6 +479,24 @@ class Database:
             "DELETE FROM schedule WHERE id=?",
             (schedule_id,)
         )
+    
+    def check_schedule_overlap(self, user_id, day, start, end):
+        """Kiểm tra xem khung giờ mới có bị trùng lấp với lịch đã có không."""
+        query = """
+            SELECT course, start_time, end_time
+            FROM schedule
+            WHERE user_id = ? AND day = ? 
+              AND start_time < ? AND end_time > ?
+        """
+        # Thuật toán: Trùng khi (Bắt đầu cũ < Kết thúc mới) VÀ (Kết thúc cũ > Bắt đầu mới)
+        return self.execute(query, (user_id, day, end, start), fetch=True)
+    
+    def delete_all_schedules(self, user_id):
+        """Xóa toàn bộ lịch học của user."""
+        return self.execute(
+            "DELETE FROM schedule WHERE user_id=?",
+            (user_id,)
+        )
 
     # ================= FLASHCARD DECKS =================
     def create_deck(self, user_id: int, title: str, source: str = "",

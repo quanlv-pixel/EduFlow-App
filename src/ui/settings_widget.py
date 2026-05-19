@@ -120,6 +120,14 @@ TRANSLATIONS = {
 
         "input_course":         "Môn học",
         "input_course_label":   "Nhập tên môn:",
+
+        # Schedule extra / Reset
+        "schedule_reset":       "🔄 Reset",
+        "reset_confirm_title":  "Xác nhận Reset",
+        "reset_confirm_msg":    "Bạn có chắc chắn muốn xóa TẤT CẢ lịch học không?\nHành động này không thể hoàn tác!",
+        "reset_success_title":  "Thành công",
+        "reset_success_msg":    "Đã xóa toàn bộ lịch học thành công!",
+        "reset_fail_msg":       "Không thể xóa lịch học!",
         # Days of week
         "mon":                  "Thứ Hai",
         "tue":                  "Thứ Ba",
@@ -426,6 +434,15 @@ TRANSLATIONS = {
 
         "input_course":         "Course",
         "input_course_label":   "Enter course name:",
+
+        # Schedule extra / Reset
+        "schedule_reset":       "🔄 Reset",
+        "reset_confirm_title":  "Confirm Reset",
+        "reset_confirm_msg":    "Are you sure you want to delete ALL schedules?\nThis action cannot be undone!",
+        "reset_success_title":  "Success",
+        "reset_success_msg":    "All schedules have been deleted successfully!",
+        "reset_fail_msg":       "Failed to delete schedules!",
+
         # Days of week
         "mon":                  "Monday",
         "tue":                  "Tuesday",
@@ -741,6 +758,14 @@ TRANSLATIONS = {
 
         "input_course":         "课程",
         "input_course_label":   "输入课程名称:",
+
+        # Schedule extra / Reset
+        "schedule_reset":       "🔄 重置",
+        "reset_confirm_title":  "确认重置",
+        "reset_confirm_msg":    "您确定要删除所有课程安排吗？\n此操作无法撤销！",
+        "reset_success_title":  "成功",
+        "reset_success_msg":    "已成功删除所有课程安排！",
+        "reset_fail_msg":       "无法删除课程安排！",
 
         # Days of week
         "mon":                  "周一",

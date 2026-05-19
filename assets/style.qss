@@ -495,3 +495,16 @@ QMessageBox QPushButton {
 QMessageBox QPushButton:hover {
     background-color: #1A4FE0;
 }
+
+/* ===== NÚT RESET LỊCH HỌC ===== */
+QPushButton#BtnResetSchedule {
+    background-color: #2D60FF; /* Màu cam cảnh báo */
+    color: white;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-weight: bold;
+    border: none;
+}
+QPushButton#BtnResetSchedule:hover {
+    background-color:   #1A4FE0; /* Màu cam đậm hơn khi hover */
+}

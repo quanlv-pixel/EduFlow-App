@@ -266,10 +266,16 @@ class ScheduleWidget(QWidget):
         self.btn_delete.setCheckable(True)
         self.btn_delete.clicked.connect(self.toggle_delete_mode)
 
+        self.btn_reset = QPushButton()
+        self.btn_reset.setObjectName("BtnResetSchedule")
+        self.btn_reset.setFixedHeight(40)
+        self.btn_reset.clicked.connect(self.confirm_reset_schedule)
+
         header_layout.addLayout(title_v)
         header_layout.addStretch()
         header_layout.addWidget(self.btn_add)
         header_layout.addWidget(self.btn_delete)
+        header_layout.addWidget(self.btn_reset)
         main_layout.addLayout(header_layout)
 
         # Nhãn gợi ý khi đang ở chế độ xóa
@@ -433,16 +439,46 @@ class ScheduleWidget(QWidget):
             return
 
         try:
-            success = self.controller.add_schedule(
+            success, message = self.controller.add_schedule(
                 self.user_id, course.strip(), room.strip(),
                 col, start_total, end_total
             )
             if success:
                 self.load_schedule()
             else:
-                QMessageBox.warning(self, "Lỗi", "Không thể thêm lịch!")
+                # Nếu false, in ra message lỗi (có thể là lỗi trùng lịch)
+                QMessageBox.warning(self, "Không thể thêm lịch", message)
         except Exception as e:
             QMessageBox.critical(self, "Lỗi hệ thống", str(e))
+
+    # ─── RESET ALL ────────────────────────────────────────────
+    def confirm_reset_schedule(self):
+        confirm = QMessageBox.question(
+            self, 
+            tr("reset_confirm_title"),
+            tr("reset_confirm_msg"),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if confirm == QMessageBox.Yes:
+            try:
+                ok = self.controller.delete_all_schedules(self.user_id)
+                if ok:
+                    self.load_schedule()  # Tải lại lịch (sẽ làm trống màn hình)
+                    QMessageBox.information(
+                        self, 
+                        tr("reset_success_title"), 
+                        tr("reset_success_msg")
+                    )
+                else:
+                    QMessageBox.critical(
+                        self, 
+                        tr("error"), 
+                        tr("reset_fail_msg")
+                    )
+            except Exception as e:
+                QMessageBox.critical(self, tr("error"), str(e))
 
     def _retranslate(self):
         self.title.setText(tr("schedule_title"))
@@ -450,6 +486,9 @@ class ScheduleWidget(QWidget):
 
         self.btn_add.setText(tr("schedule_add"))
         self.btn_delete.setText(tr("schedule_delete"))
+        
+        # SỬA DÒNG NÀY ĐỂ ĐỔI SANG DÙNG BIẾN BẢN DỊCH TR()
+        self.btn_reset.setText(tr("schedule_reset")) 
 
         self.lbl_hint.setText(tr("schedule_delete_hint"))
         self.days = [
