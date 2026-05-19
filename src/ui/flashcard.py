@@ -242,11 +242,34 @@ class DeckCard(QFrame):
 
         count = deck.get("card_count", 0)
         created = deck.get("created_at", "")[:10]
-        lbl_meta = QLabel(f"{count} câu hỏi  •  {created}")
-        lbl_meta.setStyleSheet("font-size:12px;color:#6F767E;background:transparent;")
+
+        done = bool(deck.get("is_completed", 0))
+
+        status_text = "✅ Đã hoàn thành" if done else "⏳ Chưa hoàn thành"
+        status_color = "#10B981" if done else "#F59E0B"
+
+        lbl_meta = QLabel(
+            f"{count} câu hỏi  •  {created}"
+        )
+        lbl_meta.setStyleSheet(
+            "font-size:12px;"
+            "color:#6F767E;"
+            "background:transparent;"
+        )
+
+        lbl_status = QLabel(status_text)
+        lbl_status.setStyleSheet(
+            f"""
+            font-size:12px;
+            font-weight:600;
+            color:{status_color};
+            background:transparent;
+            """
+        )
 
         info.addWidget(lbl_title)
         info.addWidget(lbl_meta)
+        info.addWidget(lbl_status)
 
         # Nút xóa
         btn_del = QPushButton("🗑")
@@ -264,6 +287,22 @@ class DeckCard(QFrame):
 
         layout.addWidget(lbl_icon)
         layout.addLayout(info, stretch=1)
+
+        # Tick xanh góc phải nếu hoàn thành
+        if done:
+            lbl_done = QLabel("✅")
+            lbl_done.setFixedWidth(30)
+            lbl_done.setAlignment(Qt.AlignCenter)
+
+            lbl_done.setStyleSheet("""
+                font-size:18px;
+                color:#10B981;
+                background:transparent;
+            """)
+
+            lbl_done.setToolTip("Đã hoàn thành")
+            layout.addWidget(lbl_done)
+
         layout.addWidget(btn_del)
 
         self.mousePressEvent = lambda e: on_open(deck) if e.button() == Qt.LeftButton else None
@@ -1055,12 +1094,35 @@ class FlashcardWidget(QWidget):
                 w.deleteLater()
 
     def _on_quiz_finished(self, score: int, total: int):
-        # Nếu là deck từ khóa học → đánh dấu lesson done + tính progress
+        
         lesson_id   = None
         course_id   = None
         new_progress = None
 
+        # Đạt >=70% thì đánh dấu hoàn thành
+        if self._current_deck and total > 0:
+            if score / total >= 0.7:
+                self.controller.set_deck_completed(
+                    self._current_deck["id"],
+                    True
+                )
+
+                # cập nhật object hiện tại
+                self._current_deck["is_completed"] = 1
+
+        self._load_decks()
+
         if self._current_deck and self._current_deck.get("source") == "course":
+            # Đánh dấu deck đã hoàn thành
+            if self._current_deck:
+                self.controller.set_deck_completed(
+                    self._current_deck["id"],
+                    True
+                )
+
+                # cập nhật object hiện tại
+                self._current_deck["is_completed"] = 1
+
             lesson_id = self._current_deck.get("lesson_id")
             if lesson_id:
                 # Đánh dấu bài học hoàn thành
@@ -1093,6 +1155,7 @@ class FlashcardWidget(QWidget):
         # khiến toàn bộ app bị giãn to ra khi widget có chứa stretch.
         layout.addWidget(result, alignment=Qt.AlignTop)
         self.stack.setCurrentIndex(2)
+        self._load_decks()
 
     # ============================================================
     # RETRANSLATE

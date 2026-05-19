@@ -64,3 +64,6 @@ class FlashcardController:
 
     def generate_ai_from_topic(self, prompt: str, lang: str = "vi") -> list:
         return self.ai.generate_flashcards_from_topic(prompt, lang=lang)
+    
+    def set_deck_completed(self, deck_id: int, completed=True):
+        return self.db.set_deck_completed(deck_id, completed)

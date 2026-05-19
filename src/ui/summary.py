@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QTextEdit, QLabel, QFileDialog, QApplication, QMessageBox
+    QTextEdit, QLabel, QFileDialog, QApplication, QMessageBox,
+    QListWidget, QListWidgetItem
 )
 from PySide6.QtCore import Qt
 import os
@@ -16,6 +17,10 @@ class SummaryWidget(QWidget):
 
         self.controller = controller
         self.user_id = user_id
+
+        self.current_filename = None
+        self.current_content = None
+        self.current_summary = None
 
         layout = QVBoxLayout(self)
         layout.setSpacing(20)
@@ -38,7 +43,33 @@ class SummaryWidget(QWidget):
         top_bar.addWidget(self.btn_upload)
         top_bar.addWidget(self.lbl_status)
         top_bar.addStretch()
+        self.btn_save = QPushButton("💾 Lưu")
+        self.btn_save.setObjectName("BtnAddSchedule")
+        self.btn_save.setFixedHeight(45)
+        self.btn_save.hide()
+        self.btn_save.clicked.connect(self.handle_save)
+        top_bar.addWidget(self.btn_save)
+
+        self.saved_label = QLabel("<b>Tài liệu đã lưu</b>")
+        layout.addWidget(self.saved_label)
+
+        self.saved_list = QListWidget()
+        self.saved_list.itemClicked.connect(
+            self.open_saved_document
+        )
+
+        self.saved_list.setContextMenuPolicy(
+            Qt.CustomContextMenu
+        )
+
+        self.saved_list.customContextMenuRequested.connect(
+            self.show_document_menu
+        )
+        layout.addWidget(self.saved_list)
+
+        self.load_saved_files()
         layout.addLayout(top_bar)
+        
 
         # ===== LEFT =====
         self.lbl_original = QLabel()
@@ -136,15 +167,11 @@ class SummaryWidget(QWidget):
             self.txt_summary.setText(summary)
 
             # ===== SAVE =====
-            try:
-                self.controller.save(
-                    self.user_id,
-                    filename,
-                    content,
-                    summary
-                )
-            except Exception as e:
-                print("⚠️ Lỗi lưu DB:", e)
+            self.current_filename = filename
+            self.current_content = content
+            self.current_summary = summary
+
+            self.btn_save.show()
 
             self.lbl_status.setText(tr("done", file=filename))
 
@@ -155,3 +182,146 @@ class SummaryWidget(QWidget):
 
         finally:
             self.btn_upload.setEnabled(True)
+    
+    def handle_save(self):
+        try:
+            if not self.current_summary:
+                return
+
+            title = self.extract_title(
+                self.current_content,
+                self.current_filename
+            )
+
+            self.controller.save(
+                self.user_id,
+                title,
+                self.current_content,
+                self.current_summary
+            )
+
+            QMessageBox.information(
+                self,
+                "Thành công",
+                "Đã lưu tài liệu"
+            )
+
+            self.btn_save.hide()
+
+            self.current_filename = None
+            self.current_content = None
+            self.current_summary = None
+
+            self.txt_original.clear()
+            self.txt_summary.clear()
+
+            self.load_saved_files()
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Lỗi",
+                str(e)
+            )
+
+
+    def extract_title(self, content, filename):
+        lines = content.split("\n")
+
+        for line in lines[:5]:
+            line = line.strip()
+
+            if len(line) > 5:
+                return line[:60]
+
+        return filename
+
+
+    def load_saved_files(self):
+        self.saved_list.clear()
+
+        docs = self.controller.get_documents(
+            self.user_id
+        )
+
+        for doc in docs:
+
+            item = QListWidgetItem(
+                doc["filename"]
+            )
+
+            item.setData(
+                Qt.UserRole,
+                doc["id"]
+            )
+
+            self.saved_list.addItem(
+                item
+            )
+    def open_saved_document(self,item):
+        doc_id = item.data(
+            Qt.UserRole
+        )
+
+        data = self.controller.get_document_detail(
+            doc_id
+        )
+
+        if not data:
+            return
+
+        self.txt_original.setText(
+            data["content"]
+        )
+
+        self.txt_summary.setText(
+            data["summary_text"]
+        )
+
+        self.lbl_status.setText(
+            f"Đã mở: {data['filename']}"
+        )
+    def show_document_menu(self,pos):
+        item = self.saved_list.itemAt(pos)
+
+        if not item:
+            return
+
+        from PySide6.QtWidgets import QMenu
+
+        menu = QMenu()
+
+        delete_action = menu.addAction(
+            "🗑 Xóa"
+        )
+
+        action = menu.exec(
+            self.saved_list.mapToGlobal(pos)
+        )
+
+        if action == delete_action:
+
+            doc_id = item.data(
+                Qt.UserRole
+            )
+
+            reply = QMessageBox.question(
+                self,
+                "Xác nhận",
+                "Xóa tài liệu này?"
+            )
+
+            if reply == QMessageBox.Yes:
+
+                self.controller.delete_document(
+                    doc_id
+                )
+
+                self.load_saved_files()
+
+                self.txt_original.clear()
+                self.txt_summary.clear()
+
+                self.lbl_status.setText(
+                    "Đã xóa"
+                )

@@ -104,7 +104,8 @@ class Database:
                 title TEXT,
                 source TEXT,
                 lesson_id INTEGER DEFAULT NULL,
-                created_at TEXT DEFAULT (datetime('now','localtime'))
+                created_at TEXT DEFAULT (datetime('now','localtime')),
+                is_completed INTEGER DEFAULT 0
             )
             """,
 
@@ -281,6 +282,34 @@ class Database:
                 )
             self.cursor.execute(
                 "INSERT INTO migrations (id) VALUES (?)", (mid6,)
+            )
+            self.conn.commit()
+        
+        # Migration 7: thêm trạng thái hoàn thành cho flashcard deck
+        mid7 = "flashcard_decks_add_completed"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid7,)
+        ).fetchone()
+
+        if not row:
+            existing_cols = [
+                r[1] for r in
+                self.cursor.execute(
+                    "PRAGMA table_info(flashcard_decks)"
+                ).fetchall()
+            ]
+
+            if "is_completed" not in existing_cols:
+                self.cursor.execute(
+                    """
+                    ALTER TABLE flashcard_decks
+                    ADD COLUMN is_completed INTEGER DEFAULT 0
+                    """
+                )
+
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)",
+                (mid7,)
             )
             self.conn.commit()
     def create_default_user(self):
@@ -572,15 +601,21 @@ class Database:
         except Exception as e:
             print("❌ SAVE ERROR:", e)
             return False
+    
+    def get_documents(self, user_id):
+        return self.execute(
+            """
+            SELECT *
+            FROM documents
+            WHERE user_id=?
+            ORDER BY id DESC
+            """,
+            (user_id,),
+            fetch=True
+        ) or []
 
     # ================= USER PROFILE =================
     def update_user_info(self, user_id: int, name: str, username: str, password: str = ""):
-        """
-        Cập nhật thông tin profile user.
-        Nếu password trống thì không update cột password.
-        Trả về: True = OK | "username" = username trùng | False = lỗi
-        """
-        # Kiểm tra username trùng với user khác
         existing = self.execute(
             "SELECT id FROM users WHERE username=? AND id!=?",
             (username, user_id),
@@ -604,6 +639,61 @@ class Database:
             return True
         except Exception as e:
             print("❌ Update Profile Error:", e)
+            return False
+    
+    def set_deck_completed(self, deck_id: int, completed=True):
+        self.execute(
+            "UPDATE flashcard_decks SET is_completed=? WHERE id=?",
+            (1 if completed else 0, deck_id)
+        )
+
+    def get_decks(self, user_id):
+        return self.execute("""
+            SELECT d.*,
+                COUNT(f.id) as card_count
+            FROM flashcard_decks d
+            LEFT JOIN flashcards f
+                ON f.deck_id=d.id
+            WHERE d.user_id=?
+            GROUP BY d.id
+            ORDER BY d.created_at DESC
+        """,(user_id,),fetch=True) or []
+    
+    def get_document_detail(self, document_id):
+        result = self.execute(
+            """
+            SELECT d.id,
+                d.filename,
+                d.content,
+                s.summary_text
+            FROM documents d
+            LEFT JOIN summaries s
+                ON s.document_id=d.id
+            WHERE d.id=?
+            """,
+            (document_id,),
+            fetch=True
+        )
+
+        return result[0] if result else None
+
+
+    def delete_document(self, document_id):
+        try:
+            self.execute(
+                "DELETE FROM summaries WHERE document_id=?",
+                (document_id,)
+            )
+
+            self.execute(
+                "DELETE FROM documents WHERE id=?",
+                (document_id,)
+            )
+
+            return True
+
+        except Exception as e:
+            print(e)
             return False
 
     # ================= CLOSE =================
