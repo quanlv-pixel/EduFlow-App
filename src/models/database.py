@@ -1,7 +1,6 @@
 import sqlite3
 import os
 
-
 class Database:
     def __init__(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -43,8 +42,7 @@ class Database:
             )
             """,
 
-            # LESSONS — đầy đủ các cột cần thiết
-            # FIX: Thêm duration, type, has_exercise, completed so với phiên bản cũ
+            # LESSONS
             """
             CREATE TABLE IF NOT EXISTS lessons (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,7 +94,7 @@ class Database:
             )
             """,
 
-            # FLASHCARD DECKS — mỗi bộ flashcard có tiêu đề riêng
+            # FLASHCARD DECKS 
             """
             CREATE TABLE IF NOT EXISTS flashcard_decks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,6 +133,7 @@ class Database:
             )
             """,
 
+            #GRADE SUBJECTS
             """
             CREATE TABLE IF NOT EXISTS grade_subjects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
