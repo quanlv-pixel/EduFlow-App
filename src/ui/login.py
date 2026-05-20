@@ -138,7 +138,7 @@ class ForgotPasswordDialog(QDialog):
         self.stack.addWidget(self.step3_widget)
 
     def handle_send_otp(self):
-            email = self.email_input.text().strip()
+            email = self.id_input.text().strip()
             if not email or "@" not in email:
                 QMessageBox.warning(self, "Lỗi", "Vui lòng nhập định dạng Email hợp lệ!")
                 return
@@ -263,26 +263,36 @@ class LoginDialog(QDialog):
         self.btn_forgot = QPushButton("Quên mật khẩu?")
         self.btn_forgot.setCursor(Qt.PointingHandCursor)
         self.btn_forgot.setStyleSheet("color:#2D60FF; border:none; background:none; font-size:12px; font-weight:500;")
-        self.btn_forgot.clicked.connect(self.open_forgot_password_dialog)
+        
+        # CHẶN KHÔNG CHO NÚT NÀY TỰ KÍCH HOẠT KHI NHẤN ENTER
+        self.btn_forgot.setAutoDefault(False)
+        self.btn_forgot.setDefault(False)
+        
+        # (Xóa dòng clicked.connect ở đây vì đã có ở phía dưới)
         forgot_layout.addWidget(self.btn_forgot)
         layout.addLayout(forgot_layout)
 
-        # ================= BUTTON =================
+        # ================= BUTTON ĐĂNG NHẬP =================
         self.btn_login = QPushButton("Đăng nhập")
         self.btn_login.setObjectName("BtnLogin")
         self.btn_login.setCursor(Qt.PointingHandCursor)
         self.btn_login.setFixedHeight(42)
+        
+        # ĐẶT NÚT ĐĂNG NHẬP LÀM NÚT MẶC ĐỊNH DUY NHẤT KHI NHẤN ENTER
+        self.btn_login.setDefault(True)
 
         layout.addWidget(self.btn_login)
 
         # 👉 THÊM NÚT ĐĂNG KÝ
         self.btn_goto_register = QPushButton("Chưa có tài khoản? Đăng ký ngay")
-        self.btn_goto_register.setObjectName("BtnRegisterLink") # Đặt tên để có thể style riêng
+        self.btn_goto_register.setObjectName("BtnRegisterLink") 
         self.btn_goto_register.setCursor(Qt.PointingHandCursor)
         self.btn_goto_register.setStyleSheet("color:#2D60FF; border:none; background:none; font-size:13px;")
+        
+        # CHẶN KHÔNG CHO NÚT ĐĂNG KÝ TỰ KÍCH HOẠT KHI NHẤN ENTER
+        self.btn_goto_register.setAutoDefault(False)
+        
         layout.addWidget(self.btn_goto_register)
-
-        layout.addStretch()
 
         # ================= EVENTS =================
         self.btn_login.clicked.connect(self.handle_login)
@@ -293,7 +303,7 @@ class LoginDialog(QDialog):
         layout.addStretch()
 
         # 👉 ENTER để login
-        self.pass_input.returnPressed.connect(self.handle_login)
+        
         self.user_input.returnPressed.connect(self.pass_input.setFocus)
 
     # ================= FORGOT PASSWORD =================
@@ -333,7 +343,7 @@ class LoginDialog(QDialog):
                 msgBox.setWindowTitle("Lỗi")
                 msgBox.setText("Sai email hoặc mật khẩu!")
                 # Ép màu chữ thành trắng để nổi bật trên nền tối
-                msgBox.setStyleSheet("QLabel { color: white; text-align: center; font-weight: bold;}") 
+                msgBox.setStyleSheet("QLabel { color: black; text-align: center; font-weight: bold;}") 
                 msgBox.exec()
 
         except Exception as e:
