@@ -158,15 +158,24 @@ class CourseController:
         try:
             topic = lesson.get("title", "")
             course_title = lesson.get("course_title", "")
+            url = lesson.get("url", "")
+            source = lesson.get("source", "")
 
-            # Tạo prompt kết hợp tên bài + tên khóa học
-            prompt = f"Tạo flashcard về bài: {topic}"
-            if course_title:
-                prompt += f" (thuộc khóa học: {course_title})"
+            # Kiểm tra nếu bài học là video YouTube (dựa vào source hoặc URL)
+            if source == "YouTube" or (url and ("youtube.com" in url.lower() or "youtu.be" in url.lower())):
+                print(f"🎬 Phát hiện bài học YouTube: {topic}. Đang cào phụ đề và tạo trắc nghiệm...")
+                # Gọi hàm xử lý trắc nghiệm từ YouTube mới cấu trúc lại
+                return self.ai.generate_flashcards_from_youtube(url, topic)
+            
+            else:
+                # Luồng cũ: Tạo prompt kết hợp tên bài + tên khóa học cho tài liệu thông thường
+                print(f"📚 Bài học dạng tài liệu/topic: {topic}. Đang tạo flashcard thường...")
+                prompt = f"Tạo flashcard về bài: {topic}"
+                if course_title:
+                    prompt += f" (thuộc khóa học: {course_title})"
 
-            # Dùng đúng method có trong AIEngine
-            cards = self.ai.generate_flashcards_from_topic(prompt)
-            return cards
+                return self.ai.generate_flashcards_from_topic(prompt)
+
         except Exception as e:
-            print("❌ Lỗi tạo flashcard:", e)
+            print("❌ Lỗi khi tạo flashcard từ AI tại Controller:", e)
             return []

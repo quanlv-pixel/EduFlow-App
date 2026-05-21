@@ -101,9 +101,12 @@ class Database:
                 user_id INTEGER,
                 title TEXT,
                 source TEXT,
-                lesson_id INTEGER DEFAULT NULL,
-                created_at TEXT DEFAULT (datetime('now','localtime')),
-                is_completed INTEGER DEFAULT 0
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_completed INTEGER DEFAULT 0,
+                parent_id INTEGER DEFAULT NULL,  -- NULL nếu là bộ lớn (tên khóa học), có ID nếu là bộ nhỏ (từng bài)
+                lesson_id INTEGER DEFAULT NULL,  -- Liên kết trực tiếp tới bài học để tích xanh khi làm xong
+                FOREIGN KEY (parent_id) REFERENCES flashcard_decks(id) ON DELETE CASCADE,
+                FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
             )
             """,
 
@@ -538,20 +541,29 @@ class Database:
         self.conn.commit()
         return cur.lastrowid
 
-    def get_decks(self, user_id: int) -> list:
-        """Lấy tất cả bộ flashcard của user, kèm số lượng card."""
-        return self.execute(
-            """
+    def get_decks(self, user_id):
+            # FIX: Chỉ lấy các bộ gốc (parent_id IS NULL), không lấy bộ bài học nhỏ ra màn hình chính
+            return self.execute("""
+                SELECT d.*,
+                    COUNT(f.id) as card_count
+                FROM flashcard_decks d
+                LEFT JOIN flashcards f
+                    ON f.deck_id=d.id
+                WHERE d.user_id=? AND d.parent_id IS NULL
+                GROUP BY d.id
+                ORDER BY d.created_at DESC
+            """, (user_id,), fetch=True) or []
+
+    def get_sub_decks(self, user_id, parent_id):
+        """Lấy danh sách các bộ flashcard bài học nhỏ nằm trong khóa học lớn"""
+        return self.execute("""
             SELECT d.*, COUNT(f.id) as card_count
             FROM flashcard_decks d
-            LEFT JOIN flashcards f ON f.deck_id = d.id
-            WHERE d.user_id = ?
+            LEFT JOIN flashcards f ON f.deck_id=d.id
+            WHERE d.user_id=? AND d.parent_id=?
             GROUP BY d.id
-            ORDER BY d.created_at DESC
-            """,
-            (user_id,),
-            fetch=True
-        ) or []
+            ORDER BY d.id ASC
+        """, (user_id, parent_id), fetch=True) or []
 
     def delete_deck(self, deck_id: int):
         """Xóa bộ flashcard và toàn bộ card trong đó."""
@@ -694,6 +706,41 @@ class Database:
         except Exception as e:
             print(e)
             return False
+
+    def complete_lesson_flashcard(self, deck_id):
+        """Đánh dấu hoàn thành bộ flashcard nhỏ và tự động kích hoạt tích xanh bài học liên kết"""
+        try:
+            # 1. Cập nhật hoàn thành cho bộ flashcard nhỏ
+            self.execute("UPDATE flashcard_decks SET is_completed=1 WHERE id=?", (deck_id,))
+            
+            # 2. Tìm xem bộ flashcard này liên kết với lesson_id nào
+            self.cursor.execute("SELECT lesson_id, parent_id FROM flashcard_decks WHERE id=?", (deck_id,))
+            row = self.cursor.fetchone()
+            
+            if row and row["lesson_id"]:
+                lesson_id = row["lesson_id"]
+                parent_id = row["parent_id"]
+                
+                # 3. Kích hoạt Tích xanh cho bài học trong bảng lessons
+                self.execute("UPDATE lessons SET is_completed=1 WHERE id=?", (lesson_id,))
+                
+                # 4. Kiểm tra xem toàn bộ các bài học nhỏ trong Khóa học lớn này đã hoàn thành hết chưa
+                if parent_id:
+                    self.cursor.execute("SELECT COUNT(*) as total FROM flashcard_decks WHERE parent_id=?", (parent_id,))
+                    total_sub = self.cursor.fetchone()["total"]
+                    
+                    self.cursor.execute("SELECT COUNT(*) as completed FROM flashcard_decks WHERE parent_id=? AND is_completed=1", (parent_id,))
+                    comp_sub = self.cursor.fetchone()["completed"]
+                    
+                    # Nếu hoàn thành 100% các bộ nhỏ -> Đánh dấu hoàn thành luôn bộ lớn mang tên khóa học
+                    if total_sub == comp_sub:
+                        self.execute("UPDATE flashcard_decks SET is_completed=1 WHERE id=?", (parent_id,))
+            
+            self.conn.commit()
+            return True
+        except Exception as e:
+            print(f"❌ Lỗi cập nhật tiến độ hoàn thành bài học: {e}")
+            return False        
 
     # ================= CLOSE =================
     def close(self):

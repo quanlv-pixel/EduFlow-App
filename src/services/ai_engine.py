@@ -6,6 +6,7 @@ import fitz
 from docx import Document
 from google import genai
 from dotenv import load_dotenv
+from youtube_transcript_api import YouTubeTranscriptApi
 
 
 class AIEngine:
@@ -74,6 +75,7 @@ class AIEngine:
         return f"❌ AI lỗi: {last_error}"
 
     def _parse_flashcard_json(self, raw: str) -> list:
+        """Hàm parse chung bóc tách mảng JSON từ phản hồi của AI"""
         match = re.search(r"\[.*\]", raw, re.DOTALL)
         if match:
             try:
@@ -81,9 +83,27 @@ class AIEngine:
                 result = []
                 for c in cards:
                     q = c.get("q") or c.get("question", "")
-                    a = c.get("a") or c.get("answer", "")
-                    if q and a:
-                        result.append({"q": str(q), "a": str(a)})
+                    
+                    # Hỗ trợ cả 2 luồng: 
+                    # 1. Luồng trắc nghiệm mới (a là index số nguyên, có options)
+                    # 2. Luồng flashcard cũ (a là một chuỗi văn bản câu trả lời phẳng)
+                    options = c.get("options")
+                    a_val = c.get("a") if c.get("a") is not None else c.get("answer")
+                    
+                    if q and a_val is not None:
+                        if options and isinstance(options, list):
+                            # Luồng câu hỏi dạng trắc nghiệm 4 lựa chọn
+                            result.append({
+                                "q": str(q),
+                                "options": [str(opt) for opt in options],
+                                "a": a_val # Giữ nguyên index integer (0, 1, 2, 3)
+                            })
+                        else:
+                            # Luồng Flashcard truyền thống
+                            result.append({
+                                "q": str(q),
+                                "a": str(a_val)
+                            })
                 return result
             except Exception:
                 pass
@@ -189,3 +209,79 @@ Return ONLY a JSON array, no extra text:
         if not cards:
             return [{"q": "❌ Không parse được", "a": raw[:200]}]
         return cards
+
+    # ================= SCRIPT YOUTUBE & TRẮC NGHIỆM KHÓA HỌC =================
+    def extract_youtube_id(self, url: str) -> str:
+        if not url:
+            return None
+        patterns = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
+        match = re.search(patterns, url)
+        return match.group(1) if match else None
+
+    def generate_flashcards_from_youtube(self, video_url: str, lesson_title: str) -> list:
+        """Cào script từ YouTube và bắt Gemini tạo bộ trắc nghiệm dựa trên bài giảng"""
+        video_id = self.extract_youtube_id(video_url)
+        script_text = ""
+
+        if video_id:
+            try:
+                # Thử lấy phụ đề tiếng Việt trước, nếu không có thì lấy tiếng Anh
+                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['vi', 'en'])
+                script_text = " ".join([item['text'] for item in transcript])
+            except Exception as e:
+                print(f"⚠️ Không thể tự động lấy phụ đề từ YouTube ({e}). AI sẽ tự suy luận dựa trên tiêu đề bài học.")
+        
+        # Nếu lấy được script thì nhồi vào prompt, nếu không lấy được thì dùng tiêu đề bài học để cứu cánh
+        context_data = f"NỘI DUNG BÀI GIẢNG (SCRIPT DƯỚI VIDEO):\n{script_text}" if script_text else f"Tiêu đề bài học: {lesson_title}"
+
+        prompt = f"""
+Bạn là một trợ lý giáo dục thông minh chuyên về Flashcard.
+Dựa vào tài liệu bài học cụ thể được cung cấp dưới đây, hãy soạn ra chính xác từ 5 đến 7 câu hỏi trắc nghiệm kiến thức cốt lõi.
+
+{context_data}
+
+YÊU CẦU BẮT BUỘC:
+1. Câu hỏi phải bám rất sát nội dung bài học được cung cấp.
+2. Định dạng đầu ra bắt buộc phải là một chuỗi JSON Array sạch duy nhất, không chứa ký hiệu ```json hay bất kỳ chữ giải thích nào bên ngoài.
+3. Cấu trúc mỗi phần tử trong Array phải giống hoàn toàn như sau:
+[
+  {{
+    "q": "Câu hỏi trắc nghiệm cụ thể ?",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+    "a": 0
+  }}
+]
+Trong đó "options" là mảng gồm 4 đáp án lựa chọn, và "a" là CHỈ SỐ INDEX của đáp án đúng (0 cho đáp án đầu tiên, 1 cho đáp án thứ hai, v.v.). Toàn bộ viết bằng Tiếng Việt.
+"""
+        raw = self._call_ai(prompt)
+
+        try:
+            cleaned = re.sub(
+                r'^(?:https?://googleusercontent\.com/immersive_entry_chip/json)?\s*```?|```?\s*$',
+                '',
+                raw.strip(),
+                flags=re.MULTILINE
+            )
+
+            cards = self._parse_flashcard_json(cleaned)
+
+            if cards:
+                return cards
+
+        except Exception as e:
+            print("❌ Lỗi parse JSON Flashcard từ YouTube:", e)
+
+        return [
+            {
+                "q": f"Kiến thức cốt lõi của bài học: {lesson_title}",
+                "options": [
+                    "Đáp án đúng mẫu",
+                    "Đáp án nhiễu 1",
+                    "Đáp án nhiễu 2",
+                    "Đáp án nhiễu 3"
+                ],
+                "a": 0
+            }
+        ]
+
+

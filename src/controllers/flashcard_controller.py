@@ -38,7 +38,6 @@ class FlashcardController:
         return self._save_deck(user_id, title, prompt, cards, source="topic")
 
     def _save_deck(self, user_id, title, cards_or_prompt, cards=None, source="") -> tuple:
-        # Hỗ trợ cả 2 cách gọi
         if cards is None:
             cards = cards_or_prompt
             prompt_text = ""
@@ -49,9 +48,22 @@ class FlashcardController:
         saved = 0
         for c in cards[:20]:
             q = c.get("q") or c.get("question", "")
-            a = c.get("a") or c.get("answer", "")
-            if q and a:
-                self.db.add_flashcard(user_id, q, a, deck_id)
+            
+            # XỬ LÝ CHO TRẮC NGHIỆM YOUTUBE (Nếu câu hỏi có kèm options)
+            if "options" in c:
+                # Đóng gói câu hỏi và các lựa chọn thành chuỗi đặc biệt ngăn cách bằng dấu |
+                options_str = "|".join(c["options"])
+                q_saved = f"{q}||options||{options_str}"
+                
+                # Answer sẽ lưu index của đáp án đúng (ví dụ: "0", "1", "2", "3")
+                a_saved = str(c.get("a", 0))
+            else:
+                # Luồng flashcard truyền thống (mặt trước / mặt sau)
+                q_saved = q
+                a_saved = c.get("a") or c.get("answer", "")
+
+            if q_saved and a_saved:
+                self.db.add_flashcard(user_id, q_saved, a_saved, deck_id)
                 saved += 1
         return deck_id, saved
 
@@ -67,3 +79,11 @@ class FlashcardController:
     
     def set_deck_completed(self, deck_id: int, completed=True):
         return self.db.set_deck_completed(deck_id, completed)
+
+    def get_sub_decks(self, user_id: int, parent_id: int) -> list:
+        """Controller điều hướng lấy các bộ flashcard bài học nhỏ"""
+        return self.db.get_sub_decks(user_id, parent_id)
+
+    def complete_sub_deck(self, deck_id: int) -> bool:
+        """Controller điều hướng xử lý hoàn thành bộ trắc nghiệm và tích xanh bài học"""
+        return self.db.complete_lesson_flashcard(deck_id)
