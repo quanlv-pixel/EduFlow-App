@@ -877,3 +877,104 @@ class CourseDetailWidget(QWidget):
                 f"{tr('course_detail_professor')} {self.course_data.get('professor', '')}"
             )
             self.load_lessons()
+
+    def load_course(self, course_dict):
+            """Nạp thông tin chi tiết của khóa học lên giao diện"""
+            self.course_data = course_dict
+            self.course_id = course_dict.get("id")
+            
+            # Cập nhật thông tin Header có sẵn trong UI của bạn
+            self.lbl_title.setText(course_dict.get("name", "Khóa học"))
+            self.lbl_prof.setText(f"{tr('prof')}: {course_dict.get('professor', 'Hệ thống')}")
+            
+            # 1. Làm sạch (Clear) danh sách bài học cũ trong layout_lessons
+            while self.layout_lessons.count():
+                child = self.layout_lessons.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+                    
+            # Lấy danh sách bài học từ database liên kết
+            lessons = self.controller.get_lessons(self.course_id) or []
+            
+            if not lessons:
+                lbl_empty = QLabel("Khóa học này hiện chưa có danh sách bài học cụ thể.")
+                lbl_empty.setStyleSheet("color: #6F767E; font-size: 13px; font-style: italic; background: transparent;")
+                self.layout_lessons.addWidget(lbl_empty)
+                return
+
+            # 2. KIỂM TRA LUỒNG RẼ NHÁNH (Web Course vs YouTube Course)
+            is_web = lessons[0].get("is_web_course", False) or (
+                "web_route" in str(lessons[0].get("topic_key", "")) or 
+                not ("youtube.com" in lessons[0].get("url", "").lower() or "youtu.be" in lessons[0].get("url", "").lower())
+            )
+
+            if is_web:
+                # ────────────────────────────────────────────────────────
+                # 🌐 TRƯỜNG HỢP 1: GIAO DIỆN KHÓA HỌC TRÊN WEB
+                # ────────────────────────────────────────────────────────
+                # Ẩn nút kêu gọi hành động (CTA) mặc định bên cột phải đi (nếu cần thiết)
+                if hasattr(self, "btn_cta") and self.btn_cta:
+                    self.btn_cta.hide()
+                    
+                source_platform = lessons[0].get("source", "Hệ thống Web")
+                
+                # Tạo hộp thông tin và nút dẫn trực tiếp ra trình duyệt
+                web_frame = QFrame()
+                web_frame.setStyleSheet("background: #F4F7FF; border: 1px dashed #2D60FF; border-radius: 12px;")
+                web_box = QVBoxLayout(web_frame)
+                web_box.setContentsMargins(16, 16, 16, 16)
+                
+                lbl_info = QLabel(f"🎯 Khóa học này được tổ chức trực tiếp trên nền tảng {source_platform}. Bạn sẽ học lý thuyết và làm bài tập trực tiếp tại website hệ thống.")
+                lbl_info.setWordWrap(True)
+                lbl_info.setStyleSheet("font-size: 13px; color: #1E2328; font-weight: 500; background: transparent;")
+                web_box.addWidget(lbl_info)
+                
+                btn_launch = QPushButton(f"Truy cập khóa học trên {source_platform} 🌐")
+                btn_launch.setCursor(Qt.PointingHandCursor)
+                btn_launch.setFixedHeight(40)
+                btn_launch.setStyleSheet("""
+                    QPushButton {
+                        background: #2D60FF; color: white; font-weight: bold;
+                        border-radius: 8px; border: none; font-size: 13px;
+                    }
+                    QPushButton:hover { background: #1A4BDB; }
+                """)
+                btn_launch.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(lessons[0].get("url", ""))))
+                web_box.addWidget(btn_launch)
+                self.layout_lessons.addWidget(web_frame)
+                
+                # Tạo khung hiển thị Cẩm nang hướng dẫn học bằng AI dạng văn bản Markdown
+                lbl_guide_title = QLabel("💡 Cẩm nang hướng dẫn tự học hiệu quả (EduFlow AI):")
+                lbl_guide_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #1E2328; margin-top: 16px; background: transparent;")
+                self.layout_lessons.addWidget(lbl_guide_title)
+                
+                # Gọi hàm sinh từ Controller
+                tutorial_text = self.controller.get_course_tutorial(source_platform, course_dict.get("name", "Khóa học"))
+                
+                from PySide6.QtWidgets import QTextEdit
+                txt_guide = QTextEdit()
+                txt_guide.setReadOnly(True)
+                txt_guide.setMarkdown(tutorial_text)
+                txt_guide.setMinimumHeight(200)
+                txt_guide.setStyleSheet("""
+                    QTextEdit {
+                        background: #FAFAFA; border: 1px solid #E5E7EB;
+                        border-radius: 10px; padding: 12px; font-size: 13px; color: #1E2328;
+                    }
+                """)
+                self.layout_lessons.addWidget(txt_guide)
+
+            else:
+                # ────────────────────────────────────────────────────────
+                # 📺 TRƯỜNG HỢP 2: GIAO DIỆN KHÓA HỌC YOUTUBE
+                # ────────────────────────────────────────────────────────
+                # Hiện lại nút bấm ở cột phải cho luồng YouTube học tập tương tác
+                if hasattr(self, "btn_cta") and self.btn_cta:
+                    self.btn_cta.show()
+                    
+                for idx, lesson in enumerate(lessons):
+                    item_widget = LessonItem(lesson, on_flashcard=None)
+                    self.layout_lessons.addWidget(item_widget)
+
+            # Thêm lại căn lề đẩy các phần tử lên trên cùng của vùng scroll area
+            self.layout_lessons.addStretch()

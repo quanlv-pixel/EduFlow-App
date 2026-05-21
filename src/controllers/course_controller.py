@@ -179,3 +179,22 @@ class CourseController:
         except Exception as e:
             print("❌ Lỗi khi tạo flashcard từ AI tại Controller:", e)
             return []
+        
+
+    def get_course_tutorial(self, source_platform: str, course_title: str) -> str:
+            """AI tạo cẩm nang hướng dẫn học tối ưu cho riêng từng nền tảng Web"""
+            if not self.ai:
+                return "Chào mừng bạn đến với khóa học. Hãy truy cập liên kết chính thức để tự học theo lộ trình chuẩn của website."
+                
+            prompt = f"""
+            Người dùng đang chuẩn bị học khóa học '{course_title}' trên nền tảng website '{source_platform}'.
+            Hãy biên soạn một cẩm nang hướng dẫn tự học ngắn gọn, thông minh (gồm 3-4 bước thực tế).
+            Yêu cầu: Chỉ rõ mẹo để khai thác tốt nhất website này (ví dụ: cách tìm bài tập thực hành trên đó, cách tận dụng forum thảo luận hoặc đọc tài liệu đính kèm của nền tảng {source_platform}).
+            Ngôn ngữ: Tiếng Việt. Trực diện, súc tích, trình bày đẹp bằng các gạch đầu dòng (Markdown).
+            """
+            try:
+                # Gọi trực tiếp qua phương thức giao tiếp AI của bạn
+                return self.ai._call_ai(prompt)
+            except Exception as e:
+                print(f"❌ Lỗi sinh cẩm nang học: {e}")
+                return f"Hệ thống đã kết nối tới {source_platform}. Bạn hãy nhấn nút 'Mở liên kết' phía trên để học trực tiếp bài học & làm bài tập đi kèm."

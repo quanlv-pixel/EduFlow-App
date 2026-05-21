@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFrame, QScrollArea, QFileDialog, QMessageBox,
     QTextEdit, QStackedWidget, QProgressBar, QDialog,
-    QLineEdit, QSizePolicy
+    QLineEdit, QSizePolicy, QInputDialog
 )
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont
@@ -698,3 +698,9 @@ class FlashcardWidget(QWidget):
     def _retranslate(self):
         self.lbl_title.setText(tr("flash_title"))
         self.lbl_sub.setText(tr("flash_subtitle"))
+
+    def set_ai_limit(self, limit: int):
+        """Cập nhật giới hạn số câu hỏi tối đa sinh bởi AI (gọi từ Settings)"""
+        # Bạn có thể lưu vào thuộc tính để giới hạn số vòng lặp [:limit] thay vì cố định [:20]
+        self.ai_limit = limit
+        print(f"⚙️ FlashcardWidget updated AI limit to: {limit}")
