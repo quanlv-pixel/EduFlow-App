@@ -29,9 +29,11 @@ class ForgotPasswordDialog(QDialog):
         self.controller = controller
         self.target_email = None
 
+        self.setObjectName("LoginWindow")
+
         self.setWindowTitle("Quên mật khẩu")
         self.setFixedSize(380, 420)
-        self.setStyleSheet("background-color: white;")
+        
 
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(30, 30, 30, 30)
