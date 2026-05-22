@@ -313,6 +313,37 @@ class Database:
                 (mid7,)
             )
             self.conn.commit()
+
+        # Migration 8: thêm tutorial_cache vào courses
+        mid8 = "courses_add_tutorial_cache"
+
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?",
+            (mid8,)
+        ).fetchone()
+
+        if not row:
+            existing_cols = [
+                r[1] for r in
+                self.cursor.execute(
+                    "PRAGMA table_info(courses)"
+                ).fetchall()
+            ]
+
+            if "tutorial_cache" not in existing_cols:
+                self.cursor.execute(
+                    """
+                    ALTER TABLE courses
+                    ADD COLUMN tutorial_cache TEXT
+                    """
+                )
+
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)",
+                (mid8,)
+            )
+
+            self.conn.commit()
     def create_default_user(self):
         self.cursor.execute(
             "SELECT * FROM users WHERE email=?",
@@ -655,7 +686,7 @@ class Database:
                 ON f.deck_id=d.id
             WHERE d.user_id=?
             GROUP BY d.id
-            ORDER BY d.created_at DESC
+            ORDER BY d.id DESC
         """,(user_id,),fetch=True) or []
     
     def get_document_detail(self, document_id):
@@ -710,7 +741,7 @@ class Database:
                 parent_id = row["parent_id"]
                 
                 # 3. Kích hoạt Tích xanh cho bài học trong bảng lessons
-                self.execute("UPDATE lessons SET is_completed=1 WHERE id=?", (lesson_id,))
+                self.execute("UPDATE lessons SET completed=1 WHERE id=?", (lesson_id,))
                 
                 # 4. Kiểm tra xem toàn bộ các bài học nhỏ trong Khóa học lớn này đã hoàn thành hết chưa
                 if parent_id:
