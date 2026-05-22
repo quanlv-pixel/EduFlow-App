@@ -62,8 +62,24 @@ class YouTubeService:
         return videos
 
     def get_lessons_from_url(self, url: str) -> list[dict]:
-        """Hàm tổng — controller chỉ cần gọi hàm này."""
-        playlist_id = self.extract_playlist_id(url)
-        if not playlist_id:
+            """Hàm tổng — tự nhận diện playlist hoặc video đơn."""
+            # 1. Thử bóc tách theo dạng Playlist
+            playlist_id = self.extract_playlist_id(url)
+            if playlist_id:
+                return self.get_videos_from_playlist(playlist_id)
+                
+            # 2. Nếu không phải playlist, thử lấy Video ID đơn lẻ (FALLBACK)
+            video_match = re.search(r"(?:v=|/)([0-9A-Za-z_-]{11}).*", url)
+            if video_match:
+                video_id = video_match.group(1)
+                # Khởi tạo 1 bài học duy nhất cho video này
+                return [{
+                    "title": "Bài học Video độc lập", # Tiêu đề mặc định
+                    "url": f"https://www.youtube.com/watch?v={video_id}",
+                    "video_id": video_id,
+                    "position": 0,
+                    "is_web_course": False,
+                    "source": "YouTube",
+                }]
+                
             return []
-        return self.get_videos_from_playlist(playlist_id)

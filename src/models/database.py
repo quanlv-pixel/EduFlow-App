@@ -100,11 +100,10 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 title TEXT,
-                source TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                source TEXT DEFAULT 'manual', -- 'manual', 'ai', 'course'
                 is_completed INTEGER DEFAULT 0,
-                parent_id INTEGER DEFAULT NULL,  -- NULL nếu là bộ lớn (tên khóa học), có ID nếu là bộ nhỏ (từng bài)
-                lesson_id INTEGER DEFAULT NULL,  -- Liên kết trực tiếp tới bài học để tích xanh khi làm xong
+                parent_id INTEGER DEFAULT NULL,
+                lesson_id INTEGER DEFAULT NULL,
                 FOREIGN KEY (parent_id) REFERENCES flashcard_decks(id) ON DELETE CASCADE,
                 FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
             )
