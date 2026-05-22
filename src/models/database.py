@@ -541,18 +541,7 @@ class Database:
         self.conn.commit()
         return cur.lastrowid
 
-    def get_decks(self, user_id):
-            # FIX: Chỉ lấy các bộ gốc (parent_id IS NULL), không lấy bộ bài học nhỏ ra màn hình chính
-            return self.execute("""
-                SELECT d.*,
-                    COUNT(f.id) as card_count
-                FROM flashcard_decks d
-                LEFT JOIN flashcards f
-                    ON f.deck_id=d.id
-                WHERE d.user_id=? AND d.parent_id IS NULL
-                GROUP BY d.id
-                ORDER BY d.created_at DESC
-            """, (user_id,), fetch=True) or []
+
 
     def get_sub_decks(self, user_id, parent_id):
         """Lấy danh sách các bộ flashcard bài học nhỏ nằm trong khóa học lớn"""
