@@ -36,16 +36,17 @@ class WebTutorialWorker(QThread):
     finished = Signal(str)
     error    = Signal(str)
 
-    def __init__(self, controller, source_platform, course_name):
+    def __init__(self, controller, source_platform, course_name, course_id=None):
         super().__init__()
         self.controller      = controller
         self.source_platform = source_platform
         self.course_name     = course_name
+        self.course_id       = course_id
 
     def run(self):
         try:
             text = self.controller.get_course_tutorial(
-                self.source_platform, self.course_name
+                self.source_platform, self.course_name, self.course_id
             )
             self.finished.emit(text or "")
         except Exception as e:
@@ -764,7 +765,8 @@ class CourseDetailWidget(QWidget):
         self._tutorial_worker = WebTutorialWorker(
             self.controller,
             source_platform,
-            (self.course_data or {}).get("name", "")
+            (self.course_data or {}).get("name", ""),
+            course_id=self.course_id 
         )
         self._tutorial_worker.finished.connect(
             lambda text: txt_guide.setMarkdown(text) if text else None

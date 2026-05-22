@@ -226,8 +226,9 @@ Return ONLY a JSON array, no extra text:
         if video_id:
             try:
                 # Thử lấy phụ đề tiếng Việt trước, nếu không có thì lấy tiếng Anh
-                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['vi', 'en'])
-                script_text = " ".join([item['text'] for item in transcript])
+                ytt = YouTubeTranscriptApi()
+                transcript_list = ytt.fetch(video_id, languages=['vi', 'en'])
+                script_text = " ".join([item.text for item in transcript_list])
             except Exception as e:
                 print(f"⚠️ Không thể tự động lấy phụ đề từ YouTube ({e}). AI sẽ tự suy luận dựa trên tiêu đề bài học.")
         

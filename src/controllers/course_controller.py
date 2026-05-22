@@ -181,20 +181,33 @@ class CourseController:
             return []
         
 
-    def get_course_tutorial(self, source_platform: str, course_title: str) -> str:
-            """AI tạo cẩm nang hướng dẫn học tối ưu cho riêng từng nền tảng Web"""
-            if not self.ai:
-                return "Chào mừng bạn đến với khóa học. Hãy truy cập liên kết chính thức để tự học theo lộ trình chuẩn của website."
-                
-            prompt = f"""
-            Người dùng đang chuẩn bị học khóa học '{course_title}' trên nền tảng website '{source_platform}'.
-            Hãy biên soạn một cẩm nang hướng dẫn tự học ngắn gọn, thông minh (gồm 3-4 bước thực tế).
-            Yêu cầu: Chỉ rõ mẹo để khai thác tốt nhất website này (ví dụ: cách tìm bài tập thực hành trên đó, cách tận dụng forum thảo luận hoặc đọc tài liệu đính kèm của nền tảng {source_platform}).
-            Ngôn ngữ: Tiếng Việt. Trực diện, súc tích, trình bày đẹp bằng các gạch đầu dòng (Markdown).
-            """
-            try:
-                # Gọi trực tiếp qua phương thức giao tiếp AI của bạn
-                return self.ai._call_ai(prompt)
-            except Exception as e:
-                print(f"❌ Lỗi sinh cẩm nang học: {e}")
-                return f"Hệ thống đã kết nối tới {source_platform}. Bạn hãy nhấn nút 'Mở liên kết' phía trên để học trực tiếp bài học & làm bài tập đi kèm."
+    def get_course_tutorial(self, source_platform: str, course_name: str, course_id: int = None) -> str:
+        """
+        Trả tutorial từ cache nếu có.
+        Nếu chưa có → gọi AI → lưu cache → trả về.
+        """
+        # 1. Kiểm tra cache trước
+        if course_id:
+            cached = self.db.get_tutorial_cache(course_id)
+            if cached:
+                print(f"[Tutorial] ✅ Lấy từ cache (course_id={course_id})")
+                return cached
+
+        # 2. Chưa có → gọi AI
+        prompt = f"""
+    Bạn là chuyên gia tư vấn học tập.
+    Sinh viên muốn tự học "{course_name}" trên nền tảng {source_platform}.
+
+    Hãy viết cẩm nang tự học ngắn gọn, thực tế gồm 4-5 bước,
+    phù hợp riêng với {source_platform} (ví dụ: cách dùng forum, cách làm bài tập, cách theo dõi tiến độ).
+
+    Viết bằng Tiếng Việt, rõ ràng, dùng emoji cho mỗi bước.
+    """
+        text = self.ai.generate_tutorial(prompt)  # hoặc self.ai._call_ai(prompt)
+
+        # 3. Lưu cache
+        if course_id and text and not text.startswith("❌"):
+            self.db.save_tutorial_cache(course_id, text)
+            print(f"[Tutorial] 💾 Đã lưu cache (course_id={course_id})")
+
+        return text

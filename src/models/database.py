@@ -728,7 +728,24 @@ class Database:
             return True
         except Exception as e:
             print(f"❌ Lỗi cập nhật tiến độ hoàn thành bài học: {e}")
-            return False        
+            return False    
+
+    def get_tutorial_cache(self, course_id: int) -> str | None:
+        """Lấy tutorial đã cache, trả None nếu chưa có."""
+        rows = self.execute(
+            "SELECT tutorial_cache FROM courses WHERE id = ?",
+            (course_id,), fetch=True
+        )
+        if rows and rows[0].get("tutorial_cache"):
+            return rows[0]["tutorial_cache"]
+        return None
+
+    def save_tutorial_cache(self, course_id: int, text: str):
+        """Lưu tutorial vào DB để lần sau không cần gọi AI lại."""
+        self.execute(
+            "UPDATE courses SET tutorial_cache = ? WHERE id = ?",
+            (text, course_id)
+        )    
 
     # ================= CLOSE =================
     def close(self):
