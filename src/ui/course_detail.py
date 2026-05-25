@@ -238,7 +238,6 @@ class LessonItem(QFrame):
             }
             QPushButton:hover { background-color: #1A4FE0; }
         """)
-        # FIX: không để None — dùng self._on_flashcard đã lưu
         btn_flash.clicked.connect(lambda: self._on_flashcard(self.lesson))
         layout.addWidget(btn_flash)
 
@@ -408,138 +407,123 @@ class CourseDetailWidget(QWidget):
         self.lbl_code_badge = QLabel()
         self.lbl_code_badge.setStyleSheet("""
             background: #EEF2FF; color: #2D60FF;
-            border-radius: 8px; padding: 3px 12px;
+            border-radius: 8px; padding: 4px 10px;
             font-size: 12px; font-weight: 600;
         """)
 
         self.lbl_status_badge = QLabel()
         self.lbl_status_badge.setStyleSheet("""
-            background: #ECFDF5; color: #10B981;
+            background: #EEF2FF; color: #2D60FF;
             border-radius: 12px; padding: 4px 14px;
             font-size: 12px; font-weight: 600;
         """)
 
         title_row.addWidget(self.lbl_title)
-        title_row.addWidget(self.lbl_code_badge)
         title_row.addStretch()
+        title_row.addWidget(self.lbl_code_badge)
         title_row.addWidget(self.lbl_status_badge)
+        header_card_layout.addLayout(title_row)
 
         self.lbl_prof = QLabel()
-        self.lbl_prof.setStyleSheet(
-            "color: #6F767E; font-size: 13px; font-style: italic; background: transparent;"
-        )
-
-        self.lbl_desc_title = QLabel()
-        self.lbl_desc_title.setStyleSheet(
-            "font-size: 15px; font-weight: bold; color: #1E2328; background: transparent;"
-        )
-
-        self.lbl_desc = QLabel()
-        self.lbl_desc.setStyleSheet("color: #6F767E; font-size: 13px; background: transparent;")
-        self.lbl_desc.setWordWrap(True)
-
-        stats_row = QHBoxLayout()
-        stats_row.setSpacing(30)
-        self.stat_lessons   = self._make_stat("lessons",   "📺", tr("stat_lessons"),   "0")
-        self.stat_exercises = self._make_stat("exercises", "✅", tr("stat_exercises"), "0")
-        self.stat_progress  = self._make_stat("progress",  "🔵", tr("stat_progress"),  "0%")
-        stats_row.addLayout(self.stat_lessons)
-        stats_row.addLayout(self.stat_exercises)
-        stats_row.addLayout(self.stat_progress)
-        stats_row.addStretch()
+        self.lbl_prof.setStyleSheet("font-size: 13px; color: #6F767E; background: transparent;")
+        header_card_layout.addWidget(self.lbl_prof)
 
         self.progress_bar = QProgressBar()
-        self.progress_bar.setValue(0)
-        self.progress_bar.setTextVisible(False)
         self.progress_bar.setFixedHeight(8)
+        self.progress_bar.setTextVisible(False)
         self.progress_bar.setStyleSheet("""
-            QProgressBar { border: none; background-color: #EEF0F4; border-radius: 4px; }
-            QProgressBar::chunk { background-color: #2D60FF; border-radius: 4px; }
+            QProgressBar { border: none; background: #EEF0F4; border-radius: 4px; }
+            QProgressBar::chunk { background: #2D60FF; border-radius: 4px; }
         """)
-
-        header_card_layout.addLayout(title_row)
-        header_card_layout.addWidget(self.lbl_prof)
-        header_card_layout.addSpacing(4)
-        header_card_layout.addWidget(self.lbl_desc_title)
-        header_card_layout.addWidget(self.lbl_desc)
-        header_card_layout.addSpacing(8)
-        header_card_layout.addLayout(stats_row)
         header_card_layout.addWidget(self.progress_bar)
+
+        # Stats row
+        stats_row = QHBoxLayout()
+        stats_row.setSpacing(24)
+        stats_row.addLayout(self._make_stat("lessons",   "📚", "", "0"))
+        stats_row.addLayout(self._make_stat("exercises", "✏️",  "", "0"))
+        stats_row.addLayout(self._make_stat("progress",  "📊", "", "0%"))
+        stats_row.addStretch()
+        header_card_layout.addLayout(stats_row)
+
         left.addWidget(self.header_card)
 
         # Lessons card
         lessons_card = QFrame()
-        lessons_card.setObjectName("CardWhite")
+        lessons_card.setObjectName("CardWhite2")
         lessons_card.setStyleSheet("""
-            QFrame#CardWhite {
+            QFrame#CardWhite2 {
                 background: #FFFFFF; border-radius: 20px;
                 border: 1px solid #EDEDED;
             }
         """)
         lessons_card_layout = QVBoxLayout(lessons_card)
-        lessons_card_layout.setContentsMargins(20, 18, 20, 18)
+        lessons_card_layout.setContentsMargins(24, 20, 24, 20)
         lessons_card_layout.setSpacing(10)
 
         self.lbl_content = QLabel()
         self.lbl_content.setStyleSheet(
-            "font-size: 16px; font-weight: bold; color: #1E2328; background: transparent;"
+            "font-size: 15px; font-weight: bold; color: #1E2328; background: transparent;"
         )
         lessons_card_layout.addWidget(self.lbl_content)
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet("background: transparent; border: none;")
+        scroll_lessons = QScrollArea()
+        scroll_lessons.setWidgetResizable(True)
+        scroll_lessons.setFrameShape(QFrame.NoFrame)
+        scroll_lessons.setStyleSheet("background: transparent; border: none;")
+        scroll_lessons.setMinimumHeight(240)
 
-        scroll_content = QWidget()
-        scroll_content.setStyleSheet("background: transparent;")
-
-        self.layout_lessons = QVBoxLayout(scroll_content)
+        lessons_container = QWidget()
+        lessons_container.setStyleSheet("background: transparent;")
+        self.layout_lessons = QVBoxLayout(lessons_container)
         self.layout_lessons.setContentsMargins(0, 0, 0, 0)
         self.layout_lessons.setSpacing(8)
         self.layout_lessons.addStretch()
 
-        scroll.setWidget(scroll_content)
-        lessons_card_layout.addWidget(scroll)
+        scroll_lessons.setWidget(lessons_container)
+        lessons_card_layout.addWidget(scroll_lessons)
+
         left.addWidget(lessons_card, stretch=1)
 
         # ── RIGHT COLUMN ──
         right = QVBoxLayout()
-        right.setSpacing(18)
-        right.setAlignment(Qt.AlignTop)
+        right.setSpacing(16)
+        right.setContentsMargins(0, 0, 0, 0)
 
         res_card = QFrame()
-        res_card.setObjectName("CardWhite")
         res_card.setFixedWidth(280)
         res_card.setStyleSheet("""
-            QFrame#CardWhite {
+            QFrame {
                 background: #FFFFFF; border-radius: 20px;
                 border: 1px solid #EDEDED;
             }
         """)
         res_layout = QVBoxLayout(res_card)
-        res_layout.setContentsMargins(20, 18, 20, 18)
-        res_layout.setSpacing(0)
+        res_layout.setContentsMargins(20, 20, 20, 20)
+        res_layout.setSpacing(10)
 
-        lbl_ext = QLabel("🔗")
-        lbl_ext.setStyleSheet("font-size: 18px; background: transparent;")
-        res_layout.addWidget(lbl_ext)
-        res_layout.addSpacing(8)
+        self.lbl_pop = QLabel()
+        self.lbl_pop.setStyleSheet(
+            "font-size: 14px; font-weight: bold; color: #1E2328; background: transparent;"
+        )
+        res_layout.addWidget(self.lbl_pop)
+
+        self.lbl_desc_title = QLabel()
+        self.lbl_desc_title.setStyleSheet(
+            "font-size: 12px; color: #6F767E; background: transparent;"
+        )
+        res_layout.addWidget(self.lbl_desc_title)
+
+        self.lbl_desc = QLabel()
+        self.lbl_desc.setWordWrap(True)
+        self.lbl_desc.setStyleSheet("font-size: 12px; color: #374151; background: transparent;")
+        res_layout.addWidget(self.lbl_desc)
 
         self.res_container = QVBoxLayout()
         res_layout.addLayout(self.res_container)
 
-        self.lbl_pop = QLabel()
-        self.lbl_pop.setStyleSheet(
-            "font-size: 10px; color: #9BA3AF; font-weight: 700; "
-            "letter-spacing: 1px; background: transparent;"
-        )
-        res_layout.addSpacing(12)
-        res_layout.addWidget(self.lbl_pop)
-
         tags_layout = QHBoxLayout()
-        tags_layout.setSpacing(6)
-        for tag in ["W3Schools", "Coursera", "Study4", "EdX"]:
+        for tag in ["Tự học", "Online", "AI hỗ trợ"]:
             t = QLabel(tag)
             t.setStyleSheet("""
                 background: #F3F4F6; color: #6F767E;
@@ -670,15 +654,12 @@ class CourseDetailWidget(QWidget):
 
         self._clear_lessons()
 
-        # Lấy nhanh 1 lesson để biết loại course (Web hay YouTube)
-        # Không gọi toàn bộ — chỉ peek row đầu tiên từ DB
         try:
             first_lessons = self.controller.get_lessons(self.course_id)
         except Exception:
             first_lessons = []
 
         if not first_lessons:
-            # Chưa có bài học nào trong DB
             lbl = QLabel(tr("course_detail_no_lessons"))
             lbl.setStyleSheet("color: #9BA3AF; font-size: 13px; background: transparent;")
             self.layout_lessons.insertWidget(0, lbl)
@@ -761,16 +742,28 @@ class CourseDetailWidget(QWidget):
         """)
         self.layout_lessons.insertWidget(self.layout_lessons.count() - 1, txt_guide)
 
+        # FIX: Đảm bảo course_id được lấy từ self chứ không để None
+        # Trước đây course_id có thể là None nếu lesson không có trường này
+        current_course_id = self.course_id
+        current_course_name = (self.course_data or {}).get("name", "")
+
         # Worker gọi AI ngầm — không đứng hình
         self._tutorial_worker = WebTutorialWorker(
             self.controller,
             source_platform,
-            (self.course_data or {}).get("name", ""),
-            course_id=self.course_id 
+            current_course_name,
+            course_id=current_course_id  # FIX: dùng self.course_id thay vì lesson field
         )
-        self._tutorial_worker.finished.connect(
-            lambda text: txt_guide.setMarkdown(text) if text else None
-        )
+
+        def _on_tutorial_done(text: str):
+            if not text:
+                return
+            # FIX: Dùng setHtml thay vì setMarkdown để tránh lỗi render trên một số phiên bản Qt
+            # Chuyển đổi markdown cơ bản sang HTML để hiển thị đúng
+            html = self._markdown_to_html(text)
+            txt_guide.setHtml(html)
+
+        self._tutorial_worker.finished.connect(_on_tutorial_done)
         self._tutorial_worker.error.connect(
             lambda err: txt_guide.setHtml(
                 f"<span style='color:#EF4444;'>Không thể kết nối AI ({err}). "
@@ -781,12 +774,39 @@ class CourseDetailWidget(QWidget):
 
         self._update_stats([lesson])
 
+    @staticmethod
+    def _markdown_to_html(text: str) -> str:
+        """
+        Chuyển đổi Markdown đơn giản sang HTML để hiển thị trong QTextEdit.
+        FIX: setMarkdown() trên một số phiên bản PySide6 không render emoji/bold đúng.
+        """
+        import re
+        lines = text.split("\n")
+        html_lines = []
+        for line in lines:
+            # Heading ##
+            if line.startswith("## "):
+                line = f"<h3 style='color:#1E2328;margin:8px 0 4px;'>{line[3:]}</h3>"
+            elif line.startswith("# "):
+                line = f"<h2 style='color:#1E2328;'>{line[2:]}</h2>"
+            # Bold **text**
+            line = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", line)
+            # Bullet list
+            if line.startswith("- ") or line.startswith("* "):
+                line = f"<li style='margin:2px 0;'>{line[2:]}</li>"
+            elif line.strip() == "":
+                line = "<br>"
+            else:
+                line = f"<p style='margin:2px 0;'>{line}</p>"
+            html_lines.append(line)
+        return "<html><body style='font-family:sans-serif;font-size:13px;line-height:1.6;'>" \
+               + "".join(html_lines) + "</body></html>"
+
     # ── YOUTUBE COURSE ────────────────────────────────────────────
     def _render_youtube_loading(self, lessons: list):
         if hasattr(self, "btn_cta") and self.btn_cta:
             self.btn_cta.show()
 
-        # Hiện loading spinner
         lbl_loading = QLabel("⏳ Đang tải danh sách bài học từ YouTube...")
         lbl_loading.setStyleSheet(
             "color: #6F767E; font-size: 13px; font-style: italic; background: transparent;"
@@ -794,8 +814,6 @@ class CourseDetailWidget(QWidget):
         self.layout_lessons.insertWidget(self.layout_lessons.count() - 1, lbl_loading)
 
         self._update_stats(lessons)
-
-        # Render ngay những gì đã có trong DB (tải nhanh)
         self._render_lesson_list(lessons, lbl_loading)
 
     def _render_lesson_list(self, lessons: list, lbl_loading=None):
@@ -863,7 +881,11 @@ class CourseDetailWidget(QWidget):
             BadgeDialog(course_name, self).exec()
 
     def handle_flashcard(self, lesson: dict):
-        """Xử lý tạo Flashcard từ 1 bài học — dùng AI đọc transcript YouTube."""
+        """
+        Xử lý tạo Flashcard từ 1 bài học.
+        FIX: Gán đúng parent_id để deck bài học nằm dưới deck khóa học cha.
+        FIX: Lưu flashcard dạng trắc nghiệm (có options) đúng cấu trúc.
+        """
         if not self.user_id:
             QMessageBox.warning(self, "Lỗi", "Không xác định được người dùng.")
             return
@@ -872,7 +894,7 @@ class CourseDetailWidget(QWidget):
         course_name  = (self.course_data or {}).get("name", "")
         deck_title   = f"{lesson_title}" + (f" — {course_name}" if course_name else "")
 
-        # Kiểm tra deck đã tồn tại chưa
+        # Kiểm tra deck bài học này đã tồn tại chưa (tránh tạo trùng)
         existing = self.controller.db.execute(
             "SELECT id FROM flashcard_decks WHERE user_id=? AND title=? AND source='course'",
             (self.user_id, deck_title),
@@ -899,23 +921,50 @@ class CourseDetailWidget(QWidget):
                 return
 
             lesson_id = lesson.get("id")
-            deck_id   = self.controller.db.create_deck(
+
+            # FIX: Đảm bảo có deck CHA cho khóa học trước
+            # Nếu flashcard_controller có hàm ensure_course_parent_deck thì dùng
+            parent_deck_id = None
+            if course_name and hasattr(self.controller, 'flashcard_controller'):
+                fc = self.controller.flashcard_controller
+                parent_deck_id = fc.ensure_course_parent_deck(
+                    self.user_id, self.course_id, course_name
+                )
+
+            # Tạo deck CON cho từng bài học, gán parent_id = deck khóa học cha
+            deck_id = self.controller.db.create_deck(
                 self.user_id, deck_title, source="course", lesson_id=lesson_id
             )
+            if parent_deck_id is not None:
+                self.controller.db.execute(
+                    "UPDATE flashcard_decks SET parent_id=? WHERE id=?",
+                    (parent_deck_id, deck_id)
+                )
 
             saved = 0
             for c in cards:
                 q = c.get("q") or c.get("question", "")
-                a = c.get("a") or c.get("answer", "")
-                if q and a:
-                    self.controller.db.add_flashcard(self.user_id, q, a, deck_id)
+                a_val = c.get("a")
+                if a_val is None:
+                    a_val = c.get("answer", "")
+
+                # FIX: Lưu đúng cấu trúc trắc nghiệm (options) nếu có
+                if "options" in c and isinstance(c["options"], list):
+                    options_str = "|".join(c["options"])
+                    q_saved = f"{q}||options||{options_str}"
+                    a_saved = str(a_val)  # lưu index số nguyên dạng string
+                else:
+                    q_saved = q
+                    a_saved = str(a_val)
+
+                if q_saved and a_saved:
+                    self.controller.db.add_flashcard(self.user_id, q_saved, a_saved, deck_id)
                     saved += 1
 
             QMessageBox.information(
                 self, "✅ Đã tạo Flashcard",
                 f"Đã tạo {saved} flashcard cho bài\n\"{lesson_title}\".\n\n"
-                "Vào mục Khóa học → bài học này để ôn tập,\n"
-                "hoặc vào mục Flashcard → 'Từ khóa học' để xem tất cả."
+                "Vào mục Flashcard → 'Từ khóa học' để ôn tập."
             )
 
         except Exception as e:

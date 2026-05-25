@@ -151,10 +151,10 @@ class PromptDialog(QDialog):
         btn_row = QHBoxLayout()
         btn_cancel = self._btn(tr("cancel"), "#F3F4F6", "#374151")
         btn_cancel.clicked.connect(self.reject)
-        
+
         self.btn_ok = self._btn(tr("flash_prompt_generate"), "#2D60FF", "white")
         self.btn_ok.clicked.connect(self._on_ok)
-        
+
         btn_row.addWidget(btn_cancel)
         btn_row.addWidget(self.btn_ok)
         layout.addLayout(btn_row)
@@ -213,7 +213,7 @@ class DeckCard(QFrame):
         layout.setSpacing(14)
 
         source = deck.get("source", "")
-        icon = "📄" if source == "file" else "🤖"
+        icon = "📚" if source == "course" else ("📄" if source == "file" else "🤖")
         lbl_icon = QLabel(icon)
         lbl_icon.setFixedSize(44, 44)
         lbl_icon.setAlignment(Qt.AlignCenter)
@@ -226,13 +226,12 @@ class DeckCard(QFrame):
         lbl_title.setStyleSheet("font-size:15px;font-weight:bold;color:#1E2328;background:transparent;")
 
         count = deck.get("card_count", 0)
-        created = deck.get("created_at", "")[:10]
         done = bool(deck.get("is_completed", 0))
 
         status_text = "✅ Đã hoàn thành" if done else "⏳ Chưa hoàn thành"
         status_color = "#10B981" if done else "#F59E0B"
 
-        lbl_meta = QLabel(f"{count} câu hỏi  •  {created}")
+        lbl_meta = QLabel(f"{count} câu hỏi")
         lbl_meta.setStyleSheet("font-size:12px;color:#6F767E;background:transparent;")
 
         lbl_status = QLabel(status_text)
@@ -300,35 +299,38 @@ class QuizWidget(QWidget):
 
     def _build_quiz(self, cards: list) -> list:
         """Nhận diện chuỗi đóng gói ||options|| hoặc tự tạo đáp án nhiễu ngẫu nhiên."""
-        all_answers = [c.get("answer", c.get("a", "")) for c in cards if "||options||" not in (c.get("question") or c.get("q", ""))]
+        all_answers = [
+            c.get("answer", c.get("a", ""))
+            for c in cards
+            if "||options||" not in (c.get("question") or c.get("q", ""))
+        ]
         result = []
-        
+
         for c in cards:
             q = c.get("question") or c.get("q", "")
             a = c.get("answer") or c.get("a", "")
 
-            # TRƯỜNG HỢP 1: Cấu trúc trắc nghiệm đóng gói sẵn từ Khóa học hoặc Youtube
+            # TRƯỜNG HỢP 1: Cấu trúc trắc nghiệm đóng gói sẵn
             if "||options||" in q:
                 parts = q.split("||options||")
                 question_text = parts[0]
                 options_list = parts[1].split("|")
-                
-                # Biến đổi a thành chỉ số index tương ứng để kiểm tra tính đúng đắn
+
                 try:
                     correct_idx = int(a)
-                except ValueError:
+                except (ValueError, TypeError):
                     correct_idx = 0
                     if a in options_list:
                         correct_idx = options_list.index(a)
-                
+
                 result.append({
                     "q": question_text,
-                    "a_text": options_list[correct_idx] if correct_idx < len(options_list) else a,
+                    "a_text": options_list[correct_idx] if correct_idx < len(options_list) else str(a),
                     "options": options_list,
                     "correct_index": correct_idx
                 })
-            
-            # TRƯỜNG HỢP 2: Flashcard 2 mặt truyền thống -> Tự sinh đáp án gây nhiễu
+
+            # TRƯỜNG HỢP 2: Flashcard 2 mặt truyền thống → Tự sinh đáp án gây nhiễu
             else:
                 wrongs = [x for x in all_answers if x != a]
                 random.shuffle(wrongs)
@@ -336,7 +338,7 @@ class QuizWidget(QWidget):
                 while len(options) < 4:
                     options.append(tr("flash_empty_option") or "Đáp án khác")
                 random.shuffle(options)
-                
+
                 result.append({
                     "q": q,
                     "a_text": a,
@@ -373,12 +375,12 @@ class QuizWidget(QWidget):
         q_card.setObjectName("QCard")
         q_card.setMinimumHeight(120)
         q_card.setStyleSheet("QFrame#QCard { background:#EEF2FF;border-radius:20px;border:none; }")
-        
+
         q_layout = QVBoxLayout(q_card)
         q_layout.setContentsMargins(32, 24, 32, 24)
         lbl_q_badge = QLabel("CÂU HỎI")
         lbl_q_badge.setStyleSheet("font-size:10px;font-weight:700;color:#6366F1;letter-spacing:1.5px;background:transparent;")
-        
+
         self.lbl_question = QLabel()
         self.lbl_question.setWordWrap(True)
         self.lbl_question.setAlignment(Qt.AlignCenter)
@@ -387,7 +389,7 @@ class QuizWidget(QWidget):
         font.setBold(True)
         self.lbl_question.setFont(font)
         self.lbl_question.setStyleSheet("color:#1E2328;background:transparent;")
-        
+
         q_layout.addWidget(lbl_q_badge, alignment=Qt.AlignLeft)
         q_layout.addSpacing(8)
         q_layout.addWidget(self.lbl_question)
@@ -435,7 +437,6 @@ class QuizWidget(QWidget):
         c = self.cards[self.index]
         self.lbl_question.setText(c["q"])
 
-        # Cập nhật thanh tiến độ
         self.lbl_progress_text.setText(f"Câu hỏi {self.index + 1} trên {len(self.cards)}")
         self.lbl_score.setText(f"Đúng: {self.score}")
         percent = int((self.index / len(self.cards)) * 100)
@@ -484,6 +485,10 @@ class QuizWidget(QWidget):
 
 # ================================================================
 # MAIN FLASHCARD WIDGET
+# Stack index:
+#   0 — Trang chính (tab Flashcard cá nhân / Từ khóa học)
+#   1 — QuizWidget đang làm bài
+#   2 — Loading AI
 # ================================================================
 class FlashcardWidget(QWidget):
     def __init__(self, controller, user_id: int):
@@ -491,38 +496,104 @@ class FlashcardWidget(QWidget):
         self.controller = controller
         self.user_id = user_id
         self.current_deck_id = None
+        self._current_parent_deck_id = None   # deck cha đang xem (màn lesson list)
 
-        # Giao diện Phân tầng (Stack)
-        # Index 0: Danh sách bộ / Index 1: Màn học Quiz / Index 2: Đang tải AI
+        self._lm = LanguageManager.instance()
+        self._lm.language_changed.connect(self._retranslate)
+
         self.stack = QStackedWidget(self)
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.stack)
 
-        self._init_page_list()
-        self._init_page_loading()
+        self._init_page_main()       # index 0 — trang chính có 2 tab
+        self._init_page_loading()    # index 1 — loading AI (di chuyển lên 1)
 
         self.stack.setCurrentIndex(0)
-        self._load_decks()
+        self._load_my_decks()
 
-    def _init_page_list(self):
+    # ================================================================
+    # PAGE 0 — TRANG CHÍNH (2 tab)
+    # ================================================================
+    def _init_page_main(self):
         page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(32, 24, 32, 24)
-        layout.setSpacing(20)
+        outer = QVBoxLayout(page)
+        outer.setContentsMargins(32, 24, 32, 24)
+        outer.setSpacing(0)
 
-        # Tiêu đề chính
+        # ── Tiêu đề ──
         self.lbl_title = QLabel(tr("flash_title"))
         self.lbl_title.setStyleSheet("font-size:24px;font-weight:bold;color:#1E2328;")
         self.lbl_sub = QLabel(tr("flash_subtitle"))
-        self.lbl_sub.setStyleSheet("font-size:14px;color:#6F767E;")
-        layout.addWidget(self.lbl_title)
-        layout.addWidget(self.lbl_sub)
+        self.lbl_sub.setStyleSheet("font-size:14px;color:#6F767E;margin-bottom:16px;")
+        outer.addWidget(self.lbl_title)
+        outer.addWidget(self.lbl_sub)
 
-        # Khu vực điều hướng thêm mới
+        # ── Tab bar ──
+        tab_bar = QHBoxLayout()
+        tab_bar.setSpacing(0)
+        tab_bar.setContentsMargins(0, 0, 0, 0)
+
+        self.btn_tab_my = QPushButton("📝  Flashcard của tôi")
+        self.btn_tab_course = QPushButton("📚  Từ khóa học")
+        for btn in (self.btn_tab_my, self.btn_tab_course):
+            btn.setFixedHeight(40)
+            btn.setCursor(Qt.PointingHandCursor)
+        self.btn_tab_my.clicked.connect(lambda: self._switch_tab(0))
+        self.btn_tab_course.clicked.connect(lambda: self._switch_tab(1))
+
+        tab_bar.addWidget(self.btn_tab_my)
+        tab_bar.addWidget(self.btn_tab_course)
+        tab_bar.addStretch()
+        outer.addLayout(tab_bar)
+
+        # ── Tab content stack ──
+        self.tab_stack = QStackedWidget()
+        outer.addWidget(self.tab_stack, stretch=1)
+
+        self._init_tab_my_decks()       # tab_stack index 0
+        self._init_tab_course_decks()   # tab_stack index 1
+
+        self._switch_tab(0)
+        self.stack.addWidget(page)
+
+    def _tab_btn_style(self, active: bool) -> str:
+        if active:
+            return """
+                QPushButton {
+                    background:#2D60FF;color:white;
+                    border-radius:0;border-bottom:3px solid #1A4FE0;
+                    font-size:13px;font-weight:bold;padding:0 20px;
+                }
+            """
+        return """
+            QPushButton {
+                background:transparent;color:#6F767E;
+                border-radius:0;border-bottom:2px solid #EDEDED;
+                font-size:13px;font-weight:500;padding:0 20px;
+            }
+            QPushButton:hover { color:#2D60FF; }
+        """
+
+    def _switch_tab(self, idx: int):
+        self.tab_stack.setCurrentIndex(idx)
+        self.btn_tab_my.setStyleSheet(self._tab_btn_style(idx == 0))
+        self.btn_tab_course.setStyleSheet(self._tab_btn_style(idx == 1))
+        if idx == 0:
+            self._load_my_decks()
+        else:
+            self._load_course_decks()
+
+    # ── TAB 0: Flashcard của tôi ──────────────────────────────────
+    def _init_tab_my_decks(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 16, 0, 0)
+        layout.setSpacing(16)
+
+        # Nút tạo mới
         actions = QHBoxLayout()
-        actions.setSpacing(16)
-
+        actions.setSpacing(12)
         self.btn_file = QPushButton("📁 Tạo từ File (PDF/Docx)")
         self.btn_file.setFixedHeight(44)
         self.btn_file.setCursor(Qt.PointingHandCursor)
@@ -539,28 +610,300 @@ class FlashcardWidget(QWidget):
         actions.addWidget(self.btn_topic)
         layout.addLayout(actions)
 
-        # Danh sách hiển thị cuộn Area
+        # Danh sách deck
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("QScrollArea { border:none;background:transparent; }")
-        
+
         scroll_content = QWidget()
         scroll_content.setStyleSheet("background:transparent;")
-        self.decks_layout = QVBoxLayout(scroll_content)
-        self.decks_layout.setContentsMargins(0, 4, 0, 4)
-        self.decks_layout.setSpacing(12)
-        self.decks_layout.addStretch()
-        
+        self.my_decks_layout = QVBoxLayout(scroll_content)
+        self.my_decks_layout.setContentsMargins(0, 4, 0, 4)
+        self.my_decks_layout.setSpacing(12)
+        self.my_decks_layout.addStretch()
+
         scroll.setWidget(scroll_content)
         layout.addWidget(scroll, stretch=1)
 
         self.no_deck_label = QLabel("Chưa có bộ câu hỏi nào. Hãy tạo mới bằng AI ở trên nhé!")
         self.no_deck_label.setAlignment(Qt.AlignCenter)
         self.no_deck_label.setStyleSheet("color:#9BA3AF;font-size:14px;margin-top:40px;")
-        self.decks_layout.addWidget(self.no_deck_label)
+        self.my_decks_layout.insertWidget(0, self.no_deck_label)
 
-        self.stack.addWidget(page)
+        self.tab_stack.addWidget(page)
 
+    def _load_my_decks(self):
+        """
+        Tải decks từ mục Flashcard cá nhân (file + AI).
+        FIX: Chỉ hiển thị source != 'course' — không lẫn với deck khóa học.
+        """
+        # Xóa decks cũ
+        for i in range(self.my_decks_layout.count() - 1, -1, -1):
+            item = self.my_decks_layout.itemAt(i)
+            if item and item.widget() and item.widget() != self.no_deck_label:
+                item.widget().deleteLater()
+
+        # FIX: Dùng get_user_decks thay vì get_decks để lọc đúng
+        if hasattr(self.controller, 'get_user_decks'):
+            decks = self.controller.get_user_decks(self.user_id) or []
+        else:
+            # Fallback nếu controller cũ chưa có hàm này
+            all_decks = self.controller.get_decks(self.user_id) or []
+            decks = [d for d in all_decks if d.get("source") != "course"]
+
+        if not decks:
+            self.no_deck_label.show()
+            return
+
+        self.no_deck_label.hide()
+        for d in decks:
+            card = DeckCard(d, on_open=self._on_open_my_deck, on_delete=self._on_delete_deck)
+            self.my_decks_layout.insertWidget(self.my_decks_layout.count() - 1, card)
+
+    def _on_open_my_deck(self, deck: dict):
+        self.current_deck_id = deck.get("id")
+        cards = self.controller.get_flashcards(self.user_id, self.current_deck_id)
+
+        if not cards:
+            QMessageBox.warning(self, "Thông báo", "Bộ câu hỏi này hiện tại chưa có dữ liệu thẻ.")
+            return
+
+        self._open_quiz(cards, deck.get("title", "Luyện tập"))
+
+    # ── TAB 1: Từ khóa học ───────────────────────────────────────
+    def _init_tab_course_decks(self):
+        """
+        Tab này có 2 màn xếp chồng:
+          inner_stack index 0 — Danh sách khóa học (deck cha)
+          inner_stack index 1 — Danh sách bài học (deck con) của khóa học đã chọn
+        """
+        page = QWidget()
+        outer = QVBoxLayout(page)
+        outer.setContentsMargins(0, 16, 0, 0)
+        outer.setSpacing(0)
+
+        self.course_inner_stack = QStackedWidget()
+        outer.addWidget(self.course_inner_stack, stretch=1)
+
+        # Inner 0: danh sách khóa học
+        self._init_course_list_page()
+        # Inner 1: danh sách bài học của khóa học đã chọn
+        self._init_lesson_list_page()
+
+        self.tab_stack.addWidget(page)
+
+    def _init_course_list_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        lbl = QLabel("Chọn khóa học để ôn tập flashcard:")
+        lbl.setStyleSheet("font-size:14px;color:#374151;font-weight:600;")
+        layout.addWidget(lbl)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border:none;background:transparent; }")
+
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background:transparent;")
+        self.course_decks_layout = QVBoxLayout(scroll_content)
+        self.course_decks_layout.setContentsMargins(0, 4, 0, 4)
+        self.course_decks_layout.setSpacing(12)
+        self.course_decks_layout.addStretch()
+
+        scroll.setWidget(scroll_content)
+        layout.addWidget(scroll, stretch=1)
+
+        self.no_course_deck_label = QLabel(
+            "Chưa có flashcard từ khóa học nào.\n"
+            "Vào mục Khóa học → chọn bài học → nhấn nút Flashcard để tạo."
+        )
+        self.no_course_deck_label.setAlignment(Qt.AlignCenter)
+        self.no_course_deck_label.setWordWrap(True)
+        self.no_course_deck_label.setStyleSheet("color:#9BA3AF;font-size:13px;margin-top:40px;")
+        self.course_decks_layout.insertWidget(0, self.no_course_deck_label)
+
+        self.course_inner_stack.addWidget(page)
+
+    def _init_lesson_list_page(self):
+        """Màn hiển thị các bài học (sub-deck) của 1 khóa học đã chọn."""
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        # Header với nút Back
+        header = QHBoxLayout()
+        self.btn_back_to_courses = QPushButton("← Quay lại")
+        self.btn_back_to_courses.setCursor(Qt.PointingHandCursor)
+        self.btn_back_to_courses.setStyleSheet("""
+            QPushButton {
+                background:transparent;color:#2D60FF;
+                border:none;font-size:13px;font-weight:600;
+            }
+            QPushButton:hover { color:#1A4FE0; }
+        """)
+        self.btn_back_to_courses.clicked.connect(
+            lambda: self.course_inner_stack.setCurrentIndex(0)
+        )
+
+        self.lbl_course_deck_title = QLabel()
+        self.lbl_course_deck_title.setStyleSheet(
+            "font-size:16px;font-weight:bold;color:#1E2328;"
+        )
+
+        header.addWidget(self.btn_back_to_courses)
+        header.addSpacing(8)
+        header.addWidget(self.lbl_course_deck_title)
+        header.addStretch()
+        layout.addLayout(header)
+
+        lbl_hint = QLabel("Chọn bài học để bắt đầu làm bài:")
+        lbl_hint.setStyleSheet("font-size:13px;color:#6F767E;")
+        layout.addWidget(lbl_hint)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border:none;background:transparent; }")
+
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background:transparent;")
+        self.lesson_decks_layout = QVBoxLayout(scroll_content)
+        self.lesson_decks_layout.setContentsMargins(0, 4, 0, 4)
+        self.lesson_decks_layout.setSpacing(12)
+        self.lesson_decks_layout.addStretch()
+
+        scroll.setWidget(scroll_content)
+        layout.addWidget(scroll, stretch=1)
+
+        self.no_lesson_deck_label = QLabel("Chưa có bài học nào trong khóa học này.")
+        self.no_lesson_deck_label.setAlignment(Qt.AlignCenter)
+        self.no_lesson_deck_label.setStyleSheet("color:#9BA3AF;font-size:13px;margin-top:40px;")
+        self.lesson_decks_layout.insertWidget(0, self.no_lesson_deck_label)
+
+        self.course_inner_stack.addWidget(page)
+
+    def _load_course_decks(self):
+        """Tải danh sách deck cha (đại diện cho từng khóa học)."""
+        for i in range(self.course_decks_layout.count() - 1, -1, -1):
+            item = self.course_decks_layout.itemAt(i)
+            if item and item.widget() and item.widget() != self.no_course_deck_label:
+                item.widget().deleteLater()
+
+        # FIX: Dùng get_course_decks (chỉ lấy deck cha source='course', parent_id IS NULL)
+        if hasattr(self.controller, 'get_course_decks'):
+            decks = self.controller.get_course_decks(self.user_id) or []
+        else:
+            all_decks = self.controller.get_decks(self.user_id) or []
+            decks = [
+                d for d in all_decks
+                if d.get("source") == "course" and d.get("parent_id") is None
+            ]
+
+        if not decks:
+            self.no_course_deck_label.show()
+            self.course_inner_stack.setCurrentIndex(0)
+            return
+
+        self.no_course_deck_label.hide()
+        for d in decks:
+            card = DeckCard(
+                d,
+                on_open=self._on_open_course_deck,
+                on_delete=self._on_delete_deck
+            )
+            self.course_decks_layout.insertWidget(
+                self.course_decks_layout.count() - 1, card
+            )
+
+    def _on_open_course_deck(self, deck: dict):
+        """Nhấn vào khóa học → hiển thị danh sách bài học (sub-deck)."""
+        parent_id = deck.get("id")
+        self._current_parent_deck_id = parent_id
+        self.lbl_course_deck_title.setText(deck.get("title", "Khóa học"))
+
+        # Xóa bài học cũ
+        for i in range(self.lesson_decks_layout.count() - 1, -1, -1):
+            item = self.lesson_decks_layout.itemAt(i)
+            if item and item.widget() and item.widget() != self.no_lesson_deck_label:
+                item.widget().deleteLater()
+
+        # Lấy sub-decks (bài học)
+        if hasattr(self.controller, 'get_sub_decks'):
+            sub_decks = self.controller.get_sub_decks(self.user_id, parent_id) or []
+        else:
+            sub_decks = []
+
+        if not sub_decks:
+            self.no_lesson_deck_label.show()
+        else:
+            self.no_lesson_deck_label.hide()
+            for sd in sub_decks:
+                card = DeckCard(
+                    sd,
+                    on_open=self._on_open_lesson_deck,
+                    on_delete=self._on_delete_deck
+                )
+                self.lesson_decks_layout.insertWidget(
+                    self.lesson_decks_layout.count() - 1, card
+                )
+
+        self.course_inner_stack.setCurrentIndex(1)
+
+    def _on_open_lesson_deck(self, deck: dict):
+        """Nhấn vào bài học → mở QuizWidget với flashcard của bài học đó."""
+        self.current_deck_id = deck.get("id")
+        cards = self.controller.get_flashcards(self.user_id, self.current_deck_id)
+
+        if not cards:
+            QMessageBox.warning(
+                self, "Thông báo",
+                "Bài học này chưa có flashcard.\n"
+                "Vào Khóa học → bài học đó → nhấn nút Flashcard để tạo."
+            )
+            return
+
+        self._open_quiz(cards, deck.get("title", "Luyện tập"))
+
+    # ================================================================
+    # QUIZ — dùng chung cho cả 2 tab
+    # ================================================================
+    def _open_quiz(self, cards: list, title: str):
+        quiz = QuizWidget(cards, title)
+        quiz.finished.connect(self._on_quiz_finished)
+
+        # Dọn dẹp widget cũ ở slot index 1
+        if self.stack.count() > 1:
+            old_w = self.stack.widget(1)
+            self.stack.removeWidget(old_w)
+            old_w.deleteLater()
+
+        self.stack.insertWidget(1, quiz)
+        self.stack.setCurrentIndex(1)
+
+    def _on_quiz_finished(self, score: int, total: int):
+        if self.current_deck_id:
+            if hasattr(self.controller, 'complete_sub_deck'):
+                self.controller.complete_sub_deck(self.current_deck_id)
+            elif hasattr(self.controller, 'set_deck_completed'):
+                self.controller.set_deck_completed(self.current_deck_id)
+
+        QMessageBox.information(
+            self, "Kết quả học tập",
+            f"🎉 Chúc mừng bạn đã hoàn thành!\nKết quả: {score}/{total} câu trả lời đúng."
+        )
+        self.stack.setCurrentIndex(0)
+        # Reload tab đang hiển thị
+        if self.tab_stack.currentIndex() == 0:
+            self._load_my_decks()
+        else:
+            self._load_course_decks()
+
+    # ================================================================
+    # PAGE 1 — LOADING AI
+    # ================================================================
     def _init_page_loading(self):
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -574,79 +917,26 @@ class FlashcardWidget(QWidget):
 
         layout.addWidget(lbl_loading, alignment=Qt.AlignCenter)
         layout.addWidget(self.lbl_loading_text, alignment=Qt.AlignCenter)
-        self.stack.addWidget(page)
+        self.stack.addWidget(page)  # index 1 (sau page_main)
 
-    def _load_decks(self):
-        """Tải các bộ câu hỏi gốc (Gốc/Lớn) lên UI chính."""
-        for i in range(self.decks_layout.count() - 1, -1, -1):
-            item = self.decks_layout.itemAt(i)
-            if item and item.widget() and item.widget() != self.no_deck_label:
-                item.widget().deleteLater()
-
-        decks = self.controller.get_decks(self.user_id) or []
-        if not decks:
-            self.no_deck_label.show()
-            return
-        
-        self.no_deck_label.hide()
-        for d in decks:
-            card = DeckCard(d, on_open=self._on_open_deck, on_delete=self._on_delete_deck)
-            self.decks_layout.insertWidget(self.decks_layout.count() - 1, card)
-
-    def _on_open_deck(self, deck: dict):
-        self.current_deck_id = deck.get("id")
-        cards = self.controller.get_flashcards(self.user_id, self.current_deck_id)
-        
-        if not cards:
-            QMessageBox.warning(self, "Thông báo", "Bộ câu hỏi này hiện tại chưa có dữ liệu thẻ.")
-            return
-
-        quiz = QuizWidget(cards, deck.get("title", "Luyện tập"))
-        quiz.finished.connect(self._on_quiz_finished)
-
-        # Dọn dẹp Widget cũ ở Page Index 1 nếu có trước khi thêm mới
-        if self.stack.widget(1):
-            old_w = self.stack.widget(1)
-            self.stack.removeWidget(old_w)
-            old_w.deleteLater()
-
-        self.stack.insertWidget(1, quiz)
-        self.stack.setCurrentIndex(1)
-
-    def _on_quiz_finished(self, score: int, total: int):
-        # Tự động gọi đồng bộ tích xanh xuống Database khi kết thúc lượt làm bài
-        if self.current_deck_id:
-            self.controller.complete_sub_deck(self.current_deck_id)
-
-        QMessageBox.information(
-            self, "Kết quả học tập",
-            f"🎉 Chúc mừng bạn đã hoàn thành!\nKết quả đạt được: {score}/{total} câu trả lời đúng."
-        )
-        self.stack.setCurrentIndex(0)
-        self._load_decks()
-
-    def _on_delete_deck(self, deck: dict):
-        ans = QMessageBox.question(
-            self, "Xác nhận xóa",
-            f"Bạn có chắc chắn muốn xóa bộ câu hỏi '{deck.get('title')}' không?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if ans == QMessageBox.Yes:
-            self.controller.delete_deck(deck.get("id"))
-            self._load_decks()
-
+    # ================================================================
+    # TẠO FLASHCARD TỪ FILE / TOPIC
+    # ================================================================
     def _on_create_from_file(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Chọn tài liệu học tập", "", "Tài liệu (*.pdf *.docx)")
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Chọn tài liệu học tập", "", "Tài liệu (*.pdf *.docx)"
+        )
         if not path:
             return
 
-        title, ok = QInputDialog.getText(self, "Đặt tên bộ học tập", "Nhập tên cho bộ câu hỏi mới:")
+        title, ok = QInputDialog.getText(
+            self, "Đặt tên bộ học tập", "Nhập tên cho bộ câu hỏi mới:"
+        )
         if not ok or not title.strip():
             title = "Tài liệu từ File"
 
-        self.stack.setCurrentIndex(2)
-        
-        # Đọc nội dung thô từ file và đưa vào luồng AI sinh trắc nghiệm
+        self.stack.setCurrentIndex(1)  # loading page
+
         try:
             from src.services.ai_engine import AIEngine
             engine = AIEngine()
@@ -669,23 +959,53 @@ class FlashcardWidget(QWidget):
             title = dialog.get_title()
             prompt = dialog.get_prompt()
 
-            self.stack.setCurrentIndex(2)
+            self.stack.setCurrentIndex(1)  # loading page
             self.worker = AIWorker(self.controller, "topic", prompt)
             self.worker.finished.connect(lambda cards: self._save_ai_deck(title, cards))
             self.worker.error.connect(self._on_ai_error)
             self.worker.start()
 
     def _save_ai_deck(self, title: str, cards: list):
-        # Lưu trực tiếp bộ bài thông qua cấu trúc mới của controller
-        deck_id, saved_count = self.controller._save_deck(self.user_id, title, cards, source="ai")
-        QMessageBox.information(self, "Thành công", f"Đã khởi tạo bộ bài '{title}' với {saved_count} câu hỏi trắc nghiệm.")
+        deck_id, saved_count = self.controller._save_deck(
+            self.user_id, title, cards, source="ai"
+        )
+        QMessageBox.information(
+            self, "Thành công",
+            f"Đã khởi tạo bộ bài '{title}' với {saved_count} câu hỏi trắc nghiệm."
+        )
         self.stack.setCurrentIndex(0)
-        self._load_decks()
+        self._load_my_decks()
 
     def _on_ai_error(self, err_msg: str):
         QMessageBox.critical(self, "Lỗi kết nối AI", f"Không thể sinh câu hỏi tự động:\n{err_msg}")
         self.stack.setCurrentIndex(0)
 
+    # ================================================================
+    # DELETE (dùng chung)
+    # ================================================================
+    def _on_delete_deck(self, deck: dict):
+        ans = QMessageBox.question(
+            self, "Xác nhận xóa",
+            f"Bạn có chắc chắn muốn xóa bộ câu hỏi '{deck.get('title')}' không?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if ans == QMessageBox.Yes:
+            self.controller.delete_deck(deck.get("id"))
+            # Reload tab hiện tại
+            if self.tab_stack.currentIndex() == 0:
+                self._load_my_decks()
+            else:
+                # Nếu đang ở màn bài học, reload lại màn đó
+                if self.course_inner_stack.currentIndex() == 1 and self._current_parent_deck_id:
+                    # Reload sub-decks của khóa học cha
+                    fake_deck = {"id": self._current_parent_deck_id}
+                    self._on_open_course_deck(fake_deck)
+                else:
+                    self._load_course_decks()
+
+    # ================================================================
+    # MISC
+    # ================================================================
     def _action_btn_style(self, bg: str, fg: str) -> str:
         return f"""
             QPushButton {{
@@ -700,7 +1020,5 @@ class FlashcardWidget(QWidget):
         self.lbl_sub.setText(tr("flash_subtitle"))
 
     def set_ai_limit(self, limit: int):
-        """Cập nhật giới hạn số câu hỏi tối đa sinh bởi AI (gọi từ Settings)"""
-        # Bạn có thể lưu vào thuộc tính để giới hạn số vòng lặp [:limit] thay vì cố định [:20]
         self.ai_limit = limit
         print(f"⚙️ FlashcardWidget updated AI limit to: {limit}")
