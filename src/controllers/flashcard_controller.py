@@ -95,30 +95,35 @@ class FlashcardController:
         return deck_id, saved
 
     # ================= DECK KHÓA HỌC =================
-    def ensure_course_parent_deck(self, user_id: int, course_id: int,
-                                   course_name: str) -> int:
-        """
-        Đảm bảo tồn tại 1 deck CHA cho khóa học (source='course', parent_id=NULL).
-        Nếu chưa có thì tạo mới. Trả về deck_id của deck cha.
+    def ensure_course_parent_deck(self, user_id, course_id, course_name):
 
-        Deck cha này đại diện cho toàn bộ khóa học trong màn "Từ khóa học".
-        """
-        # Tìm deck cha đã tồn tại cho course_id này
-        rows = self.db.execute(
+        existing=self.db.execute(
             """
-            SELECT id FROM flashcard_decks
-            WHERE user_id=? AND source='course' AND parent_id IS NULL
-              AND title=?
+            SELECT id
+            FROM flashcard_decks
+            WHERE
+            user_id=?
+            AND course_id=?
+            AND parent_id IS NULL
+            AND source='course'
             """,
-            (user_id, course_name),
+            (
+                user_id,
+                course_id
+            ),
             fetch=True
         )
-        if rows:
-            return rows[0]["id"]
 
-        # Chưa có → tạo mới
-        parent_deck_id = self.db.create_deck(user_id, course_name, source="course")
-        return parent_deck_id
+        if existing:
+            return existing[0]["id"]
+
+        return self.db.create_deck(
+            user_id,
+            course_name,
+            source="course",
+            parent_id=None,
+            course_id=course_id
+        )
 
     def get_sub_decks(self, user_id: int, parent_id: int) -> list:
         """Lấy các deck BÀI HỌC con thuộc deck khóa học cha."""

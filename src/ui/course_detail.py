@@ -951,7 +951,12 @@ class CourseDetailWidget(QWidget):
 
             # Tạo deck CON cho từng bài học, gán parent_id = deck khóa học cha
             deck_id = self.controller.db.create_deck(
-                self.user_id, deck_title, source="course", lesson_id=lesson_id
+                self.user_id,
+                deck_title,
+                source="course",
+                lesson_id=lesson_id,
+                parent_id=parent_deck_id,
+                course_id=self.course_id
             )
             if parent_deck_id is not None:
                 self.controller.db.execute(

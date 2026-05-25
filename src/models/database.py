@@ -342,6 +342,37 @@ class Database:
                 "INSERT INTO migrations (id) VALUES (?)",
                 (mid8,)
             )
+            self.conn.commit()
+
+
+        # Migration 9: thêm course_id vào flashcard_decks
+        mid9 = "flashcard_decks_add_course_id"
+
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?",
+            (mid9,)
+        ).fetchone()
+
+        if not row:
+            existing_cols = [
+                r[1] for r in
+                self.cursor.execute(
+                    "PRAGMA table_info(flashcard_decks)"
+                ).fetchall()
+            ]
+
+            if "course_id" not in existing_cols:
+                self.cursor.execute(
+                    """
+                    ALTER TABLE flashcard_decks
+                    ADD COLUMN course_id INTEGER DEFAULT NULL
+                    """
+                )
+
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)",
+                (mid9,)
+            )
 
             self.conn.commit()
     def create_default_user(self):
@@ -560,13 +591,12 @@ class Database:
         )
 
     # ================= FLASHCARD DECKS =================
-    def create_deck(self, user_id: int, title: str, source: str = "",
-                    lesson_id: int = None) -> int:
+    def create_deck(self, user_id: int, title: str, source: str = "", lesson_id: int = None, parent_id: int = None, course_id: int = None) -> int:
         """Tạo bộ flashcard mới, trả về deck_id."""
         cur = self.conn.cursor()
         cur.execute(
-            "INSERT INTO flashcard_decks (user_id, title, source, lesson_id) VALUES (?, ?, ?, ?)",
-            (user_id, title, source, lesson_id)
+            "INSERT INTO flashcard_decks (user_id, title, source, lesson_id, parent_id, course_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, title, source, lesson_id, parent_id, course_id)
         )
         self.conn.commit()
         return cur.lastrowid

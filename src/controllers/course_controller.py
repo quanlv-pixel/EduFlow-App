@@ -5,9 +5,10 @@ from src.services.lesson_mapper import LessonMapper
 
 class CourseController:
     # FIX: Đổi tên attribute cho nhất quán: fetcher / ranker / mapper
-    def __init__(self, db, ai=None):
+    def __init__(self, db, ai=None, flashcard_controller=None):
         self.db = db
         self.ai = ai
+        self.flashcard_controller = flashcard_controller
 
         # FIX: Phiên bản cũ dùng self.course_fetcher, self.ai_ranker, self.lesson_mapper
         # nhưng bên dưới lại gọi self.fetcher, self.ranker, self.mapper → NameError
