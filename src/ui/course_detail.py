@@ -44,18 +44,7 @@ class WebTutorialWorker(QThread):
 
     def run(self):
         try:
-            prompt = f"""
-Bạn là chuyên gia tư vấn học tập.
-Sinh viên muốn tự học "{self.course_name}"
-trên nền tảng {self.source_platform}.
-
-Hãy viết cẩm nang tự học ngắn gọn,
-thực tế gồm 4–5 bước.
-
-Viết bằng Tiếng Việt và dùng emoji.
-"""
-
-            text = self.ai.generate_tutorial(prompt)
+            text = self.ai.generate_tutorial(self.course_name, self.source_platform)
             self.finished.emit(text)
 
         except Exception as e:
@@ -801,24 +790,6 @@ class CourseDetailWidget(QWidget):
             )
 
             self._tutorial_worker.start()
-
-        def _on_tutorial_done(text: str):
-            if not text:
-                return
-            # FIX: Dùng setHtml thay vì setMarkdown để tránh lỗi render trên một số phiên bản Qt
-            # Chuyển đổi markdown cơ bản sang HTML để hiển thị đúng
-            html = self._markdown_to_html(text)
-            txt_guide.setHtml(html)
-
-        self._tutorial_worker.finished.connect(_on_tutorial_done)
-        self._tutorial_worker.error.connect(
-            lambda err: txt_guide.setHtml(
-                f"<span style='color:#EF4444;'>Không thể kết nối AI ({err}). "
-                f"Hãy bấm nút trên để vào học trực tiếp.</span>"
-            )
-        )
-        self._tutorial_worker.start()
-
         self._update_stats([lesson])
 
     @staticmethod
