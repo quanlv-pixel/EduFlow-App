@@ -34,21 +34,30 @@ class LessonLoaderWorker(QThread):
 # ================================================================
 class WebTutorialWorker(QThread):
     finished = Signal(str)
-    error    = Signal(str)
+    error = Signal(str)
 
-    def __init__(self, controller, source_platform, course_name, course_id=None):
+    def __init__(self, ai, source_platform, course_name):
         super().__init__()
-        self.controller      = controller
+        self.ai = ai
         self.source_platform = source_platform
-        self.course_name     = course_name
-        self.course_id       = course_id
+        self.course_name = course_name
 
     def run(self):
         try:
-            text = self.controller.get_course_tutorial(
-                self.source_platform, self.course_name, self.course_id
-            )
-            self.finished.emit(text or "")
+            prompt = f"""
+Bạn là chuyên gia tư vấn học tập.
+Sinh viên muốn tự học "{self.course_name}"
+trên nền tảng {self.source_platform}.
+
+Hãy viết cẩm nang tự học ngắn gọn,
+thực tế gồm 4–5 bước.
+
+Viết bằng Tiếng Việt và dùng emoji.
+"""
+
+            text = self.ai.generate_tutorial(prompt)
+            self.finished.emit(text)
+
         except Exception as e:
             self.error.emit(str(e))
 
@@ -748,12 +757,50 @@ class CourseDetailWidget(QWidget):
         current_course_name = (self.course_data or {}).get("name", "")
 
         # Worker gọi AI ngầm — không đứng hình
-        self._tutorial_worker = WebTutorialWorker(
-            self.controller,
-            source_platform,
-            current_course_name,
-            course_id=current_course_id  # FIX: dùng self.course_id thay vì lesson field
-        )
+        # Lấy cache ở UI thread
+        cached = None
+
+        if current_course_id:
+            cached = self.controller.db.get_tutorial_cache(
+                current_course_id
+            )
+
+        if cached:
+            txt_guide.setHtml(
+                self._markdown_to_html(cached)
+            )
+
+        else:
+            self._tutorial_worker = WebTutorialWorker(
+                self.controller.ai,
+                source_platform,
+                current_course_name
+            )
+
+            def _on_tutorial_done(text):
+
+                if text and current_course_id:
+                    self.controller.db.save_tutorial_cache(
+                        current_course_id,
+                        text
+                    )
+
+                txt_guide.setHtml(
+                    self._markdown_to_html(text)
+                )
+
+            self._tutorial_worker.finished.connect(
+                _on_tutorial_done
+            )
+
+            self._tutorial_worker.error.connect(
+                lambda err:
+                txt_guide.setHtml(
+                    f"<span style='color:red'>{err}</span>"
+                )
+            )
+
+            self._tutorial_worker.start()
 
         def _on_tutorial_done(text: str):
             if not text:

@@ -195,15 +195,8 @@ class CourseController:
 
         # 2. Chưa có → gọi AI
         prompt = f"""
-    Bạn là chuyên gia tư vấn học tập.
-    Sinh viên muốn tự học "{course_name}" trên nền tảng {source_platform}.
-
-    Hãy viết cẩm nang tự học ngắn gọn, thực tế gồm 4-5 bước,
-    phù hợp riêng với {source_platform} (ví dụ: cách dùng forum, cách làm bài tập, cách theo dõi tiến độ).
-
-    Viết bằng Tiếng Việt, rõ ràng, dùng emoji cho mỗi bước.
     """
-        text = self.ai.generate_tutorial(prompt)  # hoặc self.ai._call_ai(prompt)
+        text = self.ai._call_ai(prompt)
 
         # 3. Lưu cache
         if course_id and text and not text.startswith("❌"):
