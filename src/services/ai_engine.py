@@ -219,71 +219,140 @@ Return ONLY a JSON array, no extra text:
         return match.group(1) if match else None
 
     def generate_flashcards_from_youtube(self, video_url: str, lesson_title: str) -> list:
-        """Cào script từ YouTube và bắt Gemini tạo bộ trắc nghiệm dựa trên bài giảng"""
+        """
+        Lấy transcript YouTube nếu có.
+        Nếu không lấy được -> AI tự suy luận từ tiêu đề bài học.
+        """
+
         video_id = self.extract_youtube_id(video_url)
         script_text = ""
 
         if video_id:
             try:
-                # Thử lấy phụ đề tiếng Việt trước, nếu không có thì lấy tiếng Anh
                 ytt = YouTubeTranscriptApi()
-                transcript_list = ytt.fetch(video_id, languages=['vi', 'en'])
-                script_text = " ".join([item.text for item in transcript_list])
+
+                # Ưu tiên tiếng Việt -> tiếng Anh -> biến thể tiếng Anh
+                transcript_list = ytt.fetch(
+                    video_id,
+                    languages=[
+                        "vi",
+                        "en",
+                        "en-US",
+                        "en-GB",
+                        "en-IN"
+                    ]
+                )
+
+                script_text = " ".join(
+                    item.text
+                    for item in transcript_list
+                )
+
+                print(
+                    f"✅ Lấy transcript thành công ({len(script_text)} ký tự)"
+                )
+
             except Exception as e:
-                print(f"⚠️ Không thể tự động lấy phụ đề từ YouTube ({e}). AI sẽ tự suy luận dựa trên tiêu đề bài học.")
-        
-        # Nếu lấy được script thì nhồi vào prompt, nếu không lấy được thì dùng tiêu đề bài học để cứu cánh
-        context_data = f"NỘI DUNG BÀI GIẢNG (SCRIPT DƯỚI VIDEO):\n{script_text}" if script_text else f"Tiêu đề bài học: {lesson_title}"
+
+                print(
+                    f"⚠️ Không thể lấy transcript ({e})"
+                )
+
+                print(
+                    f"🧠 Fallback AI theo tiêu đề: {lesson_title}"
+                )
+
+        # ================= Context =================
+
+        if script_text:
+
+            context_data = f"""
+    NỘI DUNG BÀI GIẢNG:
+
+    {script_text[:10000]}
+    """
+
+        else:
+
+            context_data = f"""
+    TIÊU ĐỀ BÀI HỌC:
+
+    {lesson_title}
+
+    Hãy suy luận nội dung kiến thức có thể xuất hiện
+    trong bài học dựa trên tiêu đề.
+    """
+
+        # ================= Prompt =================
 
         prompt = f"""
-Bạn là một trợ lý giáo dục thông minh chuyên về Flashcard.
-Dựa vào tài liệu bài học cụ thể được cung cấp dưới đây, hãy soạn ra chính xác từ 5 đến 7 câu hỏi trắc nghiệm kiến thức cốt lõi.
+    Bạn là trợ lý giáo dục AI.
 
-{context_data}
+    Dựa trên dữ liệu bên dưới:
 
-YÊU CẦU BẮT BUỘC:
-1. Câu hỏi phải bám rất sát nội dung bài học được cung cấp.
-2. Định dạng đầu ra bắt buộc phải là một chuỗi JSON Array sạch duy nhất, không chứa ký hiệu ```json hay bất kỳ chữ giải thích nào bên ngoài.
-3. Cấu trúc mỗi phần tử trong Array phải giống hoàn toàn như sau:
-[
-  {{
-    "q": "Câu hỏi trắc nghiệm cụ thể ?",
-    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
-    "a": 0
-  }}
-]
-Trong đó "options" là mảng gồm 4 đáp án lựa chọn, và "a" là CHỈ SỐ INDEX của đáp án đúng (0 cho đáp án đầu tiên, 1 cho đáp án thứ hai, v.v.). Toàn bộ viết bằng Tiếng Việt.
-"""
+    {context_data}
+
+    Hãy tạo từ 5-7 flashcard trắc nghiệm.
+
+    YÊU CẦU:
+
+    1. Bám sát nội dung bài học
+    2. Chỉ trả về JSON Array
+    3. Không thêm markdown
+    4. Không thêm ```json
+    5. Toàn bộ bằng tiếng Việt
+
+    Ví dụ:
+
+    [
+        {{
+            "q":"Python là gì?",
+            "options":[
+                "Ngôn ngữ lập trình",
+                "Hệ điều hành",
+                "Database",
+                "Trình duyệt"
+            ],
+            "a":0
+        }}
+    ]
+    """
+
         raw = self._call_ai(prompt)
 
         try:
+
             cleaned = re.sub(
-                r'^(?:https?://googleusercontent\.com/immersive_entry_chip/json)?\s*```?|```?\s*$',
-                '',
-                raw.strip(),
-                flags=re.MULTILINE
+                r"```json|```",
+                "",
+                raw.strip()
             )
 
-            cards = self._parse_flashcard_json(cleaned)
+            cards = self._parse_flashcard_json(
+                cleaned
+            )
 
             if cards:
                 return cards
 
         except Exception as e:
-            print("❌ Lỗi parse JSON Flashcard từ YouTube:", e)
 
-        return [
-            {
-                "q": f"Kiến thức cốt lõi của bài học: {lesson_title}",
-                "options": [
-                    "Đáp án đúng mẫu",
-                    "Đáp án nhiễu 1",
-                    "Đáp án nhiễu 2",
-                    "Đáp án nhiễu 3"
-                ],
-                "a": 0
-            }
-        ]
+            print(
+                f"❌ Parse flashcard lỗi: {e}"
+            )
+
+        # ================= cứu cánh cuối =================
+
+        return [{
+            "q": f"{lesson_title} chủ yếu nói về điều gì?",
+            "options": [
+                lesson_title,
+                "Khái niệm không liên quan",
+                "Nội dung khác",
+                "Đáp án nhiễu"
+            ],
+            "a":0
+        }]
     # ================= TUTORIAL =================
     def generate_tutorial(
             self,

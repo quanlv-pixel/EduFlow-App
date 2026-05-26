@@ -12,6 +12,7 @@ from src.services.ai_engine import AIEngine
 
 # CONTROLLERS
 from src.controllers.auth_controller import AuthController
+from src.controllers.flashcard_controller import FlashcardController
 from PySide6.QtGui import QFont
 
 class AppController:
@@ -32,6 +33,7 @@ class AppController:
         self.ai = AIEngine()
 
         self.auth_controller = AuthController(self.db)
+        self.flashcard_controller = FlashcardController(self.db, self.ai)
 
         self.dashboard = None 
         self.login_window = None
@@ -69,7 +71,7 @@ class AppController:
             self.login_window.deleteLater()
             self.login_window = None
 
-        self.dashboard = EduDashboard(user, self.db, self.ai)
+        self.dashboard = EduDashboard(user, self.db, self.ai, self.flashcard_controller)
         self.dashboard.logout_signal.connect(self.show_login)
         self.dashboard.show()
 

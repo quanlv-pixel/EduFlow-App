@@ -256,16 +256,17 @@ class DashMenuButton(QPushButton):
 class EduDashboard(QMainWindow):
     logout_signal = Signal()
 
-    def __init__(self, user_info, db, ai):
+    def __init__(self, user_info, db, ai, flashcard_controller):
         super().__init__()
 
         self.user_info = user_info
         self.db = db
         self.ai = ai
+        self.flashcard_controller = flashcard_controller
 
         # Controllers
-        self.course_controller   = CourseController(self.db, self.ai)
-        self.flash_controller    = FlashcardController(self.db, self.ai)
+        self.flashcard_controller    = FlashcardController(self.db, self.ai)
+        self.course_controller   = CourseController(self.db, self.ai, self.flashcard_controller)
         self.summary_controller  = SummaryController(self.ai, self.db)
         self.schedule_controller = ScheduleController(self.db)
         self.grade_controller    = GradeController(self.db)      # ← NEW
@@ -486,7 +487,7 @@ class EduDashboard(QMainWindow):
             return CoursesWidget(self.course_controller, self.user_info["id"])
 
         elif key == "flash":
-            self.flash_widget = FlashcardWidget(self.flash_controller, self.user_info["id"])
+            self.flash_widget = FlashcardWidget(self.flashcard_controller, self.user_info["id"])
             return self.flash_widget
 
         elif key == "summary":

@@ -9,13 +9,11 @@ class CourseController:
         self.db = db
         self.ai = ai
         self.flashcard_controller = flashcard_controller
-
-        # FIX: Phiên bản cũ dùng self.course_fetcher, self.ai_ranker, self.lesson_mapper
-        # nhưng bên dưới lại gọi self.fetcher, self.ranker, self.mapper → NameError
-        # Sửa thống nhất thành tên ngắn
         self.fetcher = CourseFetcher()
         self.ranker = AIRanker()
         self.mapper = LessonMapper()
+
+        print("DEBUG Flashcard:", flashcard_controller)
 
     # ================= GET =================
     def get_courses(self, user_id):

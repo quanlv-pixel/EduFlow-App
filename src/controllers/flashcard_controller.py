@@ -118,8 +118,8 @@ class FlashcardController:
             return existing[0]["id"]
 
         return self.db.create_deck(
-            user_id,
-            course_name,
+            user_id=user_id,
+            title=course_name,
             source="course",
             parent_id=None,
             course_id=course_id
