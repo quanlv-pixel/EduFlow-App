@@ -418,7 +418,7 @@ class SemesterBlock(QFrame):
 
     def _rename_semester(self):
         name, ok = QInputDialog.getText(
-            self, "Đổi tên học kỳ", "Tên mới:",
+            self.window(), "Đổi tên học kỳ", "Tên mới:",
             text=self.semester.get("name", "")
         )
         if ok and name.strip():
@@ -428,7 +428,7 @@ class SemesterBlock(QFrame):
 
     def _delete_semester(self):
         reply = QMessageBox.question(
-            self, "Xác nhận",
+            self.window(), "Xác nhận",
             f"Xóa học kỳ '{self.semester.get('name')}' và toàn bộ môn học?\nHành động này không thể hoàn tác.",
             QMessageBox.Yes | QMessageBox.No
         )
@@ -439,9 +439,9 @@ class SemesterBlock(QFrame):
     # ── OPEN DIALOG ───────────────────────────────────────────
     def _open_add_dialog(self, edit_data=None, editing_id=None):
         if self.mode == GradeWidget.MODE_HS:
-            dlg = HSSubjectDialog(self, edit_data)
+            dlg = HSSubjectDialog(self.window(), edit_data)
         else:
-            dlg = SVSubjectDialog(self, edit_data)
+            dlg = SVSubjectDialog(self.window(), edit_data)
 
         if dlg.exec() != QDialog.Accepted:
             return
