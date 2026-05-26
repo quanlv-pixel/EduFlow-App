@@ -94,13 +94,13 @@ class Database:
             )
             """,
 
-            # FLASHCARD DECKS 
+            # FLASHCARD DECKS
             """
             CREATE TABLE IF NOT EXISTS flashcard_decks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 title TEXT,
-                source TEXT DEFAULT 'manual', -- 'manual', 'ai', 'course'
+                source TEXT DEFAULT 'manual',
                 is_completed INTEGER DEFAULT 0,
                 parent_id INTEGER DEFAULT NULL,
                 lesson_id INTEGER DEFAULT NULL,
@@ -135,17 +135,27 @@ class Database:
             )
             """,
 
-            #GRADE SUBJECTS
+            # GRADE SUBJECTS
             """
             CREATE TABLE IF NOT EXISTS grade_subjects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            mode TEXT,
-            subject_name TEXT,
-            credits INTEGER,
-            scores_data TEXT
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                mode TEXT,
+                subject_name TEXT,
+                credits INTEGER,
+                scores_data TEXT
             )
+            """,
+
+            # SEMESTERS
             """
+            CREATE TABLE IF NOT EXISTS semesters (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                mode TEXT,
+                name TEXT
+            )
+            """,
         ]
 
         for q in queries:
@@ -172,7 +182,6 @@ class Database:
             self.conn.commit()
 
         # Migration 2: thêm các cột mới vào bảng lessons nếu chưa có
-        # FIX: Đây là migration để upgrade DB cũ không bị lỗi
         mid2 = "lessons_add_extra_columns"
         row = self.cursor.execute(
             "SELECT id FROM migrations WHERE id=?", (mid2,)
@@ -198,8 +207,7 @@ class Database:
             )
             self.conn.commit()
 
-        # Migration 3: thêm topic_key, course_title, minutes để hỗ trợ đa ngôn ngữ
-        # FIX: Các cột này giúp LessonItem._build_title() dịch đúng khi đổi ngôn ngữ
+        # Migration 3: thêm topic_key, course_title, minutes
         mid3 = "lessons_add_i18n_columns"
         row = self.cursor.execute(
             "SELECT id FROM migrations WHERE id=?", (mid3,)
@@ -238,7 +246,6 @@ class Database:
                 self.cursor.execute(
                     "ALTER TABLE users ADD COLUMN username TEXT"
                 )
-                # Tạo unique index riêng (ALTER TABLE không hỗ trợ UNIQUE trực tiếp)
                 self.cursor.execute(
                     "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username "
                     "ON users(username) WHERE username IS NOT NULL"
@@ -285,13 +292,12 @@ class Database:
                 "INSERT INTO migrations (id) VALUES (?)", (mid6,)
             )
             self.conn.commit()
-        
+
         # Migration 7: thêm trạng thái hoàn thành cho flashcard deck
         mid7 = "flashcard_decks_add_completed"
         row = self.cursor.execute(
             "SELECT id FROM migrations WHERE id=?", (mid7,)
         ).fetchone()
-
         if not row:
             existing_cols = [
                 r[1] for r in
@@ -299,7 +305,6 @@ class Database:
                     "PRAGMA table_info(flashcard_decks)"
                 ).fetchall()
             ]
-
             if "is_completed" not in existing_cols:
                 self.cursor.execute(
                     """
@@ -307,7 +312,6 @@ class Database:
                     ADD COLUMN is_completed INTEGER DEFAULT 0
                     """
                 )
-
             self.cursor.execute(
                 "INSERT INTO migrations (id) VALUES (?)",
                 (mid7,)
@@ -316,12 +320,10 @@ class Database:
 
         # Migration 8: thêm tutorial_cache vào courses
         mid8 = "courses_add_tutorial_cache"
-
         row = self.cursor.execute(
             "SELECT id FROM migrations WHERE id=?",
             (mid8,)
         ).fetchone()
-
         if not row:
             existing_cols = [
                 r[1] for r in
@@ -329,7 +331,6 @@ class Database:
                     "PRAGMA table_info(courses)"
                 ).fetchall()
             ]
-
             if "tutorial_cache" not in existing_cols:
                 self.cursor.execute(
                     """
@@ -337,44 +338,52 @@ class Database:
                     ADD COLUMN tutorial_cache TEXT
                     """
                 )
-
             self.cursor.execute(
                 "INSERT INTO migrations (id) VALUES (?)",
                 (mid8,)
             )
             self.conn.commit()
 
-
-        # Migration 9: thêm course_id vào flashcard_decks
-        mid9 = "flashcard_decks_add_course_id"
-
+        # Migration 9: thêm cột semester_id vào grade_subjects
+        mid9 = "grade_subjects_add_semester_id"
         row = self.cursor.execute(
-            "SELECT id FROM migrations WHERE id=?",
-            (mid9,)
+            "SELECT id FROM migrations WHERE id=?", (mid9,)
         ).fetchone()
-
         if not row:
             existing_cols = [
                 r[1] for r in
-                self.cursor.execute(
-                    "PRAGMA table_info(flashcard_decks)"
-                ).fetchall()
+                self.cursor.execute("PRAGMA table_info(grade_subjects)").fetchall()
             ]
-
-            if "course_id" not in existing_cols:
+            if "semester_id" not in existing_cols:
                 self.cursor.execute(
-                    """
-                    ALTER TABLE flashcard_decks
-                    ADD COLUMN course_id INTEGER DEFAULT NULL
-                    """
+                    "ALTER TABLE grade_subjects ADD COLUMN semester_id INTEGER DEFAULT NULL"
                 )
-
             self.cursor.execute(
-                "INSERT INTO migrations (id) VALUES (?)",
-                (mid9,)
+                "INSERT INTO migrations (id) VALUES (?)", (mid9,)
             )
-
             self.conn.commit()
+
+        # Migration 10: tạo bảng semesters nếu DB cũ chưa có
+        mid10 = "create_semesters_table"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid10,)
+        ).fetchone()
+        if not row:
+            self.cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS semesters (
+                    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    mode    TEXT,
+                    name    TEXT
+                )
+                """
+            )
+            self.cursor.execute(
+                "INSERT INTO migrations (id) VALUES (?)", (mid10,)
+            )
+            self.conn.commit()
+
     def create_default_user(self):
         self.cursor.execute(
             "SELECT * FROM users WHERE email=?",
@@ -435,14 +444,12 @@ class Database:
         Đăng ký user mới.
         Trả về: True = thành công, "email" = email trùng, "username" = username trùng, False = lỗi khác
         """
-        # Kiểm tra email trùng
         existing_email = self.execute(
             "SELECT id FROM users WHERE email=?", (email,), fetch=True
         )
         if existing_email:
             return "email"
 
-        # Kiểm tra username trùng
         existing_username = self.execute(
             "SELECT id FROM users WHERE username=?", (username,), fetch=True
         )
@@ -475,10 +482,9 @@ class Database:
             (user_id, name, code, professor)
         )
         self.conn.commit()
-        return cur.lastrowid  # trả về id để controller dùng tiếp
+        return cur.lastrowid
 
     def delete_course(self, course_id):
-        # Xóa lessons trước, sau đó xóa course
         self.execute("DELETE FROM lessons WHERE course_id=?", (course_id,))
         self.execute("DELETE FROM course_resources WHERE course_id=?", (course_id,))
         return self.execute("DELETE FROM courses WHERE id=?", (course_id,))
@@ -490,8 +496,6 @@ class Database:
         )
 
     # ================= LESSON =================
-    # FIX: Thêm đủ tham số duration, type_, url, has_exercise, completed
-    # FIX i18n: Thêm topic_key, course_title, minutes để hỗ trợ chuyển ngôn ngữ
     def add_lesson(self, course_id, title, url, source,
                    duration="15-30 phút", type_="Online",
                    has_exercise=False, completed=False,
@@ -515,14 +519,12 @@ class Database:
             True
         )
 
-    # FIX: Mới — đánh dấu lesson đã hoàn thành / chưa
     def set_lesson_completed(self, lesson_id, completed: bool):
         return self.execute(
             "UPDATE lessons SET completed=? WHERE id=?",
             (int(completed), lesson_id)
         )
 
-    # FIX: Mới — tính progress của course (%)
     def get_course_progress(self, course_id) -> int:
         rows = self.execute(
             "SELECT completed FROM lessons WHERE course_id=?",
@@ -571,18 +573,17 @@ class Database:
             "DELETE FROM schedule WHERE id=?",
             (schedule_id,)
         )
-    
+
     def check_schedule_overlap(self, user_id, day, start, end):
         """Kiểm tra xem khung giờ mới có bị trùng lấp với lịch đã có không."""
         query = """
             SELECT course, start_time, end_time
             FROM schedule
-            WHERE user_id = ? AND day = ? 
+            WHERE user_id = ? AND day = ?
               AND start_time < ? AND end_time > ?
         """
-        # Thuật toán: Trùng khi (Bắt đầu cũ < Kết thúc mới) VÀ (Kết thúc cũ > Bắt đầu mới)
         return self.execute(query, (user_id, day, end, start), fetch=True)
-    
+
     def delete_all_schedules(self, user_id):
         """Xóa toàn bộ lịch học của user."""
         return self.execute(
@@ -591,20 +592,18 @@ class Database:
         )
 
     # ================= FLASHCARD DECKS =================
-    def create_deck(self, user_id: int, title: str, source: str = "", lesson_id: int = None, parent_id: int = None, course_id: int = None) -> int:
+    def create_deck(self, user_id: int, title: str, source: str = "",
+                    lesson_id: int = None) -> int:
         """Tạo bộ flashcard mới, trả về deck_id."""
         cur = self.conn.cursor()
         cur.execute(
-            "INSERT INTO flashcard_decks (user_id, title, source, lesson_id, parent_id, course_id) VALUES (?, ?, ?, ?, ?, ?)",
-            (user_id, title, source, lesson_id, parent_id, course_id)
+            "INSERT INTO flashcard_decks (user_id, title, source, lesson_id) VALUES (?, ?, ?, ?)",
+            (user_id, title, source, lesson_id)
         )
         self.conn.commit()
         return cur.lastrowid
 
-
-
     def get_sub_decks(self, user_id, parent_id):
-        """Lấy danh sách các bộ flashcard bài học nhỏ nằm trong khóa học lớn"""
         return self.execute("""
             SELECT d.*, COUNT(f.id) as card_count
             FROM flashcard_decks d
@@ -615,13 +614,11 @@ class Database:
         """, (user_id, parent_id), fetch=True) or []
 
     def delete_deck(self, deck_id: int):
-        """Xóa bộ flashcard và toàn bộ card trong đó."""
         self.execute("DELETE FROM flashcards WHERE deck_id=?", (deck_id,))
         return self.execute("DELETE FROM flashcard_decks WHERE id=?", (deck_id,))
 
     # ================= FLASHCARDS =================
     def get_flashcards(self, user_id: int, deck_id: int = None) -> list:
-        """Lấy flashcards — theo deck nếu có deck_id, không thì lấy tất cả."""
         if deck_id is not None:
             return self.execute(
                 "SELECT * FROM flashcards WHERE user_id=? AND deck_id=? ORDER BY id ASC",
@@ -661,7 +658,7 @@ class Database:
         except Exception as e:
             print("❌ SAVE ERROR:", e)
             return False
-    
+
     def get_documents(self, user_id):
         return self.execute(
             """
@@ -700,7 +697,7 @@ class Database:
         except Exception as e:
             print("❌ Update Profile Error:", e)
             return False
-    
+
     def set_deck_completed(self, deck_id: int, completed=True):
         self.execute(
             "UPDATE flashcard_decks SET is_completed=? WHERE id=?",
@@ -717,8 +714,8 @@ class Database:
             WHERE d.user_id=?
             GROUP BY d.id
             ORDER BY d.id DESC
-        """,(user_id,),fetch=True) or []
-    
+        """, (user_id,), fetch=True) or []
+
     def get_document_detail(self, document_id):
         result = self.execute(
             """
@@ -734,9 +731,7 @@ class Database:
             (document_id,),
             fetch=True
         )
-
         return result[0] if result else None
-
 
     def delete_document(self, document_id):
         try:
@@ -744,14 +739,11 @@ class Database:
                 "DELETE FROM summaries WHERE document_id=?",
                 (document_id,)
             )
-
             self.execute(
                 "DELETE FROM documents WHERE id=?",
                 (document_id,)
             )
-
             return True
-
         except Exception as e:
             print(e)
             return False
@@ -759,40 +751,34 @@ class Database:
     def complete_lesson_flashcard(self, deck_id):
         """Đánh dấu hoàn thành bộ flashcard nhỏ và tự động kích hoạt tích xanh bài học liên kết"""
         try:
-            # 1. Cập nhật hoàn thành cho bộ flashcard nhỏ
             self.execute("UPDATE flashcard_decks SET is_completed=1 WHERE id=?", (deck_id,))
-            
-            # 2. Tìm xem bộ flashcard này liên kết với lesson_id nào
+
             self.cursor.execute("SELECT lesson_id, parent_id FROM flashcard_decks WHERE id=?", (deck_id,))
             row = self.cursor.fetchone()
-            
+
             if row and row["lesson_id"]:
                 lesson_id = row["lesson_id"]
                 parent_id = row["parent_id"]
-                
-                # 3. Kích hoạt Tích xanh cho bài học trong bảng lessons
+
                 self.execute("UPDATE lessons SET completed=1 WHERE id=?", (lesson_id,))
-                
-                # 4. Kiểm tra xem toàn bộ các bài học nhỏ trong Khóa học lớn này đã hoàn thành hết chưa
+
                 if parent_id:
                     self.cursor.execute("SELECT COUNT(*) as total FROM flashcard_decks WHERE parent_id=?", (parent_id,))
                     total_sub = self.cursor.fetchone()["total"]
-                    
+
                     self.cursor.execute("SELECT COUNT(*) as completed FROM flashcard_decks WHERE parent_id=? AND is_completed=1", (parent_id,))
                     comp_sub = self.cursor.fetchone()["completed"]
-                    
-                    # Nếu hoàn thành 100% các bộ nhỏ -> Đánh dấu hoàn thành luôn bộ lớn mang tên khóa học
+
                     if total_sub == comp_sub:
                         self.execute("UPDATE flashcard_decks SET is_completed=1 WHERE id=?", (parent_id,))
-            
+
             self.conn.commit()
             return True
         except Exception as e:
             print(f"❌ Lỗi cập nhật tiến độ hoàn thành bài học: {e}")
-            return False    
+            return False
 
     def get_tutorial_cache(self, course_id: int) -> str | None:
-        """Lấy tutorial đã cache, trả None nếu chưa có."""
         rows = self.execute(
             "SELECT tutorial_cache FROM courses WHERE id = ?",
             (course_id,), fetch=True
@@ -802,11 +788,10 @@ class Database:
         return None
 
     def save_tutorial_cache(self, course_id: int, text: str):
-        """Lưu tutorial vào DB để lần sau không cần gọi AI lại."""
         self.execute(
             "UPDATE courses SET tutorial_cache = ? WHERE id = ?",
             (text, course_id)
-        )    
+        )
 
     # ================= CLOSE =================
     def close(self):

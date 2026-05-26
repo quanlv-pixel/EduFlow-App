@@ -5,22 +5,83 @@ class GradeController:
     def __init__(self, db):
         self.db = db
 
-    # ================= CRUD =================
-    def get_subjects(self, user_id, mode):
+    # ================= SEMESTER CRUD =================
+    def get_semesters(self, user_id: int, mode: str) -> list:
+        """Lấy danh sách học kỳ của user theo mode."""
         return self.db.execute(
-            "SELECT * FROM grade_subjects WHERE user_id=? AND mode=?",
+            "SELECT * FROM semesters WHERE user_id=? AND mode=? ORDER BY id ASC",
             (user_id, mode), True
         ) or []
 
-    def add_subject(self, user_id, mode, subject_name, credits, scores_data):
+    def add_semester(self, user_id: int, mode: str, name: str) -> int | None:
+        """Thêm học kỳ mới, trả về id của hàng vừa tạo."""
+        try:
+            cur = self.db.conn.cursor()
+            cur.execute(
+                "INSERT INTO semesters (user_id, mode, name) VALUES (?, ?, ?)",
+                (user_id, mode, name)
+            )
+            self.db.conn.commit()
+            return cur.lastrowid
+        except Exception as e:
+            print("❌ add_semester ERROR:", e)
+            return None
+
+    def rename_semester(self, semester_id: int, name: str) -> bool:
+        """Đổi tên học kỳ."""
+        return self.db.execute(
+            "UPDATE semesters SET name=? WHERE id=?",
+            (name, semester_id)
+        ) or False
+
+    def delete_semester(self, semester_id: int) -> bool:
+        """Xóa học kỳ và toàn bộ môn học thuộc kỳ đó."""
+        self.db.execute(
+            "DELETE FROM grade_subjects WHERE semester_id=?",
+            (semester_id,)
+        )
+        return self.db.execute(
+            "DELETE FROM semesters WHERE id=?",
+            (semester_id,)
+        ) or False
+
+    # ================= SUBJECT CRUD =================
+    def get_subjects(self, user_id: int, mode: str) -> list:
+        """Lấy TẤT CẢ môn học của user (dùng để tính GPA tích lũy ở banner)."""
+        return self.db.execute(
+            "SELECT * FROM grade_subjects WHERE user_id=? AND mode=? AND semester_id IS NOT NULL",
+            (user_id, mode), True
+        ) or []
+
+    def get_subjects_by_semester(self, semester_id: int) -> list:
+        """Lấy danh sách môn học theo học kỳ cụ thể."""
+        return self.db.execute(
+            "SELECT * FROM grade_subjects WHERE semester_id=? ORDER BY id ASC",
+            (semester_id,), True
+        ) or []
+
+    def add_subject(self, user_id: int, mode: str, subject_name: str,
+                    credits: int, scores_data: dict,
+                    semester_id: int | None = None) -> bool:
         return self.db.execute(
             """INSERT INTO grade_subjects
-               (user_id, mode, subject_name, credits, scores_data)
-               VALUES (?, ?, ?, ?, ?)""",
-            (user_id, mode, subject_name, credits, json.dumps(scores_data))
+               (user_id, mode, subject_name, credits, scores_data, semester_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (user_id, mode, subject_name, credits,
+             json.dumps(scores_data), semester_id)
         )
 
-    def update_subject(self, subject_id, subject_name, credits, scores_data):
+    def update_subject(self, subject_id: int, subject_name: str,
+                       credits: int, scores_data: dict,
+                       semester_id: int | None = None) -> bool:
+        # semester_id được truyền tường minh khi biết; nếu None thì giữ nguyên giá trị cũ
+        if semester_id is not None:
+            return self.db.execute(
+                """UPDATE grade_subjects
+                   SET subject_name=?, credits=?, scores_data=?, semester_id=?
+                   WHERE id=?""",
+                (subject_name, credits, json.dumps(scores_data), semester_id, subject_id)
+            )
         return self.db.execute(
             """UPDATE grade_subjects
                SET subject_name=?, credits=?, scores_data=?
@@ -28,7 +89,7 @@ class GradeController:
             (subject_name, credits, json.dumps(scores_data), subject_id)
         )
 
-    def delete_subject(self, subject_id):
+    def delete_subject(self, subject_id: int) -> bool:
         return self.db.execute(
             "DELETE FROM grade_subjects WHERE id=?",
             (subject_id,)
@@ -82,32 +143,21 @@ class GradeController:
     @staticmethod
     def calc_sv_average(scores: dict) -> float:
         """
-        Tính điểm trung bình theo hệ số cộng dồn:
-            CC  : hệ số 3  (bắt buộc nếu có)
-            BT  : hệ số 2  (tuỳ chọn — môn không có BT thì bỏ qua)
-            GK  : hệ số 3  (bắt buộc)
-            CK  : hệ số 9  (bắt buộc)
-
-        Ví dụ kiểm chứng:
-          CC=10, GK=6, CK=8.5, không có BT:
-              (10×3 + 6×3 + 8.5×9) / (3+3+9) = 124.5 / 15 = 8.30 ✓
-          CC=10, BT=10, GK=6, CK=8.5:
-              (10×3 + 10×2 + 6×3 + 8.5×9) / (3+2+3+9) = 144.5 / 17 = 8.50 ✓
-
-        → Khi thiếu thành phần nào, mẫu số tự giảm theo hệ số tương ứng,
-          không cần viết lại công thức cho từng trường hợp.
+        CC  : hệ số 3  (tuỳ chọn)
+        BT  : hệ số 2  (tuỳ chọn)
+        GK  : hệ số 3  (bắt buộc)
+        CK  : hệ số 9  (bắt buộc)
         """
         cc = scores.get("cc")
         bt = scores.get("bt")
         gk = scores.get("gk")
         ck = scores.get("ck")
 
-        # GK và CK là bắt buộc; thiếu một trong hai thì chưa tính được
         if gk is None or ck is None:
             return 0.0
 
         total  = float(gk) * 3 + float(ck) * 9
-        weight = 3 + 9                           # = 12 (GK + CK)
+        weight = 3 + 9
 
         if cc is not None:
             total  += float(cc) * 3
@@ -121,7 +171,7 @@ class GradeController:
 
     @staticmethod
     def score_to_letter(score: float) -> str:
-        if score >= 8.5:  return "A"
+        if score >= 8.5:   return "A"
         elif score >= 8.0: return "B+"
         elif score >= 7.0: return "B"
         elif score >= 6.5: return "C+"
@@ -145,24 +195,24 @@ class GradeController:
             letter = GradeController.score_to_letter(s["avg10"])
             gpa4   = GradeController.letter_to_gpa4(letter)
             c      = int(s.get("credits", 3))
-            total_pts    += gpa4 * c
+            total_pts     += gpa4 * c
             total_credits += c
         return round(total_pts / total_credits, 2) if total_credits else 0.0
 
     @staticmethod
     def calc_gpa10(subjects: list[dict]) -> float:
-        total = sum(s["avg10"] * int(s.get("credits", 3)) for s in subjects)
+        total   = sum(s["avg10"] * int(s.get("credits", 3)) for s in subjects)
         credits = sum(int(s.get("credits", 3)) for s in subjects)
         return round(total / credits, 2) if credits else 0.0
 
     @staticmethod
     def gpa4_rank(gpa: float) -> tuple[str, str]:
-        if gpa >= 3.6:  return "Xuất sắc", "#10B981"
-        elif gpa >= 3.2: return "Giỏi",    "#2D60FF"
-        elif gpa >= 2.5: return "Khá",     "#F59E0B"
+        if gpa >= 3.6:   return "Xuất sắc", "#10B981"
+        elif gpa >= 3.2: return "Giỏi",     "#2D60FF"
+        elif gpa >= 2.5: return "Khá",      "#F59E0B"
         elif gpa >= 2.0: return "Trung bình","#F97316"
-        elif gpa >= 1.0: return "Yếu",     "#EF4444"
-        else:            return "Kém",     "#DC2626"
+        elif gpa >= 1.0: return "Yếu",      "#EF4444"
+        else:            return "Kém",      "#DC2626"
 
     @staticmethod
     def letter_color(letter: str) -> str:
