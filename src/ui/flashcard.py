@@ -1018,6 +1018,40 @@ class FlashcardWidget(QWidget):
     def _retranslate(self):
         self.lbl_title.setText(tr("flash_title"))
         self.lbl_sub.setText(tr("flash_subtitle"))
+        
+        # Tab chính
+        self.btn_tab_my.setText(tr("flash_tab_mine"))
+        self.btn_tab_course.setText(tr("flash_tab_course"))
+        
+        # Nút tạo mới (chỉ update nếu nút đang tồn tại)
+        if hasattr(self, 'btn_file'):
+            self.btn_file.setText(tr("flash_from_file"))
+            self.btn_topic.setText(tr("flash_from_text"))
+            self.no_deck_label.setText(tr("flash_empty_mine"))
+            
+        # Nút Quay lại
+        if hasattr(self, 'btn_back_to_courses'):
+            self.btn_back_to_courses.setText(tr("flash_back_list"))
+            self.no_course_deck_label.setText(tr("flash_empty_course"))
+            self.no_lesson_deck_label.setText(tr("flash_empty_lesson"))
+            
+        # Loading page
+        if hasattr(self, 'lbl_loading_text'):
+            self.lbl_loading_text.setText(tr("flash_loading_overlay"))
+
+        # Gợi ý list Khóa học/Bài học
+        for child in self.findChildren(QLabel):
+            if child.text() == "Chọn khóa học để ôn tập flashcard:":
+                child.setText(tr("flash_choose_course"))
+            elif child.text() == "Chọn bài học để bắt đầu làm bài:":
+                child.setText(tr("flash_choose_lesson"))
+        
+        # Gọi lại load tab để render lại các card deck bằng ngôn ngữ mới
+        current_idx = self.tab_stack.currentIndex()
+        if current_idx == 0:
+            self._load_my_decks()
+        else:
+            self._load_course_decks()
 
     def set_ai_limit(self, limit: int):
         self.ai_limit = limit

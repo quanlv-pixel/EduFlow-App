@@ -257,12 +257,12 @@ class SummaryBanner(QFrame):
 
     def update_hs(self, avg: float, rank: str):
         self.lbl_main.setText(f"{avg:.2f} / 10")
-        self.lbl_sub.setText("Điểm trung bình tất cả môn")
+        self.lbl_sub.setText(tr("grade_hs_avg_all"))  # Đã sửa
         self.lbl_rank.setText(f"🏅 {rank}")
 
     def update_sv(self, gpa4: float, gpa10: float, rank: str):
         self.lbl_main.setText(f"GPA {gpa4:.2f} / 4.0")
-        self.lbl_sub.setText(f"Quy đổi hệ 10: {gpa10:.2f}   •   Xếp loại: {rank}")
+        self.lbl_sub.setText(tr("grade_sv_convert", gpa10=f"{gpa10:.2f}", rank=rank)) # Đã sửa
         self.lbl_rank.setText(f"🎓 {rank}")
 
 
@@ -406,8 +406,8 @@ class SemesterBlock(QFrame):
     # ── CONTEXT MENU (⋮) ──────────────────────────────────────
     def _show_menu(self):
         menu = QMenu(self)
-        act_rename = menu.addAction("✏️  Đổi tên học kỳ")
-        act_delete = menu.addAction("🗑️  Xóa học kỳ")
+        act_rename = menu.addAction(tr("grade_rename_semester")) # Sửa
+        act_delete = menu.addAction(tr("grade_delete_semester")) # Sửa
         act_delete.setStyleSheet("color:#EF4444;")
         chosen = menu.exec(QCursor.pos())
 
@@ -418,7 +418,7 @@ class SemesterBlock(QFrame):
 
     def _rename_semester(self):
         name, ok = QInputDialog.getText(
-            self.window(), "Đổi tên học kỳ", "Tên mới:",
+            self.window(), tr("grade_rename_semester_title"), tr("grade_rename_semester_label"),
             text=self.semester.get("name", "")
         )
         if ok and name.strip():
@@ -428,8 +428,8 @@ class SemesterBlock(QFrame):
 
     def _delete_semester(self):
         reply = QMessageBox.question(
-            self.window(), "Xác nhận",
-            f"Xóa học kỳ '{self.semester.get('name')}' và toàn bộ môn học?\nHành động này không thể hoàn tác.",
+            self.window(), tr("confirm"),
+            tr("grade_delete_semester_msg", name=self.semester.get('name', '')),
             QMessageBox.Yes | QMessageBox.No
         )
         if reply == QMessageBox.Yes:
@@ -497,9 +497,10 @@ class SemesterBlock(QFrame):
             if avg:
                 avgs.append(avg)
         overall = GradeController.hs_overall(avgs) if avgs else 0.0
-        self.lbl_stats.setText(
-            f"Số môn: {count}   •   ĐTB: {overall:.2f}" if count else "Chưa có môn học"
-        )
+        if count:
+            self.lbl_stats.setText(tr("grade_hs_stats", count=count, overall=f"{overall:.2f}"))
+        else:
+            self.lbl_stats.setText(tr("no_subject"))
 
     def _update_stats_sv(self, subjects):
         count   = len(subjects)
@@ -515,14 +516,12 @@ class SemesterBlock(QFrame):
         if sv_list:
             gpa4  = GradeController.calc_gpa4(sv_list)
             gpa10 = GradeController.calc_gpa10(sv_list)
-            self.lbl_stats.setText(
-                f"Số môn: {count}   •   TC: {total_credits}   •   "
-                f"GPA 10: {gpa10:.2f}   •   GPA 4: {gpa4:.2f}"
-            )
+            self.lbl_stats.setText(tr("grade_sv_stats", count=count, credits=total_credits, gpa10=f"{gpa10:.2f}", gpa4=f"{gpa4:.2f}"))
         else:
-            self.lbl_stats.setText(
-                f"Số môn: {count}   •   TC: {total_credits}" if count else "Chưa có môn học"
-            )
+            if count:
+                self.lbl_stats.setText(tr("grade_sv_stats_empty", count=count, credits=total_credits))
+            else:
+                self.lbl_stats.setText(tr("no_subject"))
 
     # ── HỌC SINH TABLE ────────────────────────────────────────
     def _build_hs_table(self, subjects):
@@ -838,4 +837,5 @@ class GradeWidget(QWidget):
         self.lbl_title.setText(tr("grade_title"))
         self.btn_hs.setText(tr("grade_student"))
         self.btn_sv.setText(tr("grade_university"))
+        self.btn_add_semester.setText(tr("grade_add_semester"))
         self._refresh()

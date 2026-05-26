@@ -1,5 +1,5 @@
 import json
-
+from src.ui.settings_widget import tr
 
 class GradeController:
     def __init__(self, db):
@@ -123,15 +123,15 @@ class GradeController:
     def hs_rank(avg: float) -> tuple[str, str]:
         """Trả về (xếp loại, màu hex)"""
         if avg >= 9.0:
-            return "Xuất sắc", "#10B981"
+            return tr("rank_excellent"), "#10B981"
         elif avg >= 8.0:
-            return "Giỏi", "#2D60FF"
+            return tr("rank_good"), "#2D60FF"
         elif avg >= 6.5:
-            return "Khá", "#F59E0B"
+            return tr("rank_fair"), "#F59E0B"
         elif avg >= 5.0:
-            return "Trung bình", "#F97316"
+            return tr("rank_average"), "#F97316"
         else:
-            return "Yếu", "#EF4444"
+            return tr("rank_weak"), "#EF4444"
 
     @staticmethod
     def hs_overall(subjects_avg: list[float]) -> float:
@@ -207,12 +207,18 @@ class GradeController:
 
     @staticmethod
     def gpa4_rank(gpa: float) -> tuple[str, str]:
-        if gpa >= 3.6:   return "Xuất sắc", "#10B981"
-        elif gpa >= 3.2: return "Giỏi",     "#2D60FF"
-        elif gpa >= 2.5: return "Khá",      "#F59E0B"
-        elif gpa >= 2.0: return "Trung bình","#F97316"
-        elif gpa >= 1.0: return "Yếu",      "#EF4444"
-        else:            return "Kém",      "#DC2626"
+        if gpa >= 3.6:   
+            return tr("rank_excellent"), "#10B981"
+        elif gpa >= 3.2: 
+            return tr("rank_good"), "#2D60FF"
+        elif gpa >= 2.5: 
+            return tr("rank_fair"), "#F59E0B"
+        elif gpa >= 2.0: 
+            return tr("rank_average"), "#F97316"
+        elif gpa >= 1.0: 
+            return tr("rank_weak"), "#EF4444"
+        else:            
+            return tr("rank_poor"), "#DC2626"
 
     @staticmethod
     def letter_color(letter: str) -> str:
