@@ -345,16 +345,17 @@ class SemesterBlock(QFrame):
         self.lbl_stats.setStyleSheet("font-size:12px;color:#9095A0;")
         lay.addWidget(self.lbl_stats)
 
-        # ⋮ menu
-        btn_menu = QPushButton("⋮")
-        btn_menu.setFixedSize(28, 28)
-        btn_menu.setCursor(Qt.PointingHandCursor)
-        btn_menu.setStyleSheet(
+        # Nút thùng rác (xóa học kỳ)
+        btn_delete_semester = QPushButton("🗑")
+        btn_delete_semester.setFixedSize(28, 28)
+        btn_delete_semester.setCursor(Qt.PointingHandCursor)
+        btn_delete_semester.setStyleSheet(
             "QPushButton{background:transparent;border:none;font-size:16px;color:#6F767E;border-radius:6px;}"
-            "QPushButton:hover{background:rgba(0,0,0,0.07);}"
+            "QPushButton:hover{background:#FEE2E2;color:#EF4444;}"
         )
-        btn_menu.clicked.connect(self._show_menu)
-        lay.addWidget(btn_menu)
+        # Kết nối thẳng vào hàm xóa thay vì mở menu
+        btn_delete_semester.clicked.connect(self._delete_semester)
+        lay.addWidget(btn_delete_semester)
 
         return header
 
@@ -427,14 +428,11 @@ class SemesterBlock(QFrame):
             self.lbl_name.setText(name.strip())
 
     def _delete_semester(self):
-        reply = QMessageBox.question(
-            self.window(), tr("confirm"),
-            tr("grade_delete_semester_msg", name=self.semester.get('name', '')),
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply == QMessageBox.Yes:
-            self.ctrl.delete_semester(self.semester_id)
-            self.parent_widget._refresh()   # rebuild toàn bộ
+        # Gọi lệnh xóa thẳng vào database dựa trên ID học kỳ
+        self.ctrl.delete_semester(self.semester_id)
+        
+        # Cập nhật lại giao diện ngay lập tức
+        self.parent_widget._refresh()
 
     # ── OPEN DIALOG ───────────────────────────────────────────
     def _open_add_dialog(self, edit_data=None, editing_id=None):
