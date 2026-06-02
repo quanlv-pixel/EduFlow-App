@@ -468,10 +468,38 @@ class SemesterBlock(QFrame):
 
     # ── DELETE SUBJECT ────────────────────────────────────────
     def _delete_subject(self, subject_id):
-        reply = QMessageBox.question(
-            self, tr("confirm"), tr("confirm_delete_msg"),
-            QMessageBox.Yes | QMessageBox.No
-        )
+        # Tạo đối tượng QMessageBox thay vì dùng hàm gọi nhanh (static)
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(tr("confirm"))
+        msg_box.setText(tr("confirm_delete_msg"))
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        
+        # Ép trực tiếp CSS nền trắng, chữ xám đen cho riêng bảng này
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #FFFFFF;
+            }
+            QLabel {
+                color: #1E2328; 
+                background-color: transparent;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #2D60FF;
+                color: white;
+                border-radius: 6px;
+                padding: 6px 16px;
+                font-weight: bold;
+                min-width: 60px;
+            }
+            QPushButton:hover {
+                background-color: #1A4FE0;
+            }
+        """)
+
+        # Hiển thị bảng và bắt kết quả
+        reply = msg_box.exec()
+        
         if reply == QMessageBox.Yes:
             self.ctrl.delete_subject(subject_id)
             self._refresh_table()
