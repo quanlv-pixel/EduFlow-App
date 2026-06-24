@@ -1536,30 +1536,18 @@ class SettingsWidget(QWidget):
                 return
             self.settings["ai_limit"] = int(raw)
 
-        # Phát signal để FlashcardWidget (và bất kỳ widget nào khác) nhận giới hạn mới
+        # Phát signal để gửi giới hạn mới đi
         self.ai_limit_changed.emit(self.settings["ai_limit"])
 
+        # Thông báo lưu thành công
         dark_str = tr("dark_on") if self.settings["dark_mode"] else tr("dark_off")
         QMessageBox.information(
             self,
             tr("saved_title"),
             tr("saved_msg", limit=self.settings["ai_limit"], dark=dark_str),
         )
-
-    
-
-        dummy_data = {
-            "exported_at": "2025-01-01T00:00:00",
-            "flashcards": [
-                {"id": 1, "front": "What is Python?", "back": "A programming language."},
-                {"id": 2, "front": "What is PySide6?", "back": "Qt bindings for Python."},
-            ],
-        }
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(dummy_data, f, ensure_ascii=False, indent=2)
-            QMessageBox.information(self, tr("export_ok"), tr("export_ok_msg", path=path))
-        except Exception as e:
-            QMessageBox.critical(self, tr("export_fail"), str(e))
+        
+        # NOTE: Đoạn mã Export JSON cũ của bạn đang bị lỗi vì thiếu biến path. 
+        # Nếu chưa cần dùng chức năng Export, hãy xóa bỏ hoặc comment đoạn code tạo JSON thừa phía dưới đi.
 
     

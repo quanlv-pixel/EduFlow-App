@@ -136,7 +136,7 @@ NỘI DUNG:
         return self._call_ai(prompt)
 
     # ================= FLASHCARD TỪ TÀI LIỆU =================
-    def generate_flashcards(self, text: str, lang: str = "vi") -> list:
+    def generate_flashcards(self, text: str, limit: int = 12, lang: str = "vi") -> list:
         if not text or len(text.strip()) < 50:
             return []
 
@@ -151,9 +151,10 @@ NỘI DUNG:
         prompt = f"""
 You are a smart study assistant.
 
-Read the document content below and create 10-15 effective study flashcards.
+Read the document content below and create effective study flashcards.
 
 Requirements:
+- Create exactly {limit} flashcards.
 - Each question must be clear and concise
 - Answers must be accurate, not too long (1-3 sentences)
 - Cover the most important concepts in the document

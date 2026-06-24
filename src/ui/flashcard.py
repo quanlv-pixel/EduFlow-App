@@ -84,17 +84,18 @@ class AIWorker(QThread):
     finished = Signal(list)
     error    = Signal(str)
 
-    def __init__(self, controller, mode: str, payload: str, lang: str = "vi"):
+    def __init__(self, controller, mode: str, payload: str, lang: str = "vi", limit = 12):
         super().__init__()
         self.controller = controller
         self.mode    = mode     # "file" | "topic"
         self.payload = payload
         self.lang    = lang
+        self.limit   = limit
 
     def run(self):
         try:
             if self.mode == "file":
-                cards = self.controller.generate_ai_from_text(self.payload, lang=self.lang)
+                cards = self.controller.generate_ai_from_text(self.payload, limit=self.limit)
             else:
                 cards = self.controller.generate_ai_from_topic(self.payload, lang=self.lang)
 
@@ -496,7 +497,8 @@ class FlashcardWidget(QWidget):
         self.controller = controller
         self.user_id = user_id
         self.current_deck_id = None
-        self._current_parent_deck_id = None   # deck cha đang xem (màn lesson list)
+        self._current_parent_deck_id = None
+        self.ai_limit = 12
 
         self._lm = LanguageManager.instance()
         self._lm.language_changed.connect(self._retranslate)
@@ -948,7 +950,7 @@ class FlashcardWidget(QWidget):
             self.stack.setCurrentIndex(0)
             return
 
-        self.worker = AIWorker(self.controller, "file", text_content)
+        self.worker = AIWorker(self.controller, "file", text_content, limit=self.ai_limit)
         self.worker.finished.connect(lambda cards: self._save_ai_deck(title, cards))
         self.worker.error.connect(self._on_ai_error)
         self.worker.start()
