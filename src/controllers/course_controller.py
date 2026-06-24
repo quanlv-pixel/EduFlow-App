@@ -48,8 +48,8 @@ class CourseController:
         UI dùng kết quả này để cho user chọn.
         """
         try:
-            results = self.fetcher.search_courses(query)
-            ranked = self.ranker.rank(results)
+            results = self.fetcher.search_courses(query) # Gọi tới CourseFetcher để tìm kiếm khóa học
+            ranked = self.ranker.rank(results) # Gọi tới AIRanker để rank kết quả tìm kiếm
             return ranked
         except Exception as e:
             print("❌ Lỗi search online courses:", e)
@@ -57,6 +57,7 @@ class CourseController:
 
     # ================= ADD COURSE (BƯỚC 2 KHI ADD COURSE) =================
     # FIX: add_course CHỈ lưu course vào DB, không tự động tạo lesson
+    # Lưu thông tin khóa học vào DB, sau đó UI sẽ gọi generate_lessons_from_course() để tạo lesson từ course đã chọn
     def add_course(self, user_id, name, code, professor) -> int | None:
         """
         Lưu course vào DB.
@@ -66,7 +67,7 @@ class CourseController:
             raise ValueError("Tên khóa học không được để trống")
 
         try:
-            course_id = self.db.add_course(
+            course_id = self.db.add_course( # Gọ tới DB để lưu thông tin khóa học
                 user_id,
                 name.strip(),
                 code.strip() if code else "",
@@ -86,7 +87,7 @@ class CourseController:
         Trả về list lessons đã tạo.
         """
         try:
-            lessons = self.mapper.split_course(selected_course)
+            lessons = self.mapper.split_course(selected_course) # Gọi tới Lesson Mapper để chia course thành các bài học
 
             for l in lessons:
                 # FIX: Gọi đúng signature của db.add_lesson()
@@ -151,6 +152,7 @@ class CourseController:
             return False
 
     # ================= FLASHCARD (tùy chọn, nếu có AI) =================
+    # Hàm tạo flashcard cho từng bài học, nếu có AI
     def generate_flashcard_for_lesson(self, lesson: dict) -> list:
         if not self.ai:
             return []
@@ -164,7 +166,7 @@ class CourseController:
             if source == "YouTube" or (url and ("youtube.com" in url.lower() or "youtu.be" in url.lower())):
                 print(f"🎬 Phát hiện bài học YouTube: {topic}. Đang cào phụ đề và tạo trắc nghiệm...")
                 # Gọi hàm xử lý trắc nghiệm từ YouTube mới cấu trúc lại
-                return self.ai.generate_flashcards_from_youtube(url, topic)
+                return self.ai.generate_flashcards_from_youtube(url, topic) # Gọi tới hàm AI để tạo flashcard 
             
             else:
                 # Luồng cũ: Tạo prompt kết hợp tên bài + tên khóa học cho tài liệu thông thường
@@ -180,6 +182,7 @@ class CourseController:
             return []
         
 
+    # Hàm để lấy tutorial từ cache hoặc gọi AI nếu chưa có
     def get_course_tutorial(self, source_platform: str, course_name: str, course_id: int = None) -> str:
         """
         Trả tutorial từ cache nếu có.

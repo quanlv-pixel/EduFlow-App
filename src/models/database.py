@@ -384,6 +384,55 @@ class Database:
             )
             self.conn.commit()
 
+        # Migration 11: Thêm parent_id vào flashcard_decks cho DB cũ
+        mid11 = "flashcard_decks_add_parent_id"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid11,)
+        ).fetchone()
+
+        if not row:
+            existing_cols = [
+                r[1] for r in
+                self.cursor.execute("PRAGMA table_info(flashcard_decks)").fetchall()
+            ]
+            if "parent_id" not in existing_cols:
+                self.cursor.execute(
+                    "ALTER TABLE flashcard_decks ADD COLUMN parent_id INTEGER DEFAULT NULL"
+                )
+                # Thêm ràng buộc khóa ngoại nếu cần
+                self.cursor.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_deck_parent ON flashcard_decks(parent_id)"
+                )
+            self.cursor.execute("INSERT INTO migrations (id) VALUES (?)", (mid11,))
+            self.conn.commit()
+            print("💾 Đã chạy Migration 11: Bổ sung thành công parent_id")
+
+        # Migration 12: Thêm course_id vào flashcard_decks + index deck_id trên flashcards
+        mid12 = "flashcard_decks_add_course_id_and_index"
+        row = self.cursor.execute(
+            "SELECT id FROM migrations WHERE id=?", (mid12,)
+        ).fetchone()
+
+        if not row:
+            # Thêm course_id vào flashcard_decks nếu chưa có
+            existing_deck_cols = [
+                r[1] for r in
+                self.cursor.execute("PRAGMA table_info(flashcard_decks)").fetchall()
+            ]
+            if "course_id" not in existing_deck_cols:
+                self.cursor.execute(
+                    "ALTER TABLE flashcard_decks ADD COLUMN course_id INTEGER DEFAULT NULL"
+                )
+
+            # Đảm bảo index trên flashcards.deck_id tồn tại để correlated subquery nhanh
+            self.cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_flashcards_deck_id ON flashcards(deck_id)"
+            )
+
+            self.cursor.execute("INSERT INTO migrations (id) VALUES (?)", (mid12,))
+            self.conn.commit()
+            print("💾 Đã chạy Migration 12: Bổ sung course_id và index deck_id")
+
     def create_default_user(self):
         self.cursor.execute(
             "SELECT * FROM users WHERE email=?",
@@ -475,14 +524,15 @@ class Database:
             True
         )
 
+    # Thêm thông tin khóa học
     def add_course(self, user_id, name, code, professor):
-        cur = self.conn.cursor()
+        cur = self.conn.cursor() # Tạo con trỏ để thực hiện các thao tác với cơ sở dữ liệu
         cur.execute(
             "INSERT INTO courses (user_id, name, code, professor) VALUES (?, ?, ?, ?)",
             (user_id, name, code, professor)
         )
         self.conn.commit()
-        return cur.lastrowid
+        return cur.lastrowid # Trả về id của khóa học vừa tạo để dùng cho các bảng liên quan (lessons, resources, flashcards,...)
 
     def delete_course(self, course_id):
         self.execute("DELETE FROM lessons WHERE course_id=?", (course_id,))
@@ -593,23 +643,30 @@ class Database:
 
     # ================= FLASHCARD DECKS =================
     def create_deck(self, user_id: int, title: str, source: str = "",
-                    lesson_id: int = None) -> int:
-        """Tạo bộ flashcard mới, trả về deck_id."""
+                    lesson_id: int = None, parent_id: int = None, course_id=None) -> int:
         cur = self.conn.cursor()
         cur.execute(
-            "INSERT INTO flashcard_decks (user_id, title, source, lesson_id) VALUES (?, ?, ?, ?)",
-            (user_id, title, source, lesson_id)
+            """
+            INSERT INTO flashcard_decks
+                (user_id, title, source, lesson_id, parent_id, course_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (user_id, title, source, lesson_id, parent_id, course_id)
         )
         self.conn.commit()
         return cur.lastrowid
 
     def get_sub_decks(self, user_id, parent_id):
+        """
+        Lấy các sub-deck thuộc một deck cha.
+        Dùng correlated subquery thay cho LEFT JOIN để tránh lỗi alias
+        và đảm bảo card_count luôn chính xác.
+        """
         return self.execute("""
-            SELECT d.*, COUNT(f.id) as card_count
+            SELECT d.*,
+                (SELECT COUNT(*) FROM flashcards WHERE deck_id = d.id) AS card_count
             FROM flashcard_decks d
-            LEFT JOIN flashcards f ON f.deck_id=d.id
-            WHERE d.user_id=? AND d.parent_id=?
-            GROUP BY d.id
+            WHERE d.user_id = ? AND d.parent_id = ?
             ORDER BY d.id ASC
         """, (user_id, parent_id), fetch=True) or []
 
@@ -705,14 +762,16 @@ class Database:
         )
 
     def get_decks(self, user_id):
+        """
+        Lấy tất cả decks của user kèm số lượng card.
+        Dùng correlated subquery thay cho LEFT JOIN để tránh lỗi
+        'no such column: f.id' do alias bị thiếu trong câu lệnh JOIN.
+        """
         return self.execute("""
             SELECT d.*,
-                COUNT(f.id) as card_count
+                (SELECT COUNT(*) FROM flashcards WHERE deck_id = d.id) AS card_count
             FROM flashcard_decks d
-            LEFT JOIN flashcards f
-                ON f.deck_id=d.id
-            WHERE d.user_id=?
-            GROUP BY d.id
+            WHERE d.user_id = ?
             ORDER BY d.id DESC
         """, (user_id,), fetch=True) or []
 
