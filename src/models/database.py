@@ -475,14 +475,15 @@ class Database:
             True
         )
 
+    # Thêm thông tin khóa học
     def add_course(self, user_id, name, code, professor):
-        cur = self.conn.cursor()
+        cur = self.conn.cursor() # Tạo con trỏ để thực hiện các thao tác với cơ sở dữ liệu
         cur.execute(
             "INSERT INTO courses (user_id, name, code, professor) VALUES (?, ?, ?, ?)",
             (user_id, name, code, professor)
         )
         self.conn.commit()
-        return cur.lastrowid
+        return cur.lastrowid # Trả về id của khóa học vừa tạo để dùng cho các bảng liên quan (lessons, resources, flashcards,...)
 
     def delete_course(self, course_id):
         self.execute("DELETE FROM lessons WHERE course_id=?", (course_id,))

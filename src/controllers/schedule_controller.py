@@ -5,6 +5,7 @@ class ScheduleController:
     def get_schedule(self, user_id):
         return self.db.get_schedule(user_id)
 
+    # Thêm lịch học 
     def add_schedule(self, user_id, course, room, day, start, end):
         """
         start / end: phút tính từ 0:00

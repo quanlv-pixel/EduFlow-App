@@ -41,7 +41,10 @@ class AuthController:
         except:
             return identifier.strip()
 
+
+    # Hàm gửi OTP qua email
     def send_otp_email(self, target_email, otp_code):
+        # Sử dụng thư viện smtplib và email.mine để tạo email HTML và gửi OTP 
         """Tạo giao diện HTML và tiến hành gửi mã OTP qua Gmail."""
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"🔐 Mã Xác Thực EduFlow: {otp_code}"
@@ -74,11 +77,13 @@ class AuthController:
             server.send_message(msg)
 
         # Lưu lại vào bộ nhớ để xác thực
+        # Lưu trên Ram thay vì trong DB để tránh lưu trữ lâu dài và bảo mật hơn
         self.otps[target_email.strip()] = {
             "code": str(otp_code),
             "timestamp": time.time()
         }
 
+    # Hàm xác thực OTP
     def verify_otp(self, email, code):
         """Xác thực mã OTP kèm theo kiểm tra thời gian hết hạn (5 phút)."""
         email_key = email.strip()
@@ -96,6 +101,7 @@ class AuthController:
             return True
         return False
 
+    # Reset lại password của user sau khi xác thực OTP thành công
     def reset_password(self, email, new_password):
         """Tiến hành cập nhật mật khẩu mới vào Database và xóa mã OTP."""
         email_key = email.strip()

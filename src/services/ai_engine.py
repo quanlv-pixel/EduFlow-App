@@ -19,8 +19,9 @@ class AIEngine:
 
         self.client = genai.Client(api_key=api_key)
         self.models = [
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
+            "gemini-2.5-flash",         # Bản 2.5 cực kỳ ổn định, ít bị nghẽn hơn bản 3.5
+            "gemini-2.5-flash-lite",    # Bản siêu nhẹ, phản hồi tức thì
+            "gemini-2.0-flash"          # Phương án dự phòng cuối cùng
         ]
 
     # ================= FILE =================
@@ -66,6 +67,10 @@ class AIEngine:
                         return response.text
                 except Exception as e:
                     err = str(e)
+                    
+                    # THÊM DÒNG NÀY ĐỂ BẮT BỆNH:
+                    print(f"🚨 LỖI TỪ GOOGLE API (Model {model}): {err}") 
+                    
                     last_error = err
                     if "503" in err or "UNAVAILABLE" in err:
                         time.sleep(2)

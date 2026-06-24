@@ -6,8 +6,9 @@ class FlashcardController:
     # ================= DECKS =================
     def get_decks(self, user_id: int) -> list:
         """Lấy tất cả decks (dùng nội bộ hoặc khi cần đủ)."""
-        return self.db.get_decks(user_id)
+        return self.db.get_decks(user_id) 
 
+    # Lấy danh sách flashcard decks của user
     def get_user_decks(self, user_id: int) -> list:
         """
         Chỉ lấy decks từ mục Flashcard (file hoặc AI tự tạo).
@@ -83,7 +84,7 @@ class FlashcardController:
             if "options" in c:
                 options_str = "|".join(c["options"])
                 q_saved = f"{q}||options||{options_str}"
-                a_saved = str(c.get("a", 0))
+                a_saved = str(c.get("a", 0)) # Đáp án đúng là index của options (0-based)
             else:
                 q_saved = q
                 a_saved = c.get("a") or c.get("answer", "")
